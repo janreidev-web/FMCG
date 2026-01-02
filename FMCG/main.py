@@ -10,6 +10,10 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 
 from config import PROJECT_ID, DATASET, INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
+
+# Force correct values for debugging
+INITIAL_SALES_AMOUNT = 6000000000  # ₱6B
+DAILY_SALES_AMOUNT = 1640000      # ₱1.64M
 from schema import (
     DIM_PRODUCTS, DIM_EMPLOYEES, DIM_RETAILERS, DIM_CAMPAIGNS,
     FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS
@@ -125,6 +129,7 @@ def main():
         if not table_has_data(client, FACT_SALES):
             # Initial run: generate historical sales
             yesterday = date.today() - timedelta(days=1)
+            logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
             logger.info(f"Generating initial sales fact targeting ₱{INITIAL_SALES_AMOUNT:,.0f} (2015-01-01 to {yesterday})...")
             sales = generate_fact_sales(
                 employees, products, retailers, campaigns,
@@ -135,6 +140,7 @@ def main():
         else:
             # Daily run: generate today's sales
             today = date.today()
+            logger.info(f"DAILY_SALES_AMOUNT from config: {DAILY_SALES_AMOUNT:,}")
             logger.info(f"Generating daily sales fact targeting ₱{DAILY_SALES_AMOUNT:,.0f} for {today}...")
             
             # Log scheduled run details

@@ -712,9 +712,11 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     
     # Calculate number of transactions based on target amount
     # For ₱6B over 11 years with realistic FMCG transaction patterns
-    avg_transaction_value = random.uniform(15000, 50000)  # ₱15K-₱50K per transaction (wholesale)
+    avg_transaction_value = random.uniform(8000, 25000)  # ₱8K-₱25K per transaction (adjusted for better distribution)
     num_transactions = int(target_amount / avg_transaction_value)
     
+    print(f"Target amount: ₱{target_amount:,.0f}")
+    print(f"Average transaction value: ₱{avg_transaction_value:,.0f}")
     print(f"Generating {num_transactions:,} sales transactions...")
     
     # Create lookup dictionaries for foreign keys
@@ -899,6 +901,13 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
             "expected_delivery_date": expected_delivery,
             "actual_delivery_date": actual_delivery
         })
+    
+    # Calculate and display actual total generated
+    actual_total = sum(sale["total_amount"] for sale in sales)
+    print(f"Generated {len(sales):,} sales transactions")
+    print(f"Target amount: ₱{target_amount:,.0f}")
+    print(f"Actual total: ₱{actual_total:,.0f}")
+    print(f"Variance: {((actual_total / target_amount - 1) * 100):+.1f}%")
     
     return sales
 
