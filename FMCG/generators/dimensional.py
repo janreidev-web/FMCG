@@ -907,7 +907,43 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     print(f"Generated {len(sales):,} sales transactions")
     print(f"Target amount: ₱{target_amount:,.0f}")
     print(f"Actual total: ₱{actual_total:,.0f}")
-    print(f"Variance: {((actual_total / target_amount - 1) * 100):+.1f}%")
+    
+    # Apply correction if variance is too large (more than 5%)
+    variance = (actual_total / target_amount - 1) * 100
+    if abs(variance) > 5.0:
+        print(f"Variance: {variance:+.1f}% - Applying correction...")
+        
+        # Calculate correction factor
+        correction_factor = target_amount / actual_total
+        
+        # Apply correction to all transactions
+        for sale in sales:
+            # Adjust total_amount proportionally
+            original_total = sale["total_amount"]
+            sale["total_amount"] = round(original_total * correction_factor, 2)
+            
+            # Recalculate tax amount based on new total
+            subtotal = sale["unit_price"] * sale["case_quantity"]
+            discount_amount = round(sale["unit_price"] * sale["case_quantity"] * (sale["discount_percent"] / 100), 2)
+            sale["tax_amount"] = round((subtotal - discount_amount) * (sale["tax_rate"] / 100), 2)
+            
+            # Recalculate commission based on new total
+            product = next(p for p in products if p["product_key"] == sale["product_key"])
+            if product["category"] in ["Personal Care", "Health & Wellness"]:
+                commission_rate = random.uniform(0.03, 0.10)
+            elif product["category"] in ["Beverages", "Food & Snacks"]:
+                commission_rate = random.uniform(0.02, 0.06)
+            else:
+                commission_rate = random.uniform(0.025, 0.08)
+            sale["commission_amount"] = round(sale["total_amount"] * commission_rate, 2)
+        
+        # Recalculate actual total after correction
+        corrected_total = sum(sale["total_amount"] for sale in sales)
+        corrected_variance = (corrected_total / target_amount - 1) * 100
+        print(f"Corrected total: ₱{corrected_total:,.0f}")
+        print(f"Final variance: {corrected_variance:+.1f}%")
+    else:
+        print(f"Variance: {variance:+.1f}%")
     
     return sales
 
