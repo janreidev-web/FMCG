@@ -195,7 +195,7 @@ Your Google Cloud service account requires the following permissions:
 
 ```bash
 git clone <repository-url>
-cd Data-Analytics
+cd FMCG-Data-Analytics
 ```
 
 ### Step 2: Python Environment
@@ -214,8 +214,8 @@ pip install -r requirements.txt
 export GCP_SERVICE_ACCOUNT="<base64-encoded-service-account-json>"
 export GCP_PROJECT_ID="your-project-id"
 export BQ_DATASET="fmcg_analytics"
-export INITIAL_SALES_AMOUNT="5000000000"
-export DAILY_SALES_AMOUNT="15000000"
+export INITIAL_SALES_AMOUNT="6000000000"
+export DAILY_SALES_AMOUNT="1640000"
 ```
 
 **Base64 Encoding Service Account:**

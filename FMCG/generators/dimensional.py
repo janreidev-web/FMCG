@@ -711,7 +711,8 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     sales = []
     
     # Calculate number of transactions based on target amount
-    avg_transaction_value = random.uniform(800, 2000)
+    # For ₱6B over 11 years with realistic FMCG transaction patterns
+    avg_transaction_value = random.uniform(15000, 50000)  # ₱15K-₱50K per transaction (wholesale)
     num_transactions = int(target_amount / avg_transaction_value)
     
     print(f"Generating {num_transactions:,} sales transactions...")
