@@ -1,0 +1,6 @@
+pandas
+faker
+google-cloud-bigquery
+google-cloud-bigquery-storage
+pyarrow
+pandas_gbq
