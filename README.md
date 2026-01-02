@@ -59,7 +59,7 @@ This platform implements a **complete dimensional data warehouse** for FMCG busi
 |:----------:|:---------------:|:-------------------:|
 | **Sales** | Revenue, Volume, Commission | Performance tracking & forecasting |
 | **Products** | Pricing, Categories, Status | Product mix analysis & optimization |
-| **Employees** | Productivity, Turnover | Workforce planning & efficiency |
+| **Employees** | Revenue, Volume, Commission, Performance, Attendance, Engagement | Complete HR analytics & workforce planning |
 | **Retailers** | Geographic distribution | Market penetration analysis |
 | **Inventory** | Stock levels, Locations | Supply chain optimization |
 | **Marketing** | Campaign ROI, Spend | Marketing effectiveness |
@@ -80,9 +80,10 @@ This platform implements a **complete dimensional data warehouse** for FMCG busi
 - Realistic synthetic data generation
 - **4 Dimension Tables** with realistic FMCG data
 - **4 Fact Tables** with business metrics
-- **200 Employees** across 10 departments
+- **900 Total Employees** (250 active, 650 terminated) across 10 departments
 - **150 Products** across 7 FMCG categories
 - **500 Retailers** across all Philippines regions
+- **Comprehensive HR data** with 47 fields per employee
 
 </td>
 <td width="50%">
@@ -277,14 +278,14 @@ Configure the system using environment variables or edit `FMCG/config.py`:
 <tr>
 <td><code>INITIAL_SALES_AMOUNT</code></td>
 <td>Historical sales target (PHP)</td>
-<td><code>5,000,000,000</code></td>
-<td>10-year historical data</td>
+<td><code>6,000,000,000</code></td>
+<td>11-year historical data (₱6B revenue)</td>
 </tr>
 <tr>
 <td><code>DAILY_SALES_AMOUNT</code></td>
 <td>Daily sales target (PHP)</td>
-<td><code>15,000,000</code></td>
-<td>For scheduled runs</td>
+<td><code>1,640,000</code></td>
+<td>For scheduled runs (₱1.64M daily)</td>
 </tr>
 </tbody>
 </table>
@@ -305,9 +306,9 @@ Additional settings in `config.py`:
 <tbody>
 <tr>
 <td><code>INITIAL_EMPLOYEES</code></td>
-<td>Initial employee count</td>
-<td><code>200</code></td>
-<td>Storage quota optimized</td>
+<td>Current active employee count</td>
+<td><code>250</code></td>
+<td>Scaled for ₱6B revenue company</td>
 </tr>
 <tr>
 <td><code>INITIAL_PRODUCTS</code></td>
@@ -361,7 +362,7 @@ python main.py
 | **1** | Authenticate with Google Cloud | Secure connection |
 | **2** | Generate dimension tables | 4 dimension tables |
 | **3** | Generate historical fact tables | 4 fact tables (2015-today) |
-| **4** | Load data into BigQuery | ~810 MB storage |
+| **4** | Load data into BigQuery | ~1.3 GB storage |
 | **5** | Display summary statistics | Record counts and metrics |
 
 </div>
@@ -392,10 +393,26 @@ GitHub Actions automatically executes daily updates:
 <details>
 <summary><b>dim_employees</b> - Employee Master Data</summary>
 
-- **200 employees** across 10 departments
-- Realistic organizational hierarchy
-- Position-based salary structure
-- 15% annual turnover rate
+- **900 total employees** (250 active, 650 terminated) across 10 departments
+- **47 comprehensive fields** including demographics, performance, benefits, and analytics
+- Realistic organizational hierarchy with department-specific distributions
+- Position-based salary structure (₱15K-150K monthly range)
+- Complete Philippine government IDs (TIN, SSS, PhilHealth, Pag-IBIG)
+- Work setup modeling (On-site, Remote, Hybrid, Field-based)
+- Performance ratings, training records, and skills tracking
+- Attendance, engagement, and satisfaction metrics
+- Leave balances and overtime tracking
+- 11-year historical growth patterns with realistic turnover
+
+**Key Employee Data Categories:**
+- **Demographics**: Name, gender, birth date, age, blood type
+- **Employment**: Department, position, hire/termination dates, work type
+- **Compensation**: Monthly salary, bank details, payroll information
+- **Performance**: Ratings, review dates, training completed, skills
+- **Benefits**: Health insurance, enrollment dates, leave balances
+- **Analytics**: Attendance rate, engagement score, satisfaction index
+- **Contact**: Work/personal email, phone, emergency contacts
+- **Location**: Complete address with Philippine geography integration
 
 </details>
 
@@ -424,10 +441,12 @@ GitHub Actions automatically executes daily updates:
 <details>
 <summary><b>fact_sales</b> - Sales Transactions</summary>
 
-- **Historical**: ₱2B across 10 years (initial run)
-- **Daily**: ₱550K per day (scheduled runs)
+- **Historical**: ₱6B across 11 years (2015-2026) (initial run)
+- **Daily**: ₱1.64M per day (scheduled runs)
 - Seasonal demand variations
 - Retailer-specific order patterns
+- Optimized for ₱6B FMCG company scale
+- 250 active employees driving sales performance
 
 </details>
 
@@ -435,9 +454,10 @@ GitHub Actions automatically executes daily updates:
 <summary><b>fact_operating_costs</b> - Operating Expenses</summary>
 
 - **40 cost categories** (fixed/variable)
-- Realistic employee salary structure
-- 15-20% profit margins
-- Complete business expenses
+- Realistic employee salary structure for 250 active employees
+- Optimized for ₱6B revenue with 15-20% profit margins
+- 50% cost reduction across all categories for improved profitability
+- Complete business expenses including payroll, operations, and overhead
 
 </details>
 
@@ -574,7 +594,7 @@ The dimensional data warehouse structure is **optimized for Power BI** and other
 | **Sales Performance** | Revenue, Volume, Growth, Profitability | Revenue optimization & forecasting |
 | **Product Analytics** | Category performance, Price elasticity, Product lifecycle | Product mix optimization |
 | **Geographic Analysis** | Regional sales, Market penetration, Delivery performance | Market expansion planning |
-| **Employee Productivity** | Sales per rep, Commission earned, Performance trends | Sales force optimization |
+| **Employee Productivity** | Sales per rep, Performance ratings, Attendance, Engagement, Satisfaction, Turnover, Skills | Complete HR analytics & workforce optimization |
 | **Marketing ROI** | Campaign effectiveness, Cost per acquisition, Brand impact | Marketing budget optimization |
 | **Financial Analysis** | Cost structure, Profit margins, Operating efficiency | Financial planning & control |
 | **Inventory Management** | Stock levels, Turnover rates, Warehouse efficiency | Supply chain optimization |
@@ -794,7 +814,7 @@ The platform is **optimized for BigQuery free tier** usage:
 
 | **Metric** | **Current Usage** | **Free Tier Limit** | **Utilization** |
 |:----------:|:----------------:|:------------------:|:---------------:|
-| **Storage** | ~810 MB | 10 GB | 8% |
+| **Storage** | ~1.3 GB | 10 GB | 13% |
 | **Monthly Queries** | Variable | 1 TB | Variable |
 | **Data Insertion** | ~3.6M records/day | 5 GB/day | 72% |
 
@@ -803,8 +823,8 @@ The platform is **optimized for BigQuery free tier** usage:
 ### Performance Characteristics
 
 #### Data Generation Performance
-- **Initial Load**: 10 years of historical data (~2B PHP sales)
-- **Daily Updates**: 550K PHP sales per day
+- **Initial Load**: 11 years of historical data (~₱6B sales)
+- **Daily Updates**: ₱1.64M PHP sales per day
 - **Generation Speed**: ~10,000 records/second
 - **BigQuery Loading**: Optimized batch operations
 
@@ -847,8 +867,8 @@ gcloud projects add-iam-policy-binding your-project-id \
 ```bash
 # Error: Memory limit exceeded during data generation
 # Solution: Reduce batch size in config.py
-INITIAL_SALES_AMOUNT = "2500000000"  # Reduce from 5B
-DAILY_SALES_AMOUNT = "7500000"      # Reduce from 15M
+INITIAL_SALES_AMOUNT = "3000000000"  # Reduce from 6B
+DAILY_SALES_AMOUNT = "820000"      # Reduce from 1.64M
 ```
 
 #### GitHub Actions Failures
