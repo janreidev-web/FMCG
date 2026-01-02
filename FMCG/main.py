@@ -67,8 +67,7 @@ def main():
             products = generate_dim_products()
             append_df_bq(client, pd.DataFrame(products), DIM_PRODUCTS)
         # Generate employees dimension
-        logger.info("Checking if table {} has data...".format(DIM_EMPLOYEES))
-        if not client.query(f"SELECT COUNT(*) as count FROM `{DIM_EMPLOYEES}`").to_dataframe()['count'].iloc[0]:
+        if not table_has_data(client, DIM_EMPLOYEES):
             logger.info("Generating employees dimension...")
             # Use historical employee generation for realistic growth patterns
             employees = generate_historical_employees(total_employees=900, current_active=250)
