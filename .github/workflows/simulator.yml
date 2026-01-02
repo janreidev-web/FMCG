@@ -36,8 +36,8 @@ jobs:
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
-        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '1000000000' }}
-        DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '274000' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '6000000000' }}
+        DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '1644000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         SCHEDULED_RUN: ${{ github.event_name == 'schedule' && 'true' || 'false' }}
       run: |

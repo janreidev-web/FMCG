@@ -179,6 +179,12 @@ def generate_dim_employees(num_employees=200, start_id=1):
         ]
     }
     
+    # Work setup types
+    work_setups = ["On-site", "Remote", "Hybrid", "Field-based"]
+    
+    # Work types
+    work_types = ["Full-time", "Part-time", "Contract", "Probationary", "Intern"]
+    
     # Department size distribution (realistic for 200-employee FMCG company)
     dept_distribution = {
         "Sales": 0.30,      # 30% of workforce
@@ -200,6 +206,44 @@ def generate_dim_employees(num_employees=200, start_id=1):
         dept_positions = positions[dept]
         
         for i in range(dept_count):
+            # Generate gender first for name compatibility
+            gender = random.choice(["Male", "Female", "Non-binary"]) if random.random() < 0.05 else random.choice(["Male", "Female"])
+            
+            # Generate name based on gender
+            if gender == "Male":
+                first_name = fake.first_name_male()
+                last_name = fake.last_name()
+            elif gender == "Female":
+                first_name = fake.first_name_female()
+                last_name = fake.last_name()
+            else:  # Non-binary
+                # Use random first name for non-binary
+                first_name = fake.first_name()
+                last_name = fake.last_name()
+            
+            full_name = f"{first_name} {last_name}"
+            
+            # Additional demographic information
+            birth_date = fake.date_between_dates(date_start=date(1970, 1, 1), date_end=date(2005, 12, 31))
+            age = (date.today() - birth_date).days // 365
+            
+            # Philippine government IDs (simulated)
+            tin_number = f"TIN-{random.randint(100000000, 999999999)}"
+            sss_number = f"SSC-{random.randint(1000000000, 9999999999)}"
+            philhealth_number = f"PH-{random.randint(100000000, 999999999)}"
+            pagibig_number = f"PG-{random.randint(1000000000, 9999999999)}"
+            
+            # Blood type distribution (Philippines)
+            blood_type = random.choices(["O+", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"], weights=[0.44, 0.22, 0.11, 0.05, 0.03, 0.09, 0.04, 0.02])[0]
+            
+            # Personal email (different from work email)
+            personal_email = fake.free_email()
+            
+            # Bank account details for payroll
+            bank_name = random.choice(["BDO", "BPI", "Metrobank", "Landbank", "PNB", "UnionBank"])
+            account_number = f"{random.randint(1000, 9999)}-{random.randint(100000, 999999)}-{random.randint(10, 99)}"
+            account_name = full_name
+            
             # Position assignment with realistic hierarchy
             if i == 0 and dept_count > 10:  # Department head
                 position = dept_positions[-1]  # Highest position
@@ -223,15 +267,152 @@ def generate_dim_employees(num_employees=200, start_id=1):
             else:
                 employment_status = "Active"
             
+            # Generate address using geography data
+            region, province, city = pick_ph_location()
+            street_address = fake.street_address()
+            postal_code = fake.postcode()
+            
+            # Work setup based on department and position
+            if dept in ["Sales"] and "Representative" in position:
+                work_setup = "Field-based"
+            elif dept in ["IT", "Finance", "HR"] and position not in ["Operations Staff", "Warehouse Supervisor"]:
+                work_setup = random.choice(["Remote", "Hybrid", "On-site"]) if random.random() < 0.4 else "On-site"
+            elif dept in ["Operations"]:
+                work_setup = "On-site"
+            else:
+                work_setup = random.choice(work_setups)
+            
+            # Work type based on position level
+            if "Intern" in position or position in ["HR Assistant", "Marketing Assistant", "Administrative Assistant"]:
+                work_type = random.choice(["Intern", "Probationary", "Full-time"]) if random.random() < 0.3 else "Full-time"
+            elif "Director" in position or "CFO" in position or "Manager" in position:
+                work_type = "Full-time"
+            else:
+                work_type = random.choice(["Full-time", "Contract", "Part-time"]) if random.random() < 0.1 else "Full-time"
+            
+            # Salary based on position and department (Philippines FMCG market rates)
+            if "Director" in position or "CFO" in position:
+                monthly_salary = random.randint(80000, 150000)
+            elif "Manager" in position:
+                monthly_salary = random.randint(50000, 90000)
+            elif "Supervisor" in position or "Senior" in position:
+                monthly_salary = random.randint(30000, 50000)
+            elif dept == "Sales" and "Representative" in position:
+                monthly_salary = random.randint(18000, 28000)
+            elif dept == "Operations":
+                monthly_salary = random.randint(15000, 25000)
+            else:
+                monthly_salary = random.randint(20000, 35000)
+            
+            # Adjust for work type
+            if work_type == "Part-time":
+                monthly_salary = int(monthly_salary * 0.6)
+            elif work_type == "Contract":
+                monthly_salary = int(monthly_salary * 0.9)
+            elif work_type == "Intern":
+                monthly_salary = random.randint(8000, 15000)
+            elif work_type == "Probationary":
+                monthly_salary = int(monthly_salary * 0.8)
+            
+            # Performance and development data
+            performance_rating = random.choices([5, 4, 3, 2, 1], weights=[0.15, 0.35, 0.30, 0.15, 0.05])[0]  # 5-point scale
+            last_review_date = fake.date_between_dates(date_start=hire_date, date_end=date.today())
+            
+            # Training completed (random selection of common FMCG trainings)
+            training_courses = [
+                "Sales Fundamentals", "Product Knowledge", "Customer Service Excellence",
+                "Leadership Development", "Supply Chain Management", "Quality Control",
+                "Digital Marketing", "Financial Planning", "Safety Training", "Compliance"
+            ]
+            num_trainings = random.randint(0, 5)
+            training_completed = random.sample(training_courses, num_trainings) if num_trainings > 0 else []
+            training_completed_str = ", ".join(training_completed)
+            
+            # Skills and competencies
+            skills = [
+                "Communication", "Teamwork", "Problem Solving", "Leadership",
+                "Analytical Skills", "Time Management", "Adaptability", "Technical Skills"
+            ]
+            num_skills = random.randint(3, 7)
+            employee_skills = random.sample(skills, num_skills)
+            skills_str = ", ".join(employee_skills)
+            
+            # Health and benefits
+            health_insurance_provider = random.choice(["PhilHealth", "Maxicare", "MediCard", "Intellicare"])
+            benefit_enrollment_date = hire_date
+            
+            # Workforce analytics metrics
+            years_of_service = (date.today() - hire_date).days // 365
+            attendance_rate = random.uniform(0.85, 0.98)  # 85-98% attendance
+            overtime_hours_monthly = random.randint(0, 20) if work_type == "Full-time" else 0
+            
+            # Engagement and satisfaction (simulated survey results)
+            engagement_score = random.randint(1, 10)  # 1-10 scale
+            satisfaction_index = random.randint(60, 95)  # 60-95% satisfaction
+            
+            # Leave balances (Philippines standard)
+            vacation_leave_balance = random.randint(0, 15)
+            sick_leave_balance = random.randint(0, 10)
+            personal_leave_balance = random.randint(0, 5)
+            
+            # Contact information
+            phone = fake.phone_number()
+            email = fake.email()
+            
+            # Emergency contact
+            emergency_contact_name = fake.name()
+            emergency_contact_relation = random.choice(["Spouse", "Parent", "Sibling", "Child", "Friend"])
+            emergency_contact_phone = fake.phone_number()
+            
             employees.append({
                 "employee_key": employee_id,
                 "employee_id": f"E{employee_id:05}",
-                "full_name": fake.name(),
+                "full_name": full_name,
                 "department": dept,
                 "position": position,
                 "employment_status": employment_status,
                 "hire_date": hire_date,
-                "termination_date": termination_date
+                "termination_date": termination_date,
+                "gender": gender,
+                "birth_date": birth_date,
+                "age": age,
+                "work_setup": work_setup,
+                "work_type": work_type,
+                "monthly_salary": monthly_salary,
+                "address_street": street_address,
+                "address_city": city,
+                "address_province": province,
+                "address_region": region,
+                "address_postal_code": postal_code,
+                "address_country": "PH",
+                "phone": phone,
+                "email": email,
+                "personal_email": personal_email,
+                "tin_number": tin_number,
+                "sss_number": sss_number,
+                "philhealth_number": philhealth_number,
+                "pagibig_number": pagibig_number,
+                "blood_type": blood_type,
+                "bank_name": bank_name,
+                "account_number": account_number,
+                "account_name": account_name,
+                "performance_rating": performance_rating,
+                "last_review_date": last_review_date,
+                "training_completed": training_completed_str,
+                "skills": skills_str,
+                "health_insurance_provider": health_insurance_provider,
+                "benefit_enrollment_date": benefit_enrollment_date,
+                "years_of_service": years_of_service,
+                "attendance_rate": round(attendance_rate, 3),
+                "overtime_hours_monthly": overtime_hours_monthly,
+                "engagement_score": engagement_score,
+                "satisfaction_index": satisfaction_index,
+                "vacation_leave_balance": vacation_leave_balance,
+                "sick_leave_balance": sick_leave_balance,
+                "personal_leave_balance": personal_leave_balance,
+                "emergency_contact_name": emergency_contact_name,
+                "emergency_contact_relation": emergency_contact_relation,
+                "emergency_contact_phone": emergency_contact_phone
             })
             
             employee_id += 1
@@ -553,51 +734,52 @@ def generate_fact_operating_costs(target_amount, start_date=None, end_date=None,
     cost_counter = 0
     current = start_date
     
-    # Cost categories for ₱100M/year FMCG company (realistic cost structure)
+    # Cost categories for ₱600M/year FMCG company (realistic cost structure)
     # Monthly costs scaled to achieve 15-20% profit margins
+    # Reduced for better profitability with 6B revenue target
     categories = {
-        "Factory Rent": {"type": "Fixed", "amount": 160000},
-        "Warehouse Rent": {"type": "Fixed", "amount": 100000},
-        "Office Rent": {"type": "Fixed", "amount": 60000},
-        "Utilities": {"type": "Variable", "amount": 80000},
-        "Raw Materials": {"type": "Variable", "amount": 1600000},
-        "Packaging": {"type": "Variable", "amount": 400000},
-        "Equipment": {"type": "Fixed", "amount": 120000},
-        "Transportation": {"type": "Variable", "amount": 300000},
-        "Marketing": {"type": "Variable", "amount": 500000},
-        "Commissions": {"type": "Variable", "amount": 300000},
-        "Quality Testing": {"type": "Variable", "amount": 80000},
-        "Insurance": {"type": "Fixed", "amount": 120000},
-        "Legal": {"type": "Fixed", "amount": 60000},
-        "IT Systems": {"type": "Fixed", "amount": 160000},
-        "Benefits": {"type": "Fixed", "amount": 600000},
-        "Training": {"type": "Fixed", "amount": 40000},
-        "Maintenance": {"type": "Fixed", "amount": 100000},
-        "Security": {"type": "Fixed", "amount": 60000},
-        "Factory Utilities": {"type": "Variable", "amount": 160000},
-        "Waste Management": {"type": "Fixed", "amount": 30000},
-        "Employee Salaries": {"type": "Fixed", "amount": 1600000},
-        "Sales Team Salaries": {"type": "Fixed", "amount": 600000},
-        "Management Salaries": {"type": "Fixed", "amount": 800000},
-        "Administrative Salaries": {"type": "Fixed", "amount": 400000},
-        "Warehouse Staff Salaries": {"type": "Fixed", "amount": 300000},
-        "Delivery Driver Salaries": {"type": "Fixed", "amount": 400000},
-        "Payroll Taxes": {"type": "Fixed", "amount": 600000},
-        "Health Insurance": {"type": "Fixed", "amount": 200000},
-        "Retirement Contributions": {"type": "Fixed", "amount": 160000},
-        "Workmen's Compensation": {"type": "Fixed", "amount": 40000},
-        "Office Supplies": {"type": "Fixed", "amount": 60000},
-        "Communication Expenses": {"type": "Fixed", "amount": 100000},
-        "Travel Expenses": {"type": "Variable", "amount": 160000},
-        "Entertainment Expenses": {"type": "Variable", "amount": 80000},
-        "Professional Services": {"type": "Fixed", "amount": 160000},
-        "Accounting Services": {"type": "Fixed", "amount": 60000},
-        "Banking Fees": {"type": "Fixed", "amount": 20000},
-        "Credit Card Processing": {"type": "Variable", "amount": 120000},
-        "Depreciation": {"type": "Fixed", "amount": 160000},
-        "Property Taxes": {"type": "Fixed", "amount": 100000},
-        "Business Licenses": {"type": "Fixed", "amount": 20000},
-        "Research & Development": {"type": "Fixed", "amount": 200000}
+        "Factory Rent": {"type": "Fixed", "amount": 80000},      # Reduced by 50%
+        "Warehouse Rent": {"type": "Fixed", "amount": 50000},     # Reduced by 50%
+        "Office Rent": {"type": "Fixed", "amount": 30000},        # Reduced by 50%
+        "Utilities": {"type": "Variable", "amount": 40000},       # Reduced by 50%
+        "Raw Materials": {"type": "Variable", "amount": 800000},    # Reduced by 50%
+        "Packaging": {"type": "Variable", "amount": 200000},       # Reduced by 50%
+        "Equipment": {"type": "Fixed", "amount": 60000},          # Reduced by 50%
+        "Transportation": {"type": "Variable", "amount": 150000},  # Reduced by 50%
+        "Marketing": {"type": "Variable", "amount": 250000},       # Reduced by 50%
+        "Commissions": {"type": "Variable", "amount": 150000},     # Reduced by 50%
+        "Quality Testing": {"type": "Variable", "amount": 40000},  # Reduced by 50%
+        "Insurance": {"type": "Fixed", "amount": 60000},           # Reduced by 50%
+        "Legal": {"type": "Fixed", "amount": 30000},              # Reduced by 50%
+        "IT Systems": {"type": "Fixed", "amount": 80000},          # Reduced by 50%
+        "Benefits": {"type": "Fixed", "amount": 300000},           # Reduced by 50%
+        "Training": {"type": "Fixed", "amount": 20000},            # Reduced by 50%
+        "Maintenance": {"type": "Fixed", "amount": 50000},         # Reduced by 50%
+        "Security": {"type": "Fixed", "amount": 30000},            # Reduced by 50%
+        "Factory Utilities": {"type": "Variable", "amount": 80000}, # Reduced by 50%
+        "Waste Management": {"type": "Fixed", "amount": 15000},    # Reduced by 50%
+        "Employee Salaries": {"type": "Fixed", "amount": 800000},   # Reduced by 50%
+        "Sales Team Salaries": {"type": "Fixed", "amount": 300000}, # Reduced by 50%
+        "Management Salaries": {"type": "Fixed", "amount": 400000},# Reduced by 50%
+        "Administrative Salaries": {"type": "Fixed", "amount": 200000}, # Reduced by 50%
+        "Warehouse Staff Salaries": {"type": "Fixed", "amount": 150000}, # Reduced by 50%
+        "Delivery Driver Salaries": {"type": "Fixed", "amount": 200000}, # Reduced by 50%
+        "Payroll Taxes": {"type": "Fixed", "amount": 300000},       # Reduced by 50%
+        "Health Insurance": {"type": "Fixed", "amount": 100000},    # Reduced by 50%
+        "Retirement Contributions": {"type": "Fixed", "amount": 80000}, # Reduced by 50%
+        "Workmen's Compensation": {"type": "Fixed", "amount": 20000}, # Reduced by 50%
+        "Office Supplies": {"type": "Fixed", "amount": 30000},      # Reduced by 50%
+        "Communication Expenses": {"type": "Fixed", "amount": 50000}, # Reduced by 50%
+        "Travel Expenses": {"type": "Variable", "amount": 80000},   # Reduced by 50%
+        "Entertainment Expenses": {"type": "Variable", "amount": 40000}, # Reduced by 50%
+        "Professional Services": {"type": "Fixed", "amount": 80000}, # Reduced by 50%
+        "Accounting Services": {"type": "Fixed", "amount": 30000},  # Reduced by 50%
+        "Banking Fees": {"type": "Fixed", "amount": 10000},         # Reduced by 50%
+        "Credit Card Processing": {"type": "Variable", "amount": 60000}, # Reduced by 50%
+        "Depreciation": {"type": "Fixed", "amount": 80000},        # Reduced by 50%
+        "Property Taxes": {"type": "Fixed", "amount": 50000},      # Reduced by 50%
+        "Business Licenses": {"type": "Fixed", "amount": 10000},    # Reduced by 50%
+        "Research & Development": {"type": "Fixed", "amount": 100000} # Reduced by 50%
     }
     
     while current <= end_date:

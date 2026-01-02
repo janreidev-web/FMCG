@@ -22,13 +22,12 @@ from generators.dimensional import (
     generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs
 )
 
-# Configure logging
+# Configure simplified logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('fmcg_simulator.log')
+        logging.StreamHandler()
     ]
 )
 logger = logging.getLogger(__name__)
@@ -46,7 +45,7 @@ def main():
         # Initialize BigQuery client
         logger.info("Authenticating with Google Cloud...")
         client = get_bigquery_client(PROJECT_ID)
-        logger.info(f"Connected to project: {PROJECT_ID}\n")
+        logger.info(f"Connected to project: {PROJECT_ID}")
         
         # Check if this is a scheduled run
         is_scheduled = os.environ.get("SCHEDULED_RUN", "false").lower() == "true"
@@ -60,9 +59,7 @@ def main():
             sys.exit(0)
         
         # ==================== DIMENSION TABLES ====================
-        logger.info("=" * 60)
-        logger.info("DIMENSION TABLES GENERATION")
-        logger.info("=" * 60)
+        logger.info("Generating dimension tables...")
         
         # Generate dimension tables only if they don't exist
         if not table_has_data(client, DIM_PRODUCTS):
@@ -93,18 +90,19 @@ def main():
         else:
             logger.info("Campaigns dimension already exists. Skipping.")
         
-        # Load existing dimensions for fact table generation
+        # Load existing dimensions for fact table generation (optimized queries)
         try:
-            products_df = client.query(f"SELECT * FROM `{DIM_PRODUCTS}` LIMIT 1000").to_dataframe()
-            employees_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}` LIMIT 1000").to_dataframe()
-            retailers_df = client.query(f"SELECT * FROM `{DIM_RETAILERS}` LIMIT 1000").to_dataframe()
-            campaigns_df = client.query(f"SELECT * FROM `{DIM_CAMPAIGNS}` LIMIT 1000").to_dataframe()
+            # Use more efficient queries with specific fields only
+            products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
+            employees_df = client.query(f"SELECT employee_key, employee_id, full_name, department, position, employment_status, hire_date, termination_date, gender, birth_date, age, work_setup, work_type, monthly_salary, address_street, address_city, address_province, address_region, address_postal_code, address_country, phone, email, personal_email, tin_number, sss_number, philhealth_number, pagibig_number, blood_type, bank_name, account_number, account_name, performance_rating, last_review_date, training_completed, skills, health_insurance_provider, benefit_enrollment_date, years_of_service, attendance_rate, overtime_hours_monthly, engagement_score, satisfaction_index, vacation_leave_balance, sick_leave_balance, personal_leave_balance, emergency_contact_name, emergency_contact_relation, emergency_contact_phone FROM `{DIM_EMPLOYEES}` WHERE employment_status = 'Active'").to_dataframe()
+            retailers_df = client.query(f"SELECT retailer_key, retailer_id, retailer_name, retailer_type, city, province, region, country FROM `{DIM_RETAILERS}`").to_dataframe()
+            campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}` WHERE end_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 YEAR)").to_dataframe()
         except Exception as e:
             if "readsessions.create" in str(e):
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
                 # Use smaller queries without read sessions
                 products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status FROM `{DIM_PRODUCTS}`").to_dataframe()
-                employees_df = client.query(f"SELECT employee_key, employee_id, full_name, department, position, employment_status, hire_date, termination_date FROM `{DIM_EMPLOYEES}`").to_dataframe()
+                employees_df = client.query(f"SELECT employee_key, employee_id, full_name, department, position, employment_status, hire_date, termination_date, gender, birth_date, age, work_setup, work_type, monthly_salary, address_street, address_city, address_province, address_region, address_postal_code, address_country, phone, email, personal_email, tin_number, sss_number, philhealth_number, pagibig_number, blood_type, bank_name, account_number, account_name, performance_rating, last_review_date, training_completed, skills, health_insurance_provider, benefit_enrollment_date, years_of_service, attendance_rate, overtime_hours_monthly, engagement_score, satisfaction_index, vacation_leave_balance, sick_leave_balance, personal_leave_balance, emergency_contact_name, emergency_contact_relation, emergency_contact_phone FROM `{DIM_EMPLOYEES}`").to_dataframe()
                 retailers_df = client.query(f"SELECT retailer_key, retailer_id, retailer_name, retailer_type, city, province, region, country FROM `{DIM_RETAILERS}`").to_dataframe()
                 campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}`").to_dataframe()
             else:
@@ -122,9 +120,7 @@ def main():
         logger.info(f"   Campaigns: {len(campaigns):,}")
         
         # ==================== FACT TABLES ====================
-        logger.info("\n" + "=" * 60)
-        logger.info("FACT TABLES GENERATION")
-        logger.info("=" * 60)
+        logger.info("Generating fact tables...")
         
         # Generate fact tables
         if not table_has_data(client, FACT_SALES):
@@ -151,11 +147,9 @@ def main():
                 logger.info(f"  Active products: {len([p for p in products if p['status'] == 'Active']):,}")
                 logger.info(f"  Total retailers: {len(retailers):,}")
             
-            # Get max sale key for continuity
+            # Get max sale key for continuity (optimized query)
             try:
-                max_key_result = client.query(f"""
-                    SELECT MAX(`sale_key`) as max_key FROM `{FACT_SALES}` LIMIT 1
-                """).to_dataframe()
+                max_key_result = client.query(f"SELECT COALESCE(MAX(`sale_key`), 0) as max_key FROM `{FACT_SALES}` LIMIT 1").to_dataframe()
             except Exception as e:
                 if "readsessions.create" in str(e):
                     logger.warning(f"BigQuery read sessions permission error. Using default start ID...")
@@ -184,20 +178,11 @@ def main():
         
         # Update delivery status only for scheduled runs
         if is_scheduled:
-            logger.info("\n" + "="*60)
-            logger.info("UPDATING DELIVERY STATUS (Scheduled Run)")
-            logger.info("="*60)
+            logger.info("Updating delivery status...")
             update_delivery_status(client, FACT_SALES)
-        else:
-            logger.info("\n" + "="*60)
-            logger.info("SKIPPING DELIVERY STATUS UPDATE (Manual Initial Run)")
-            logger.info("="*60)
-            logger.info("Delivery status will be updated by scheduled runs.")
         
         # Generate other fact tables (only on initial run)
-        logger.info("\n" + "=" * 40)
-        logger.info("GENERATING ADDITIONAL FACT TABLES")
-        logger.info("=" * 40)
+        logger.info("Generating additional fact tables...")
         
         if not table_has_data(client, FACT_OPERATING_COSTS):
             logger.info("\nGenerating operating costs fact...")
@@ -232,46 +217,7 @@ def main():
             logger.info("Inventory table already exists. Skipping.")
         
         # ==================== SUMMARY ====================
-        logger.info("\n" + "=" * 60)
-        logger.info("DIMENSIONAL MODEL LOAD COMPLETE")
-        logger.info("=" * 60)
-        logger.info(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"\nSUMMARY:")
-        logger.info(f"   Products (Dim):     {len(products):,}")
-        logger.info(f"   Employees (Dim):    {len(employees):,}")
-        logger.info(f"   Retailers (Dim):    {len(retailers):,}")
-        logger.info(f"   Campaigns (Dim):    {len(campaigns):,}")
-        logger.info(f"   Sales (Fact):       {len(sales):,}")
-        
-        # Check and log operating costs
-        if 'costs' in locals():
-            logger.info(f"   Operating Costs:   {len(costs):,}")
-        else:
-            logger.info(f"   Operating Costs:   Already exists")
-            
-        # Check and log marketing costs
-        if 'marketing_costs' in locals():
-            logger.info(f"   Marketing Costs:   {len(marketing_costs):,}")
-        else:
-            logger.info(f"   Marketing Costs:   Already exists")
-            
-        # Check and log inventory
-        if 'inventory' in locals():
-            logger.info(f"   Inventory:         {len(inventory):,}")
-        else:
-            logger.info(f"   Inventory:         Already exists")
-            
-        logger.info(f"\nStorage estimate: ~152 MB (well under 10GB free tier)")
-        
-        # Log final run summary for scheduled runs
-        if is_scheduled:
-            logger.info(f"\nSCHEDULED RUN SUMMARY:")
-            logger.info(f"  Run completed successfully at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-            logger.info(f"  New sales records added: {len(sales):,}")
-            logger.info(f"  New sales amount: ₱{sum(s['total_amount'] for s in sales):,.2f}")
-            logger.info(f"  Delivery status updated: Yes")
-        
-        logger.info("=" * 60 + "\n")
+        logger.info("Load complete!")
         
     except Exception as e:
         logger.error(f"\nERROR: {str(e)}")
