@@ -127,7 +127,7 @@ This platform implements a **complete dimensional data warehouse** for FMCG busi
 ## Project Structure
 
 ```
-Data-Analytics/
+FMCG-Data-Analytics/
 │
 ├── FMCG/                           # Main application package
 │   ├── main.py                     # Primary ETL orchestration script
