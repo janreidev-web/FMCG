@@ -16,12 +16,15 @@ INITIAL_SALES_AMOUNT = 6000000000  # ₱6B
 DAILY_SALES_AMOUNT = 1640000      # ₱1.64M
 from schema import (
     DIM_PRODUCTS, DIM_EMPLOYEES, DIM_RETAILERS, DIM_CAMPAIGNS,
-    FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS
+    DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
+    FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES
 )
 from auth import get_bigquery_client
 from helpers import table_has_data, append_df_bq, append_df_bq_safe, update_delivery_status
 from generators.dimensional import (
-    generate_dim_products, generate_dim_employees, generate_historical_employees, generate_dim_retailers,
+    generate_dim_products, generate_dim_employees_normalized, generate_dim_locations,
+    generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
+    generate_fact_employees, generate_dim_retailers_normalized,
     generate_dim_campaigns, generate_fact_sales,
     generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs
 )
@@ -63,25 +66,82 @@ def main():
             sys.exit(0)
         
         # ==================== DIMENSION TABLES ====================
-        logger.info("Generating dimension tables...")
+        logger.info("Generating normalized dimension tables...")
         
-        # Generate dimension tables only if they don't exist
+        # Generate core dimensions first (dependencies)
+        if not table_has_data(client, DIM_LOCATIONS):
+            logger.info("Generating locations dimension...")
+            locations = generate_dim_locations(num_locations=500)
+            append_df_bq(client, pd.DataFrame(locations), DIM_LOCATIONS)
+        else:
+            logger.info("Locations dimension already exists. Skipping.")
+            # Load existing locations for dependency
+            locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
+            locations = locations_df.to_dict("records")
+        
+        if not table_has_data(client, DIM_DEPARTMENTS):
+            logger.info("Generating departments dimension...")
+            departments = generate_dim_departments()
+            append_df_bq(client, pd.DataFrame(departments), DIM_DEPARTMENTS)
+        else:
+            logger.info("Departments dimension already exists. Skipping.")
+            departments_df = client.query(f"SELECT * FROM `{DIM_DEPARTMENTS}`").to_dataframe()
+            departments = departments_df.to_dict("records")
+        
+        if not table_has_data(client, DIM_JOBS):
+            logger.info("Generating jobs dimension...")
+            jobs = generate_dim_jobs(departments)
+            append_df_bq(client, pd.DataFrame(jobs), DIM_JOBS)
+        else:
+            logger.info("Jobs dimension already exists. Skipping.")
+            jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
+            jobs = jobs_df.to_dict("records")
+        
+        if not table_has_data(client, DIM_BANKS):
+            logger.info("Generating banks dimension...")
+            banks = generate_dim_banks()
+            append_df_bq(client, pd.DataFrame(banks), DIM_BANKS)
+        else:
+            logger.info("Banks dimension already exists. Skipping.")
+            banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
+            banks = banks_df.to_dict("records")
+        
+        if not table_has_data(client, DIM_INSURANCE):
+            logger.info("Generating insurance dimension...")
+            insurance = generate_dim_insurance()
+            append_df_bq(client, pd.DataFrame(insurance), DIM_INSURANCE)
+        else:
+            logger.info("Insurance dimension already exists. Skipping.")
+            insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
+            insurance = insurance_df.to_dict("records")
+        
+        # Generate dependent dimensions
         if not table_has_data(client, DIM_PRODUCTS):
             logger.info("Generating products dimension...")
             products = generate_dim_products()
             append_df_bq(client, pd.DataFrame(products), DIM_PRODUCTS)
-        # Generate employees dimension
+        else:
+            logger.info("Products dimension already exists. Skipping.")
+        
         if not table_has_data(client, DIM_EMPLOYEES):
-            logger.info("Generating employees dimension...")
-            # Use historical employee generation for realistic growth patterns
-            employees = generate_historical_employees(total_employees=900, current_active=250)
+            logger.info("Generating normalized employees dimension...")
+            employees = generate_dim_employees_normalized(
+                num_employees=250, 
+                locations=locations, 
+                jobs=jobs, 
+                banks=banks, 
+                insurance=insurance
+            )
             append_df_bq(client, pd.DataFrame(employees), DIM_EMPLOYEES)
         else:
             logger.info("Employees dimension already exists. Skipping.")
         
         if not table_has_data(client, DIM_RETAILERS):
-            logger.info("Generating retailers dimension...")
-            retailers = generate_dim_retailers()
+            logger.info("Generating normalized retailers dimension...")
+            retailers = generate_dim_retailers_normalized(
+                num_retailers=500, 
+                locations=locations
+            )
             append_df_bq(client, pd.DataFrame(retailers), DIM_RETAILERS)
         else:
             logger.info("Retailers dimension already exists. Skipping.")
@@ -93,20 +153,101 @@ def main():
         else:
             logger.info("Campaigns dimension already exists. Skipping.")
         
+        # Generate employee facts if employees exist
+        if table_has_data(client, DIM_EMPLOYEES) and not table_has_data(client, FACT_EMPLOYEES):
+            logger.info("Generating employee facts...")
+            # Load current employees
+            employees_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}` WHERE employment_status = 'Active'").to_dataframe()
+            employees = employees_df.to_dict("records")
+            
+            # Load jobs for salary ranges
+            jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
+            jobs_data = jobs_df.to_dict("records")
+            
+            employee_facts = generate_fact_employees(employees, jobs_data)
+            append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
+        else:
+            logger.info("Employee facts already exist or no employees found. Skipping.")
+        
         # Load existing dimensions for fact table generation (optimized queries)
         try:
             # Use more efficient queries with specific fields only
             products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
-            employees_df = client.query(f"SELECT employee_key, employee_id, full_name, department, position, employment_status, hire_date, termination_date, gender, birth_date, age, work_setup, work_type, monthly_salary, address_street, address_city, address_province, address_region, address_postal_code, address_country, phone, email, personal_email, tin_number, sss_number, philhealth_number, pagibig_number, blood_type, bank_name, account_number, account_name, performance_rating, last_review_date, training_completed, skills, health_insurance_provider, benefit_enrollment_date, years_of_service, attendance_rate, overtime_hours_monthly, engagement_score, satisfaction_index, vacation_leave_balance, sick_leave_balance, personal_leave_balance, emergency_contact_name, emergency_contact_relation, emergency_contact_phone FROM `{DIM_EMPLOYEES}` WHERE employment_status = 'Active'").to_dataframe()
-            retailers_df = client.query(f"SELECT retailer_key, retailer_id, retailer_name, retailer_type, city, province, region, country FROM `{DIM_RETAILERS}`").to_dataframe()
+            
+            # Load normalized employee data with joins
+            employees_df = client.query(f"""
+                SELECT 
+                    e.employee_key, e.employee_id, e.full_name, e.employment_status, 
+                    e.hire_date, e.termination_date, e.gender, e.birth_date, e.age,
+                    e.phone, e.email, e.personal_email,
+                    e.tin_number, e.sss_number, e.philhealth_number, e.pagibig_number, e.blood_type,
+                    e.emergency_contact_name, e.emergency_contact_relation, e.emergency_contact_phone,
+                    j.job_title, j.work_setup, j.work_type,
+                    d.department_name,
+                    l.city, l.province, l.region, l.country,
+                    b.bank_name,
+                    i.provider_name as health_insurance_provider,
+                    ef.monthly_salary, ef.performance_rating, ef.last_review_date,
+                    ef.training_completed, ef.skills, ef.benefit_enrollment_date,
+                    ef.years_of_service, ef.attendance_rate, ef.overtime_hours_monthly,
+                    ef.engagement_score, ef.satisfaction_index,
+                    ef.vacation_leave_balance, ef.sick_leave_balance, ef.personal_leave_balance,
+                    ef.account_number, ef.account_name
+                FROM `{DIM_EMPLOYEES}` e
+                LEFT JOIN `{DIM_JOBS}` j ON e.job_key = j.job_key
+                LEFT JOIN `{DIM_DEPARTMENTS}` d ON j.department_key = d.department_key
+                LEFT JOIN `{DIM_LOCATIONS}` l ON e.location_key = l.location_key
+                LEFT JOIN `{DIM_BANKS}` b ON e.bank_key = b.bank_key
+                LEFT JOIN `{DIM_INSURANCE}` i ON e.insurance_key = i.insurance_key
+                LEFT JOIN `{FACT_EMPLOYEES}` ef ON e.employee_key = ef.employee_key
+                WHERE e.employment_status = 'Active'
+            """).to_dataframe()
+            
+            # Load normalized retailer data
+            retailers_df = client.query(f"""
+                SELECT 
+                    r.retailer_key, r.retailer_id, r.retailer_name, r.retailer_type,
+                    l.city, l.province, l.region, l.country
+                FROM `{DIM_RETAILERS}` r
+                LEFT JOIN `{DIM_LOCATIONS}` l ON r.location_key = l.location_key
+            """).to_dataframe()
+            
             campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}` WHERE end_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 YEAR)").to_dataframe()
         except Exception as e:
             if "readsessions.create" in str(e):
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
                 # Use smaller queries without read sessions
                 products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status FROM `{DIM_PRODUCTS}`").to_dataframe()
-                employees_df = client.query(f"SELECT employee_key, employee_id, full_name, department, position, employment_status, hire_date, termination_date, gender, birth_date, age, work_setup, work_type, monthly_salary, address_street, address_city, address_province, address_region, address_postal_code, address_country, phone, email, personal_email, tin_number, sss_number, philhealth_number, pagibig_number, blood_type, bank_name, account_number, account_name, performance_rating, last_review_date, training_completed, skills, health_insurance_provider, benefit_enrollment_date, years_of_service, attendance_rate, overtime_hours_monthly, engagement_score, satisfaction_index, vacation_leave_balance, sick_leave_balance, personal_leave_balance, emergency_contact_name, emergency_contact_relation, emergency_contact_phone FROM `{DIM_EMPLOYEES}`").to_dataframe()
-                retailers_df = client.query(f"SELECT retailer_key, retailer_id, retailer_name, retailer_type, city, province, region, country FROM `{DIM_RETAILERS}`").to_dataframe()
+                
+                # Simplified employee query for fallback
+                employees_df = client.query(f"""
+                    SELECT 
+                        e.employee_key, e.employee_id, e.full_name, e.employment_status, 
+                        e.hire_date, e.termination_date, e.gender, e.birth_date, e.age,
+                        e.phone, e.email, e.personal_email,
+                        e.tin_number, e.sss_number, e.philhealth_number, e.pagibig_number, e.blood_type,
+                        e.emergency_contact_name, e.emergency_contact_relation, e.emergency_contact_phone,
+                        j.job_title, j.work_setup, j.work_type,
+                        d.department_name,
+                        l.city, l.province, l.region, l.country,
+                        b.bank_name,
+                        i.provider_name as health_insurance_provider
+                    FROM `{DIM_EMPLOYEES}` e
+                    LEFT JOIN `{DIM_JOBS}` j ON e.job_key = j.job_key
+                    LEFT JOIN `{DIM_DEPARTMENTS}` d ON j.department_key = d.department_key
+                    LEFT JOIN `{DIM_LOCATIONS}` l ON e.location_key = l.location_key
+                    LEFT JOIN `{DIM_BANKS}` b ON e.bank_key = b.bank_key
+                    LEFT JOIN `{DIM_INSURANCE}` i ON e.insurance_key = i.insurance_key
+                """).to_dataframe()
+                
+                retailers_df = client.query(f"""
+                    SELECT 
+                        r.retailer_key, r.retailer_id, r.retailer_name, r.retailer_type,
+                        l.city, l.province, l.region, l.country
+                    FROM `{DIM_RETAILERS}` r
+                    LEFT JOIN `{DIM_LOCATIONS}` l ON r.location_key = l.location_key
+                """).to_dataframe()
+                
                 campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}`").to_dataframe()
             else:
                 raise
