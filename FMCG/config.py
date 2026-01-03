@@ -14,7 +14,7 @@ INVENTORY_TABLE = f"{PROJECT_ID}.{DATASET}.inventory"
 MARKETING_TABLE = f"{PROJECT_ID}.{DATASET}.marketing_campaigns"
 DATES_TABLE = f"{PROJECT_ID}.{DATASET}.dates"
 
-INITIAL_EMPLOYEES = 500  # Realistic for ₱6B/year FMCG company
+INITIAL_EMPLOYEES = 540  # Optimized for ₱6B/year FMCG company with 20% wage ratio
 INITIAL_PRODUCTS = 150   # More product variety for realistic FMCG
 INITIAL_RETAILERS = 500  # Wider distribution network
 # Initial: ₱6B total sales over 10 years (~₱600M/year average)

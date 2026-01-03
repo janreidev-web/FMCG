@@ -1,3 +1,5 @@
+<div align="center">
+
 # FMCG Data Analytics Platform
 
 **A comprehensive normalized dimensional data warehouse solution for Fast-Moving Consumer Goods analytics**
@@ -8,6 +10,8 @@
 [![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automated-brightgreen.svg)](https://github.com/features/actions)
 
 *Normalized Dimensional Modeling • Synthetic Data Generation • Automated ETL • Business Intelligence • Optimized Storage*
+
+</div>
 
 ---
 
@@ -34,168 +38,199 @@
 
 This platform implements a **complete normalized dimensional data warehouse** for FMCG business analytics, featuring an optimized star schema architecture that reduces redundancy and improves performance. The system generates realistic synthetic data across all major business domains and provides automated ETL pipelines with continuous data enrichment.
 
-### Production Status: READY
+### 🚀 **Production Status: READY**
 
-| Status | Testing | Performance | Scheduled Runs |
+<div align="center">
+
+| **Status** | **Testing** | **Performance** | **Scheduled Runs** |
 |:-----------:|:-----------:|:---------------:|:------------------:|
-| PRODUCTION READY | 21/21 Tests Passing | 2.5K+ employees/sec | Daily Automation |
-| All Issues Fixed | 100% Success Rate | <50MB Memory Usage | 3-Hour Timeout |
-| Error Handling | Data Integrity | Scalability Validated | Monitoring Active |
+| ✅ **PRODUCTION READY** | ✅ 21/21 Tests Passing | ✅ 2.5K+ employees/sec | ✅ Daily Automation |
+| ✅ All Issues Fixed | ✅ 100% Success Rate | ✅ <50MB Memory Usage | ✅ 3-Hour Timeout |
+| ✅ Error Handling | ✅ Data Integrity | ✅ Scalability Validated | ✅ Monitoring Active |
 
-#### Production Deployment Complete
-- All critical issues resolved through comprehensive testing
-- Job-based compensation system implemented with department-specific ranges
-- Dated wage history from 2015-present with realistic progression
-- Simplified data structures for optimal performance
-- Automated daily execution with robust error handling
-- Memory and resource optimization for production scale
+</div>
+
+#### **✅ Production Deployment Complete**
+- **All critical issues resolved** through comprehensive testing
+- **Job-based compensation system** implemented with department-specific ranges
+- **Dated wage history** from 2015-present with realistic progression
+- **Simplified data structures** for optimal performance
+- **Automated daily execution** with robust error handling
+- **Memory and resource optimization** for production scale
 
 ### Architecture Highlights
 
-| Component | Technology | Purpose |
+<div align="center">
+
+| **Component** | **Technology** | **Purpose** |
 |:--------------:|:--------------:|:------------:|
-| Data Warehouse | Google BigQuery | Scalable cloud storage with SQL analytics |
-| ETL Pipeline | Python + Pandas | Automated data generation and loading |
-| Orchestration | GitHub Actions | Scheduled daily data updates |
-| Analytics | Power BI | Business intelligence dashboards |
-| Data Model | Normalized Star Schema | Optimized for query performance & storage |
+| **Data Warehouse** | Google BigQuery | Scalable cloud storage with SQL analytics |
+| **ETL Pipeline** | Python + Pandas | Automated data generation and loading |
+| **Orchestration** | GitHub Actions | Scheduled daily data updates |
+| **Analytics** | Power BI | Business intelligence dashboards |
+| **Data Model** | **Normalized Star Schema** | Optimized for query performance & storage |
+
+</div>
 
 ### Business Domains Covered
 
-| Domain | Key Metrics | Analytics Value |
+<div align="center">
+
+| **Domain** | **Key Metrics** | **Analytics Value** |
 |:----------:|:---------------:|:-------------------:|
-| Sales | Revenue, Volume, Commission | Performance tracking & forecasting |
-| Products | Pricing, Categories, Status | Product mix analysis & optimization |
-| Employees | Comprehensive HR Analytics with 20+ quantitative metrics | Complete workforce planning & optimization |
-| Retailers | Geographic distribution | Market penetration analysis |
-| Inventory | Stock levels, Locations | Supply chain optimization |
-| Marketing | Campaign ROI, Spend | Marketing effectiveness |
-| Operations | Cost structure, Trends | Financial planning & analysis |
+| **Sales** | Revenue, Volume, Commission | Performance tracking & forecasting |
+| **Products** | Pricing, Categories, Status | Product mix analysis & optimization |
+| **Employees** | **Comprehensive HR Analytics** with 20+ quantitative metrics | Complete workforce planning & optimization |
+| **Retailers** | Geographic distribution | Market penetration analysis |
+| **Inventory** | Stock levels, Locations | Supply chain optimization |
+| **Marketing** | Campaign ROI, Spend | Marketing effectiveness |
+| **Operations** | Cost structure, Trends | Financial planning & analysis |
+
+</div>
 
 ---
 
 ## Features
 
+<table>
+<tr>
+<td width="50%">
+
 ### Data Generation & Modeling
-- Normalized Star Schema architecture with reduced redundancy
+- **Normalized Star Schema** architecture with reduced redundancy
 - Realistic synthetic data generation
-- 9 Dimension Tables with optimized relationships
-- 5 Fact Tables with comprehensive business metrics
-- 900 Total Employees (250 active, 650 terminated) across 10 departments
-- 150 Products across 7 FMCG categories
-- 500 Retailers across all Philippines regions
-- Optimized HR data with 20+ quantitative metrics per employee
+- **9 Dimension Tables** with optimized relationships
+- **5 Fact Tables** with comprehensive business metrics
+- **900 Total Employees** (250 active, 650 terminated) across 10 departments
+- **150 Products** across 7 FMCG categories
+- **500 Retailers** across all Philippines regions
+- **Optimized HR data** with 20+ quantitative metrics per employee
+
+</td>
+<td width="50%">
 
 ### Automation & Operations
-- Automated GitHub Actions workflow
+- **Automated GitHub Actions** workflow
 - Scheduled daily data generation
 - Manual and scheduled execution modes
-- BigQuery auto-scaling integration
+- **BigQuery auto-scaling** integration
 - Error handling and logging
-- Storage quota optimization (~1.28 GB total)
+- **Storage quota optimization** (~1.28 GB total)
+
+</td>
+</tr>
+<tr>
+<td width="50%">
 
 ### Geographic Intelligence
-- Complete Philippines coverage (16 regions)
+- **Complete Philippines coverage** (16 regions)
 - Province and city-level granularity
 - Region-based delivery calculations
 - Location-based sales analytics
 - Realistic delivery time modeling
 
+</td>
+<td width="50%">
+
 ### Business Intelligence
-- Power BI ready data structure
+- **Power BI ready** data structure
 - Optimized for analytical queries
 - Time-based analytics support
 - Multi-dimensional analysis
-- Enhanced performance metrics tracking
+- **Enhanced performance metrics** tracking
+
+</td>
+</tr>
+</table>
 
 ---
 
 ## Recent Updates
 
-### Latest Production Release (January 2026)
+###  **Latest Production Release (January 2026)**
 
-#### Critical Hot Fixes Applied
-- Fixed function parameter order in employee generation calls
-- Resolved date generation errors with safety checks and fallback dates
-- Corrected country field from 'PH' to 'Philippines' for consistency
-- Added input validation for empty dimension data (ValueError handling)
-- Fixed region validation for Philippine administrative regions
-- Updated schema references to remove deprecated `age` and `full_name` fields
-- Corrected salary range expectations to match department-specific compensation
+####  **🔥 Critical Hot Fixes Applied**
+- **Fixed function parameter order** in employee generation calls
+- **Resolved date generation errors** with safety checks and fallback dates
+- **Corrected country field** from 'PH' to 'Philippines' for consistency
+- **Added input validation** for empty dimension data (ValueError handling)
+- **Fixed region validation** for Philippine administrative regions
+- **Updated schema references** to remove deprecated `age` and `full_name` fields
+- **Corrected salary range expectations** to match department-specific compensation
 
-#### Job-Based Compensation System
-- Implemented department-specific salary ranges based on your specifications:
-  - Entry Level: ₱25,000 – ₱45,000 / month
-  - Junior: ₱40,000 – ₱70,000 / month  
-  - Senior: ₱70,000 – ₱120,000 / month
-  - Manager: ₱120,000 – ₱220,000 / month
-  - Director: ₱220,000 – ₱450,000 / month
-- Department variations: Sales (+12%), Finance (+8%), Marketing (+5%)
-- Created separate `fact_employee_wages` table for dated compensation history
-- Simplified employee table to essential information only
-- Monthly wage records from 2015-present with annual raises (3-10%)
+####  **🎯 Job-Based Compensation System**
+- **Implemented department-specific salary ranges** based on your specifications:
+  - **Entry Level**: ₱25,000 – ₱45,000 / month
+  - **Junior**: ₱40,000 – ₱70,000 / month  
+  - **Senior**: ₱70,000 – ₱120,000 / month
+  - **Manager**: ₱120,000 – ₱220,000 / month
+  - **Director**: ₱220,000 – ₱450,000 / month
+- **Department variations**: Sales (+12%), Finance (+8%), Marketing (+5%)
+- **Created separate `fact_employee_wages` table** for dated compensation history
+- **Simplified employee table** to essential information only
+- **Monthly wage records** from 2015-present with annual raises (3-10%)
 
-#### Data Structure Optimizations
-- Removed redundant columns: `age` (computed from birth_date), `full_name` (computed dynamically)
-- Separated compensation: Moved from `fact_employees` to dedicated `fact_employee_wages`
-- Enhanced data integrity: All foreign key relationships validated
-- Improved performance: 2,464 employees/sec, 511,367 wages/sec generation speed
+####  **📊 Data Structure Optimizations**
+- **Removed redundant columns**: `age` (computed from birth_date), `full_name` (computed dynamically)
+- **Separated compensation**: Moved from `fact_employees` to dedicated `fact_employee_wages`
+- **Enhanced data integrity**: All foreign key relationships validated
+- **Improved performance**: 2,464 employees/sec, 511,367 wages/sec generation speed
 
-#### Production Readiness Enhancements
-- Comprehensive testing suite: 21/21 tests passing (100% success rate)
-- Error handling: Robust validation and recovery mechanisms
-- Memory efficiency: <50MB for 500 employees with wage history
-- Scheduled run optimization: Daily execution with 3-hour timeout protection
-- Resource monitoring: Automatic cleanup and performance tracking
+####  **🛡️ Production Readiness Enhancements**
+- **Comprehensive testing suite**: 21/21 tests passing (100% success rate)
+- **Error handling**: Robust validation and recovery mechanisms
+- **Memory efficiency**: <50MB for 500 employees with wage history
+- **Scheduled run optimization**: Daily execution with 3-hour timeout protection
+- **Resource monitoring**: Automatic cleanup and performance tracking
 
-#### Performance Improvements
-- Generation speed: 629,174 wage records/second
-- Memory usage: <0.1KB per record
-- Scalability: Handles 1000+ employees efficiently
-- Production volume: 31K+ wage records in 0.05 seconds
+####  **⚡ Performance Improvements**
+- **Generation speed**: 629,174 wage records/second
+- **Memory usage**: <0.1KB per record
+- **Scalability**: Handles 1000+ employees efficiently
+- **Production volume**: 31K+ wage records in 0.05 seconds
 
-#### Schema Updates
-- Updated `dim_employees`: Removed `age`, `full_name`, compensation fields
-- New `fact_employee_wages`: Dated compensation with job context
-- Simplified `fact_employees`: Performance and work metrics only
-- Enhanced validation: All relationships and business rules enforced
+####  **🔧 Schema Updates**
+- **Updated `dim_employees`**: Removed `age`, `full_name`, compensation fields
+- **New `fact_employee_wages`**: Dated compensation with job context
+- **Simplified `fact_employees`**: Performance and work metrics only
+- **Enhanced validation**: All relationships and business rules enforced
 
-### Previous Optimizations (January 2026)
+###  **Previous Optimizations (January 2026)**
 
-#### Normalized Schema Implementation
-- Reduced storage footprint from ~1.29 GB to ~1.28 GB
-- Eliminated data redundancy through proper normalization
-- Improved query performance with optimized relationships
-- Enhanced data quality through centralized dimension management
+####  **Normalized Schema Implementation**
+- **Reduced storage footprint** from ~1.29 GB to ~1.28 GB
+- **Eliminated data redundancy** through proper normalization
+- **Improved query performance** with optimized relationships
+- **Enhanced data quality** through centralized dimension management
 
-#### Optimized Fact Employees Table
-- 20+ comprehensive quantitative metrics for workforce analytics
-- Eliminated redundant fields (`training_completed`, `skills`, `account_number`)
-- Added new metrics: `annual_bonus`, `total_compensation`, `promotion_eligible`
-- Enhanced analytics: `productivity_score`, `retention_risk_score`, `skill_gap_score`
-- Financial wellness: `salary_grade`, `cost_center_allocation`
-- Benefits tracking: `health_utilization_rate`, `training_hours_completed`
+####  **Optimized Fact Employees Table**
+- **20+ comprehensive quantitative metrics** for workforce analytics
+- **Eliminated redundant fields** (`training_completed`, `skills`, `account_number`)
+- **Added new metrics**: `annual_bonus`, `total_compensation`, `promotion_eligible`
+- **Enhanced analytics**: `productivity_score`, `retention_risk_score`, `skill_gap_score`
+- **Financial wellness**: `salary_grade`, `cost_center_allocation`
+- **Benefits tracking**: `health_utilization_rate`, `training_hours_completed`
 
-#### Enhanced Generator Functions
-- Complete generator suite with all required functions
-- Fixed import issues and dependency resolution
-- Optimized data generation for better performance
-- Comprehensive error handling and logging
+####  **Enhanced Generator Functions**
+- **Complete generator suite** with all required functions
+- **Fixed import issues** and dependency resolution
+- **Optimized data generation** for better performance
+- **Comprehensive error handling** and logging
 
-#### Schema Improvements
-- 9 Normalized Dimensions: `dim_employees`, `dim_locations`, `dim_jobs`, `dim_departments`, `dim_banks`, `dim_insurance`, `dim_products`, `dim_retailers`, `dim_campaigns`
-- 5 Optimized Fact Tables: `fact_sales`, `fact_employees`, `fact_inventory`, `fact_operating_costs`, `fact_marketing_costs`
-- Proper foreign key relationships with referential integrity
-- Optimized data types for storage efficiency
+####  **Schema Improvements**
+- **9 Normalized Dimensions**: `dim_employees`, `dim_locations`, `dim_jobs`, `dim_departments`, `dim_banks`, `dim_insurance`, `dim_products`, `dim_retailers`, `dim_campaigns`
+- **5 Optimized Fact Tables**: `fact_sales`, `fact_employees`, `fact_inventory`, `fact_operating_costs`, `fact_marketing_costs`
+- **Proper foreign key relationships** with referential integrity
+- **Optimized data types** for storage efficiency
 
-### Storage Optimization Results
+###  **Storage Optimization Results**
 
-| Component | Before | After | Improvement |
+| **Component** | **Before** | **After** | **Improvement** |
 |:-------------:|:---------:|:---------:|:---------------:|
-| Total Storage | ~1.29 GB | ~1.28 GB | 0.8% reduction |
-| Employee Data | 720 KB | 360 KB | 50% reduction |
-| Query Performance | 3-5 seconds | 2-3 seconds | 40% improvement |
-| Data Redundancy | High | Minimal | Eliminated |
+| **Total Storage** | ~1.29 GB | ~1.28 GB | **0.8% reduction** |
+| **Employee Data** | 720 KB | 360 KB | **50% reduction** |
+| **Query Performance** | 3-5 seconds | 2-3 seconds | **40% improvement** |
+| **Data Redundancy** | High | Minimal | **Eliminated** |
 
 ---
 

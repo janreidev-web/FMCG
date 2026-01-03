@@ -75,108 +75,122 @@ def generate_dim_departments(start_id=1):
     return departments
 
 def generate_dim_jobs(departments, start_id=1):
-    """Generate jobs dimension table with normalized job information"""
+    """Generate jobs dimension table with optimized salary ranges for realistic wage/revenue ratio"""
     jobs = []
     job_key = start_id
-    
-    # Define job positions by department with realistic FMCG company salaries
-    job_positions = {
+
+    # Optimized salary ranges for 20% wage/revenue ratio
+    salary_ranges = {
+        "Entry": (30000, 50000),      # ₱360K-₱600K annually
+        "Junior": (50000, 80000),     # ₱600K-₱960K annually
+        "Senior": (80000, 140000),    # ₱960K-₱1.68M annually
+        "Manager": (140000, 250000),  # ₱1.68M-₱3M annually
+        "Director": (250000, 500000)  # ₱3M-₱6M annually
+    }
+
+    # Job positions by department
+    department_jobs = {
         "Sales": [
-            {"title": "Sales Representative", "level": "Entry", "min_sal": 28000, "max_sal": 50000, "setup": "Field-based", "type": "Full-time"},
-            {"title": "Senior Sales Rep", "level": "Junior", "min_sal": 45000, "max_sal": 80000, "setup": "Field-based", "type": "Full-time"},
-            {"title": "Sales Supervisor", "level": "Senior", "min_sal": 80000, "max_sal": 140000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Area Sales Manager", "level": "Manager", "min_sal": 140000, "max_sal": 250000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Regional Sales Manager", "level": "Senior", "min_sal": 200000, "max_sal": 350000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Sales Director", "level": "Director", "min_sal": 350000, "max_sal": 700000, "setup": "Hybrid", "type": "Full-time"},
-        ],
-        "Marketing": [
-            {"title": "Marketing Assistant", "level": "Entry", "min_sal": 26000, "max_sal": 48000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Brand Specialist", "level": "Junior", "min_sal": 42000, "max_sal": 75000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Digital Marketing Specialist", "level": "Junior", "min_sal": 48000, "max_sal": 85000, "setup": "Remote", "type": "Full-time"},
-            {"title": "Brand Manager", "level": "Manager", "min_sal": 130000, "max_sal": 240000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Marketing Manager", "level": "Senior", "min_sal": 190000, "max_sal": 320000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Marketing Director", "level": "Director", "min_sal": 320000, "max_sal": 650000, "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Sales Representative", "level": "Entry", "setup": "Field", "type": "Full-time"},
+            {"title": "Junior Sales Executive", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior Sales Executive", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Sales Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Regional Sales Director", "level": "Director", "setup": "Remote", "type": "Full-time"},
         ],
         "Operations": [
-            {"title": "Operations Staff", "level": "Entry", "min_sal": 24000, "max_sal": 42000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Warehouse Supervisor", "level": "Senior", "min_sal": 65000, "max_sal": 110000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Operations Supervisor", "level": "Senior", "min_sal": 75000, "max_sal": 130000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Operations Manager", "level": "Manager", "min_sal": 110000, "max_sal": 200000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Plant Manager", "level": "Senior", "min_sal": 170000, "max_sal": 300000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Operations Director", "level": "Director", "min_sal": 300000, "max_sal": 650000, "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Operations Assistant", "level": "Entry", "setup": "On-site", "type": "Full-time"},
+            {"title": "Junior Operations Analyst", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior Operations Specialist", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Operations Manager", "level": "Manager", "setup": "On-site", "type": "Full-time"},
+            {"title": "VP of Operations", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
         ],
-        "Finance": [
-            {"title": "Accounting Staff", "level": "Entry", "min_sal": 27000, "max_sal": 48000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Financial Analyst", "level": "Junior", "min_sal": 43000, "max_sal": 75000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Senior Accountant", "level": "Senior", "min_sal": 75000, "max_sal": 130000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Finance Manager", "level": "Manager", "min_sal": 130000, "max_sal": 240000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "CFO", "level": "Director", "min_sal": 450000, "max_sal": 850000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Finance Director", "level": "Director", "min_sal": 300000, "max_sal": 550000, "setup": "Hybrid", "type": "Full-time"},
-        ],
-        "Human Resources": [
-            {"title": "HR Assistant", "level": "Entry", "min_sal": 25000, "max_sal": 45000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "HR Specialist", "level": "Junior", "min_sal": 40000, "max_sal": 70000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "HR Supervisor", "level": "Senior", "min_sal": 70000, "max_sal": 120000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "HR Manager", "level": "Manager", "min_sal": 120000, "max_sal": 220000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "HR Director", "level": "Director", "min_sal": 270000, "max_sal": 580000, "setup": "Hybrid", "type": "Full-time"},
+        "Marketing": [
+            {"title": "Marketing Assistant", "level": "Entry", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Junior Marketing Specialist", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior Marketing Manager", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Marketing Director", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Chief Marketing Officer (CMO)", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
         ],
         "Supply Chain": [
-            {"title": "Logistics Coordinator", "level": "Entry", "min_sal": 30000, "max_sal": 55000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Supply Chain Analyst", "level": "Junior", "min_sal": 48000, "max_sal": 85000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Warehouse Manager", "level": "Manager", "min_sal": 130000, "max_sal": 240000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Supply Chain Manager", "level": "Senior", "min_sal": 170000, "max_sal": 300000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Supply Chain Director", "level": "Director", "min_sal": 300000, "max_sal": 600000, "setup": "Hybrid", "type": "Full-time"},
-        ],
-        "Quality Assurance": [
-            {"title": "QA Inspector", "level": "Entry", "min_sal": 26000, "max_sal": 46000, "setup": "On-site", "type": "Full-time"},
-            {"title": "QA Specialist", "level": "Junior", "min_sal": 46000, "max_sal": 80000, "setup": "On-site", "type": "Full-time"},
-            {"title": "QA Supervisor", "level": "Senior", "min_sal": 70000, "max_sal": 120000, "setup": "On-site", "type": "Full-time"},
-            {"title": "QA Manager", "level": "Manager", "min_sal": 120000, "max_sal": 220000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "QA Director", "level": "Director", "min_sal": 240000, "max_sal": 480000, "setup": "Hybrid", "type": "Full-time"},
-        ],
-        "IT": [
-            {"title": "IT Support", "level": "Entry", "min_sal": 30000, "max_sal": 55000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "System Administrator", "level": "Junior", "min_sal": 48000, "max_sal": 85000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "IT Specialist", "level": "Junior", "min_sal": 55000, "max_sal": 95000, "setup": "Remote", "type": "Full-time"},
-            {"title": "IT Manager", "level": "Manager", "min_sal": 130000, "max_sal": 240000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "IT Director", "level": "Director", "min_sal": 270000, "max_sal": 580000, "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Supply Chain Coordinator", "level": "Entry", "setup": "On-site", "type": "Full-time"},
+            {"title": "Junior Logistics Analyst", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior Supply Chain Planner", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Supply Chain Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Director of Supply Chain", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
         ],
         "Customer Service": [
-            {"title": "Customer Service Rep", "level": "Entry", "min_sal": 23000, "max_sal": 42000, "setup": "Remote", "type": "Full-time"},
-            {"title": "Senior CSR", "level": "Junior", "min_sal": 38000, "max_sal": 65000, "setup": "Remote", "type": "Full-time"},
-            {"title": "Customer Service Supervisor", "level": "Senior", "min_sal": 65000, "max_sal": 110000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Customer Service Manager", "level": "Manager", "min_sal": 110000, "max_sal": 200000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Service Director", "level": "Director", "min_sal": 220000, "max_sal": 450000, "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Customer Service Representative", "level": "Entry", "setup": "On-site", "type": "Full-time"},
+            {"title": "Senior Customer Service Rep", "level": "Junior", "setup": "On-site", "type": "Full-time"},
+            {"title": "Customer Service Supervisor", "level": "Senior", "setup": "On-site", "type": "Full-time"},
+            {"title": "Customer Service Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "Finance": [
+            {"title": "Finance Assistant", "level": "Entry", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Junior Accountant", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Financial Analyst", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Finance Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Chief Financial Officer (CFO)", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "Human Resources": [
+            {"title": "HR Assistant", "level": "Entry", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Junior HR Specialist", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior HR Business Partner", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "HR Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "IT": [
+            {"title": "IT Support Staff", "level": "Entry", "setup": "On-site", "type": "Full-time"},
+            {"title": "Junior Software Developer", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior Systems Administrator", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "IT Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "Research & Development": [
+            {"title": "Research Assistant", "level": "Entry", "setup": "Lab", "type": "Full-time"},
+            {"title": "Junior Scientist", "level": "Junior", "setup": "Lab", "type": "Full-time"},
+            {"title": "Senior R&D Engineer", "level": "Senior", "setup": "Lab", "type": "Full-time"},
+            {"title": "R&D Director", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "Quality Assurance": [
+            {"title": "QA Tester", "level": "Entry", "setup": "On-site", "type": "Full-time"},
+            {"title": "Junior QA Engineer", "level": "Junior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "Senior QA Lead", "level": "Senior", "setup": "Hybrid", "type": "Full-time"},
+            {"title": "QA Manager", "level": "Manager", "setup": "Hybrid", "type": "Full-time"},
+        ],
+        "Legal": [
+            {"title": "Legal Assistant", "level": "Entry", "setup": "Office", "type": "Full-time"},
+            {"title": "Junior Legal Counsel", "level": "Junior", "setup": "Office", "type": "Full-time"},
+            {"title": "Senior Legal Counsel", "level": "Senior", "setup": "Office", "type": "Full-time"},
+            {"title": "Chief Legal Officer", "level": "Director", "setup": "Hybrid", "type": "Full-time"},
         ],
         "Administration": [
-            {"title": "Administrative Assistant", "level": "Entry", "min_sal": 23000, "max_sal": 42000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Office Manager", "level": "Junior", "min_sal": 40000, "max_sal": 70000, "setup": "On-site", "type": "Full-time"},
-            {"title": "Executive Assistant", "level": "Senior", "min_sal": 60000, "max_sal": 105000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Admin Manager", "level": "Manager", "min_sal": 110000, "max_sal": 200000, "setup": "Hybrid", "type": "Full-time"},
-            {"title": "Admin Director", "level": "Director", "min_sal": 220000, "max_sal": 450000, "setup": "Hybrid", "type": "Full-time"},
-        ],
+            {"title": "Administrative Assistant", "level": "Entry", "setup": "Office", "type": "Full-time"},
+            {"title": "Executive Assistant", "level": "Junior", "setup": "Office", "type": "Full-time"},
+            {"title": "Office Manager", "level": "Senior", "setup": "Office", "type": "Full-time"},
+        ]
     }
-    
+
     # Create department lookup
     dept_lookup = {dept["department_name"]: dept["department_key"] for dept in departments}
-    
+
     # Generate jobs
-    for department, positions in job_positions.items():
+    for department, positions in department_jobs.items():
         dept_key = dept_lookup.get(department)
         if dept_key:
             for position in positions:
+                level = position["level"]
+                min_sal, max_sal = salary_ranges[level]
+                
                 jobs.append({
                     "job_key": job_key,
                     "job_title": position["title"],
-                    "job_level": position["level"],
+                    "job_level": level,
                     "department_key": dept_key,
                     "work_setup": position["setup"],
                     "work_type": position["type"],
-                    "base_salary_min": position["min_sal"],
-                    "base_salary_max": position["max_sal"],
+                    "base_salary_min": min_sal,
+                    "base_salary_max": max_sal,
                 })
                 job_key += 1
-    
+
     return jobs
 
 def generate_dim_banks(start_id=1):
@@ -303,8 +317,8 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
             bank = random.choice(banks)
             ins = random.choice(insurance)
             
-            # Employment status (90% active for realistic company)
-            employment_status = random.choices(["Active", "Terminated", "On Leave"], weights=[0.90, 0.08, 0.02])[0]
+            # Employment status (95% active for realistic company with 20% wage ratio)
+            employment_status = random.choices(["Active", "Terminated", "On Leave"], weights=[0.95, 0.04, 0.01])[0]
             
             # If terminated, generate termination date
             termination_date = None
@@ -432,6 +446,41 @@ def generate_fact_employee_wages(employees, jobs, start_date=None, end_date=None
             
             wage_key += 1
             current_date += timedelta(days=30)  # Monthly records
+        
+        # Ensure current year record exists
+        current_year = date.today().year
+        current_year_start = date(current_year, 1, 1)
+        if hire_date <= current_year_start:
+            # Add a record for current year if not present
+            has_current_year = any(w['effective_date'].year == current_year for w in wages[-12:])  # Check last 12 records
+            if not has_current_year:
+                # Calculate final salary with all raises
+                final_salary = current_salary
+                years_of_service = (date.today() - hire_date).days // 365
+                
+                # Apply all raises up to current year
+                for year in range(1, years_of_service + 1):
+                    raise_percentage = random.uniform(0.03, 0.08)
+                    if job["job_level"] in ["Manager", "Director"]:
+                        raise_percentage = random.uniform(0.05, 0.10)
+                    elif job["job_level"] == "Senior":
+                        raise_percentage = random.uniform(0.04, 0.09)
+                    final_salary = int(final_salary * (1 + raise_percentage))
+                
+                wages.append({
+                    "wage_key": wage_key,
+                    "employee_key": employee["employee_key"],
+                    "effective_date": date(current_year, 6, 1),  # Mid-year record
+                    "job_title": job["job_title"],
+                    "job_level": job["job_level"],
+                    "department": job_lookup.get(job_lookup.get(employee["job_key"], {}).get("department_key"), {}).get("department_name", "Unknown"),
+                    "monthly_salary": final_salary,
+                    "annual_salary": final_salary * 12,
+                    "currency": "PHP",
+                    "years_of_service": years_of_service,
+                    "salary_grade": (final_salary // 10000) + 1
+                })
+                wage_key += 1
     
     return wages
 
