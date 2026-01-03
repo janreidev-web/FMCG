@@ -170,8 +170,8 @@ def main():
             logger.info("Dates dimension already exists. Skipping.")
         
         # Generate employee facts if employees exist
-        if table_has_data(client, DIM_EMPLOYEES) and not table_has_data(client, FACT_EMPLOYEES):
-            logger.info("Generating employee facts...")
+        if table_has_data(client, DIM_EMPLOYEES):
+            logger.info("Processing employee data...")
             # Load current employees
             employees_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}` WHERE employment_status = 'Active'").to_dataframe()
             employees = employees_df.to_dict("records")
@@ -180,18 +180,30 @@ def main():
             jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
             jobs_data = jobs_df.to_dict("records")
             
-            employee_facts = generate_fact_employees(employees, jobs_data)
-            append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
+            # Check and regenerate employee facts if needed
+            if not table_has_data(client, FACT_EMPLOYEES):
+                logger.info("Generating employee facts...")
+                employee_facts = generate_fact_employees(employees, jobs_data)
+                append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
+            else:
+                logger.info("Employee facts already exist. Skipping.")
             
-            # Generate employee wage history
-            logger.info("Generating employee wage history...")
-            employee_wages = generate_fact_employee_wages(employees, jobs_data)
-            # Create a new table for wages
+            # Always regenerate employee wages with corrected calculation
             wages_table = f"{PROJECT_ID}.{DATASET}.fact_employee_wages"
+            logger.info("Regenerating employee wage history with corrected calculation...")
+            try:
+                # Drop existing wages table to fix the inflation issue
+                client.delete_table(wages_table)
+                logger.info("Dropped existing wages table to fix inflation issue")
+            except Exception as e:
+                logger.info(f"Wages table doesn't exist or couldn't drop: {e}")
+            
+            # Generate corrected wage data (current year only)
+            employee_wages = generate_fact_employee_wages(employees, jobs_data)
             append_df_bq(client, pd.DataFrame(employee_wages), wages_table)
-            logger.info(f"Generated {len(employee_wages)} wage records")
+            logger.info(f"Generated {len(employee_wages)} corrected wage records")
         else:
-            logger.info("Employee facts already exist or no employees found. Skipping.")
+            logger.info("No employees found. Skipping employee data generation.")
         
         # Load existing dimensions for fact table generation (optimized queries)
         try:

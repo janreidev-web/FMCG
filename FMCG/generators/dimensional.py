@@ -374,30 +374,28 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
     return employees
 
 def generate_fact_employee_wages(employees, jobs, start_date=None, end_date=None, start_id=1):
-    """Generate employee wage history with dates based on job title and seniority"""
+    """Generate annual wage records for all employees based on their actual employment periods"""
     wages = []
     wage_key = start_id
-    
-    if start_date is None:
-        start_date = date(2015, 1, 1)
-    if end_date is None:
-        end_date = date.today()
     
     # Create job lookup
     job_lookup = {job["job_key"]: job for job in jobs}
     
     for employee in employees:
-        if employee["employment_status"] != "Active":
-            continue  # Only generate wages for active employees
-        
         job = job_lookup.get(employee["job_key"])
         if not job:
             continue
         
+        # Determine employment period
         hire_date = employee["hire_date"]
+        if employee["employment_status"] == "Terminated" and employee["termination_date"]:
+            end_employment = employee["termination_date"]
+        else:
+            end_employment = date.today()
         
-        # Generate wage history from hire date to present
-        current_date = max(hire_date, start_date)
+        # Skip if employee hasn't worked yet
+        if hire_date > end_employment:
+            continue
         
         # Initial salary based on job
         base_salary = random.randint(job["base_salary_min"], job["base_salary_max"])
@@ -408,80 +406,58 @@ def generate_fact_employee_wages(employees, jobs, start_date=None, end_date=None
         elif job["work_type"] == "Contract":
             base_salary = int(base_salary * 0.9)
         elif job["work_type"] == "Intern":
-            base_salary = random.randint(18000, 25000)  # Intern salary based on Entry level scale
+            base_salary = random.randint(18000, 25000)
         elif job["work_type"] == "Probationary":
             base_salary = int(base_salary * 0.8)
         
         current_salary = base_salary
         
-        # Generate annual salary changes (promotions, raises, etc.)
-        while current_date <= end_date:
-            # Calculate years of service
-            years_of_service = (current_date - hire_date).days // 365
-            
-            # Apply annual raises (3-8% based on performance)
-            if years_of_service > 0 and current_date.month == 1 and current_date.day == 1:
-                # Higher raises for better job levels
-                raise_percentage = random.uniform(0.03, 0.08)
-                if job["job_level"] in ["Manager", "Director"]:
-                    raise_percentage = random.uniform(0.05, 0.10)
-                elif job["job_level"] == "Senior":
-                    raise_percentage = random.uniform(0.04, 0.09)
-                
-                current_salary = int(current_salary * (1 + raise_percentage))
-            
-            # Generate monthly wage record
-            wages.append({
-                "wage_key": wage_key,
-                "employee_key": employee["employee_key"],
-                "effective_date": current_date,
-                "job_title": job["job_title"],
-                "job_level": job["job_level"],
-                "department": job_lookup.get(job_lookup.get(employee["job_key"], {}).get("department_key"), {}).get("department_name", "Unknown"),
-                "monthly_salary": current_salary,
-                "annual_salary": current_salary * 12,
-                "currency": "PHP",
-                "years_of_service": years_of_service,
-                "salary_grade": (current_salary // 10000) + 1
-            })
-            
-            wage_key += 1
-            current_date += timedelta(days=30)  # Monthly records
+        # Calculate total employment duration in years (capped at 10 years for raises)
+        total_years = (end_employment - hire_date).days // 365
+        raise_years = min(total_years, 10)  # Cap at 10 years for raise calculations
         
-        # Ensure current year record exists
-        current_year = date.today().year
-        current_year_start = date(current_year, 1, 1)
-        if hire_date <= current_year_start:
-            # Add a record for current year if not present
-            has_current_year = any(w['effective_date'].year == current_year for w in wages[-12:])  # Check last 12 records
-            if not has_current_year:
-                # Calculate final salary with all raises
-                final_salary = current_salary
-                years_of_service = (date.today() - hire_date).days // 365
-                
-                # Apply all raises up to current year
-                for year in range(1, years_of_service + 1):
-                    raise_percentage = random.uniform(0.03, 0.08)
-                    if job["job_level"] in ["Manager", "Director"]:
-                        raise_percentage = random.uniform(0.05, 0.10)
-                    elif job["job_level"] == "Senior":
-                        raise_percentage = random.uniform(0.04, 0.09)
-                    final_salary = int(final_salary * (1 + raise_percentage))
-                
-                wages.append({
-                    "wage_key": wage_key,
-                    "employee_key": employee["employee_key"],
-                    "effective_date": date(current_year, 6, 1),  # Mid-year record
-                    "job_title": job["job_title"],
-                    "job_level": job["job_level"],
-                    "department": job_lookup.get(job_lookup.get(employee["job_key"], {}).get("department_key"), {}).get("department_name", "Unknown"),
-                    "monthly_salary": final_salary,
-                    "annual_salary": final_salary * 12,
-                    "currency": "PHP",
-                    "years_of_service": years_of_service,
-                    "salary_grade": (final_salary // 10000) + 1
-                })
-                wage_key += 1
+        # Apply raises based on years of service
+        for year in range(1, raise_years + 1):
+            raise_percentage = random.uniform(0.03, 0.08)
+            if job["job_level"] in ["Manager", "Director"]:
+                raise_percentage = random.uniform(0.05, 0.10)
+            elif job["job_level"] == "Senior":
+                raise_percentage = random.uniform(0.04, 0.09)
+            
+            current_salary = int(current_salary * (1 + raise_percentage))
+        
+        # Calculate salary for the employment period
+        # Both monthly and annual should follow the same logic: hire to termination/present
+        if employee["employment_status"] == "Terminated":
+            # Calculate total months worked from hire to termination
+            months_worked = max(1, (end_employment.year - hire_date.year) * 12 + (end_employment.month - hire_date.month) + 1)
+            annual_salary = current_salary * months_worked
+            monthly_salary = current_salary * months_worked  # Total monthly salary for entire period
+            effective_date = end_employment
+        else:
+            # For active employees: calculate from hire to present
+            months_worked = max(1, (date.today().year - hire_date.year) * 12 + (date.today().month - hire_date.month) + 1)
+            annual_salary = current_salary * months_worked
+            monthly_salary = current_salary * months_worked  # Total monthly salary for entire period
+            effective_date = date.today()
+        
+        # Generate single wage record
+        wages.append({
+            "wage_key": wage_key,
+            "employee_key": employee["employee_key"],
+            "effective_date": effective_date,
+            "job_title": job["job_title"],
+            "job_level": job["job_level"],
+            "department": job_lookup.get(job_lookup.get(employee["job_key"], {}).get("department_key"), {}).get("department_name", "Unknown"),
+            "monthly_salary": monthly_salary,
+            "annual_salary": annual_salary,
+            "currency": "PHP",
+            "years_of_service": total_years,
+            "salary_grade": (current_salary // 10000) + 1,
+            "employment_status": employee["employment_status"]
+        })
+        
+        wage_key += 1
     
     return wages
 
