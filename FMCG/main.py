@@ -10,13 +10,10 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 import time
 
-from config import PROJECT_ID, DATASET, INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
-
-# Force correct values for debugging
-INITIAL_SALES_AMOUNT = 6000000000  # ₱6B
-DAILY_SALES_AMOUNT = 1640000      # ₱1.64M
-from schema import (
-    DIM_PRODUCTS, DIM_EMPLOYEES, DIM_RETAILERS, DIM_CAMPAIGNS,
+from config import (
+    PROJECT_ID, DATASET,
+    EMPLOYEES_TABLE, PRODUCTS_TABLE, RETAILERS_TABLE, SALES_TABLE, COSTS_TABLE, INVENTORY_TABLE, MARKETING_TABLE, DATES_TABLE,
+    DIM_EMPLOYEES, DIM_PRODUCTS, DIM_RETAILERS, DIM_CAMPAIGNS,
     DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
     FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES
 )
@@ -27,7 +24,8 @@ from generators.dimensional import (
     generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
     generate_fact_employees, generate_dim_retailers_normalized,
     generate_dim_campaigns, generate_fact_sales,
-    generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs
+    generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
+    generate_dim_dates, validate_relationships
 )
 
 # Configure enhanced logging
@@ -135,11 +133,12 @@ def main():
         if not table_has_data(client, DIM_EMPLOYEES):
             logger.info("Generating normalized employees dimension...")
             employees = generate_dim_employees_normalized(
-                num_employees=250, 
+                num_employees=500, 
                 locations=locations, 
                 jobs=jobs, 
                 banks=banks, 
-                insurance=insurance
+                insurance=insurance,
+                departments=departments  # Pass departments for robust relationships
             )
             append_df_bq(client, pd.DataFrame(employees), DIM_EMPLOYEES)
         else:
@@ -162,6 +161,13 @@ def main():
         else:
             logger.info("Campaigns dimension already exists. Skipping.")
         
+        if not table_has_data(client, DATES_TABLE):
+            logger.info("Generating dates dimension...")
+            dates = generate_dim_dates()
+            append_df_bq(client, pd.DataFrame(dates), DATES_TABLE)
+        else:
+            logger.info("Dates dimension already exists. Skipping.")
+        
         # Generate employee facts if employees exist
         if table_has_data(client, DIM_EMPLOYEES) and not table_has_data(client, FACT_EMPLOYEES):
             logger.info("Generating employee facts...")
@@ -180,6 +186,20 @@ def main():
         
         # Load existing dimensions for fact table generation (optimized queries)
         try:
+            # Load all dimension data for relationship validation
+            locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
+            departments_df = client.query(f"SELECT * FROM `{DIM_DEPARTMENTS}`").to_dataframe()
+            jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
+            banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
+            insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
+            
+            # Convert to dictionaries for validation
+            locations = locations_df.to_dict("records")
+            departments = departments_df.to_dict("records")
+            jobs = jobs_df.to_dict("records")
+            banks = banks_df.to_dict("records")
+            insurance = insurance_df.to_dict("records")
+            
             # Use more efficient queries with specific fields only
             products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
             
@@ -224,6 +244,20 @@ def main():
             """).to_dataframe()
             
             campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}`").to_dataframe()
+            
+            # Convert to dictionaries for validation and fact generation
+            employees = employees_df.to_dict("records")
+            products = products_df.to_dict("records")
+            retailers = retailers_df.to_dict("records")
+            campaigns = campaigns_df.to_dict("records")
+            
+            # Validate all relationships before fact table generation
+            logger.info("🔍 Validating table relationships...")
+            if not validate_relationships(employees, products, retailers, campaigns, locations, departments, jobs, banks, insurance):
+                logger.error("❌ Relationship validation failed! Skipping fact table generation.")
+                return
+            else:
+                logger.info("✅ All relationships validated successfully!")
         except Exception as e:
             if "readsessions.create" in str(e):
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
