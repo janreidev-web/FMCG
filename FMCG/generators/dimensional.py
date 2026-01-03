@@ -842,8 +842,8 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
         daily_target = base_daily_target * growth_factor * growth_variation
         
         # Calculate number of sales for today
-        avg_sale_amount = 150000  # Average sale amount increased to ₱150,000 for realistic FMCG scale
-        num_sales_today = max(1, int(daily_target / avg_sale_amount))
+        avg_sale_amount = 15000  # Average sale amount ₱15,000 for realistic FMCG wholesale transactions
+        num_sales_today = max(20, int(daily_target / avg_sale_amount))  # Minimum 20 sales per day for realistic volume
         
         # Generate batch of sales for today
         for i in range(num_sales_today):
@@ -857,7 +857,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
             campaign = random.choice(campaigns) if random.random() < 0.3 else None
             
             # Generate sale quantity and calculate amounts
-            case_quantity = random.randint(1000, 10000)  # Wholesale pallet quantities (1K-10K units)
+            case_quantity = random.randint(100, 1000)  # Wholesale case quantities (100-1000 units) for ₱15K average sales
             unit_price = product["retail_price"]
             discount_percent = random.uniform(0, 0.15) if campaign else 0
             tax_rate = 0.12  # 12% VAT
