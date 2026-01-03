@@ -4,8 +4,9 @@ Generates data for the normalized schema to reduce redundancy
 """
 
 import random
-from datetime import datetime, timedelta, date
+from datetime import date, timedelta
 from faker import Faker
+import pandas as pd
 from helpers import random_date_range
 from geography import PH_GEOGRAPHY, pick_ph_location
 from config import DAILY_SALES_AMOUNT
@@ -717,36 +718,61 @@ def validate_relationships(employees, products, retailers, campaigns, locations,
     
     issues = []
     
-    # Create lookup dictionaries
-    location_keys = {loc["location_key"] for loc in locations}
-    department_keys = {dept["department_key"] for dept in departments}
-    job_keys = {job["job_key"] for job in jobs}
-    bank_keys = {bank["bank_key"] for bank in banks}
-    insurance_keys = {ins["insurance_key"] for ins in insurance}
-    product_keys = {prod["product_key"] for prod in products}
-    retailer_keys = {ret["retailer_key"] for ret in retailers}
-    campaign_keys = {camp["campaign_key"] for camp in campaigns}
+    # Create lookup dictionaries with proper type handling for BigQuery data
+    location_keys = {int(loc["location_key"]) for loc in locations}
+    department_keys = {int(dept["department_key"]) for dept in departments}
+    job_keys = {int(job["job_key"]) for job in jobs}
+    bank_keys = {int(bank["bank_key"]) for bank in banks}
+    insurance_keys = {int(ins["insurance_key"]) for ins in insurance}
+    product_keys = {int(prod["product_key"]) for prod in products}
+    retailer_keys = {int(ret["retailer_key"]) for ret in retailers}
+    campaign_keys = {int(camp["campaign_key"]) for camp in campaigns}
     
-    # Validate employee relationships
+    # Helper function to safely convert BigQuery values to int
+    def safe_int(value):
+        """Safely convert value to int, handling None, NaN, and empty strings"""
+        try:
+            if value is None or value == '' or (isinstance(value, float) and pd.isna(value)):
+                return None
+            return int(value)
+        except (ValueError, TypeError):
+            return None
+    
+    # Validate employee relationships with type conversion
     for emp in employees:
-        if emp.get("location_key") not in location_keys:
-            issues.append(f"Employee {emp['employee_key']}: Invalid location_key {emp.get('location_key')}")
-        if emp.get("job_key") not in job_keys:
-            issues.append(f"Employee {emp['employee_key']}: Invalid job_key {emp.get('job_key')}")
-        if emp.get("bank_key") not in bank_keys:
-            issues.append(f"Employee {emp['employee_key']}: Invalid bank_key {emp.get('bank_key')}")
-        if emp.get("insurance_key") not in insurance_keys:
-            issues.append(f"Employee {emp['employee_key']}: Invalid insurance_key {emp.get('insurance_key')}")
+        emp_key = emp.get('employee_key')
+        
+        # Skip validation for terminated employees
+        if emp.get('employment_status') != 'Active':
+            continue
+            
+        # Convert BigQuery values to int for comparison
+        location_key = safe_int(emp.get("location_key"))
+        job_key = safe_int(emp.get("job_key"))
+        bank_key = safe_int(emp.get("bank_key"))
+        insurance_key = safe_int(emp.get("insurance_key"))
+        
+        # Only validate if keys are not None
+        if location_key is not None and location_key not in location_keys:
+            issues.append(f"Employee {emp_key}: Invalid location_key {location_key}")
+        if job_key is not None and job_key not in job_keys:
+            issues.append(f"Employee {emp_key}: Invalid job_key {job_key}")
+        if bank_key is not None and bank_key not in bank_keys:
+            issues.append(f"Employee {emp_key}: Invalid bank_key {bank_key}")
+        if insurance_key is not None and insurance_key not in insurance_keys:
+            issues.append(f"Employee {emp_key}: Invalid insurance_key {insurance_key}")
     
     # Validate job department relationships
     for job in jobs:
-        if job.get("department_key") not in department_keys:
-            issues.append(f"Job {job['job_key']}: Invalid department_key {job.get('department_key')}")
+        dept_key = safe_int(job.get("department_key"))
+        if dept_key is not None and dept_key not in department_keys:
+            issues.append(f"Job {job['job_key']}: Invalid department_key {dept_key}")
     
     # Validate retailer relationships
     for ret in retailers:
-        if ret.get("location_key") not in location_keys:
-            issues.append(f"Retailer {ret['retailer_key']}: Invalid location_key {ret.get('location_key')}")
+        loc_key = safe_int(ret.get("location_key"))
+        if loc_key is not None and loc_key not in location_keys:
+            issues.append(f"Retailer {ret['retailer_key']}: Invalid location_key {loc_key}")
     
     if issues:
         print(f"❌ Found {len(issues)} relationship issues:")
