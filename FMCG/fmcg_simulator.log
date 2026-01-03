@@ -7,3 +7,12 @@
 2026-01-02 19:11:15,147 - ERROR - 
 ERROR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
 2026-01-02 19:11:15,149 - ERROR - Failed at: 2026-01-02 19:11:15
+2026-01-03 12:24:02,664 - INFO - ============================================================
+2026-01-03 12:24:02,665 - INFO - FMCG Data Simulator - Dimensional Model
+2026-01-03 12:24:02,665 - INFO - Started at: 2026-01-03 12:24:02
+2026-01-03 12:24:02,665 - INFO - ============================================================
+
+2026-01-03 12:24:02,666 - INFO - Authenticating with Google Cloud...
+2026-01-03 12:24:14,644 - ERROR - 
+ERROR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-01-03 12:24:14,644 - ERROR - Failed at: 2026-01-03 12:24:14

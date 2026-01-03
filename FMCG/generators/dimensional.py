@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, date
 from faker import Faker
 from helpers import random_date_range
 from geography import PH_GEOGRAPHY, pick_ph_location
+from config import DAILY_SALES_AMOUNT
 
 fake = Faker()
 
@@ -552,3 +553,263 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
             retailer_id += 1
     
     return retailers
+
+def generate_dim_products(start_id=1):
+    """Generate products dimension table"""
+    products = []
+    
+    # FMCG product categories and data
+    product_data = [
+        # Food Products
+        {"category": "Food", "subcategory": "Rice", "brand": "Datu", "name": "Premium Jasmine Rice", "wholesale": 45.50, "retail": 52.00},
+        {"category": "Food", "subcategory": "Rice", "brand": "Villar", "name": "Regular Milled Rice", "wholesale": 38.00, "retail": 43.00},
+        {"category": "Food", "subcategory": "Noodles", "brand": "Lucky Me", "name": "Instant Noodles Original", "wholesale": 8.50, "retail": 10.00},
+        {"category": "Food", "subcategory": "Noodles", "brand": "Nissin", "name": "Ramen Noodles", "wholesale": 12.00, "retail": 14.50},
+        {"category": "Food", "subcategory": "Canned Goods", "brand": "Mega", "name": "Sardines in Tomato Sauce", "wholesale": 15.50, "retail": 18.00},
+        {"category": "Food", "subcategory": "Canned Goods", "brand": "Century", "name": "Tuna Flakes in Oil", "wholesale": 28.00, "retail": 32.00},
+        {"category": "Food", "subcategory": "Biscuits", "brand": "Monde", "name": "Chocolate Sandwich Cookies", "wholesale": 22.50, "retail": 26.00},
+        {"category": "Food", "subcategory": "Biscuits", "brand": "Rebisco", "name": "Cream Sandwich", "wholesale": 18.00, "retail": 21.00},
+        {"category": "Food", "subcategory": "Coffee", "brand": "Nescafe", "name": "3-in-1 Coffee", "wholesale": 6.50, "retail": 8.00},
+        {"category": "Food", "subcategory": "Coffee", "brand": "Great Taste", "name": "White Coffee", "wholesale": 7.00, "retail": 8.50},
+        
+        # Beverages
+        {"category": "Beverages", "subcategory": "Soft Drinks", "brand": "Coca-Cola", "name": "Coca-Cola 1.5L", "wholesale": 45.00, "retail": 52.00},
+        {"category": "Beverages", "subcategory": "Soft Drinks", "brand": "Pepsi", "name": "Pepsi 1.5L", "wholesale": 44.00, "retail": 51.00},
+        {"category": "Beverages", "subcategory": "Juice", "brand": "Zesto", "name": "Orange Juice 1L", "wholesale": 28.50, "retail": 33.00},
+        {"category": "Beverages", "subcategory": "Juice", "brand": "Del Monte", "name": "Pineapple Juice 1L", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Beverages", "subcategory": "Water", "brand": "Nestle", "name": "Pure Life Water 500ml", "wholesale": 8.00, "retail": 10.00},
+        {"category": "Beverages", "subcategory": "Water", "brand": "Wilkins", "name": "Distilled Water 500ml", "wholesale": 9.00, "retail": 11.00},
+        
+        # Personal Care
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Safeguard", "name": "Antibacterial Soap", "wholesale": 18.50, "retail": 22.00},
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Dove", "name": "Beauty Bath Soap", "wholesale": 25.00, "retail": 29.00},
+        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Head & Shoulders", "name": "Anti-Dandruff Shampoo", "wholesale": 32.00, "retail": 37.00},
+        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Pantene", "name": "Smooth & Silky Shampoo", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Personal Care", "subcategory": "Toothpaste", "brand": "Colgate", "name": "Total Toothpaste", "wholesale": 45.00, "retail": 52.00},
+        {"category": "Personal Care", "subcategory": "Toothpaste", "brand": "Close Up", "name": "Red Hot Toothpaste", "wholesale": 42.00, "retail": 48.00},
+        
+        # Household Care
+        {"category": "Household", "subcategory": "Detergent", "brand": "Tide", "name": "Laundry Detergent Powder", "wholesale": 28.00, "retail": 32.00},
+        {"category": "Household", "subcategory": "Detergent", "brand": "Surf", "name": "Laundry Detergent Powder", "wholesale": 25.00, "retail": 29.00},
+        {"category": "Household", "subcategory": "Fabric Softener", "brand": "Downy", "name": "Fabric Softener", "wholesale": 22.00, "retail": 26.00},
+        {"category": "Household", "subcategory": "Fabric Softener", "brand": "Comfort", "name": "Fabric Softener", "wholesale": 20.00, "retail": 24.00},
+        {"category": "Household", "subcategory": "Disinfectant", "brand": "Domex", "name": "Bleach Disinfectant", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Household", "subcategory": "Disinfectant", "brand": "Zonrox", "name": "Color Safe Bleach", "wholesale": 32.00, "retail": 37.00},
+    ]
+    
+    for i, product in enumerate(product_data):
+        products.append({
+            "product_key": start_id + i,
+            "product_id": f"P{start_id + i:03}",
+            "product_name": product["name"],
+            "category": product["category"],
+            "subcategory": product["subcategory"],
+            "brand": product["brand"],
+            "wholesale_price": product["wholesale"],
+            "retail_price": product["retail"],
+            "status": "Active",
+            "created_date": fake.date_between_dates(date_start=date(2020, 1, 1), date_end=date.today())
+        })
+    
+    return products
+
+def generate_dim_campaigns(start_id=1):
+    """Generate campaigns dimension table"""
+    campaigns = []
+    
+    campaign_data = [
+        {"name": "Summer Sale 2024", "type": "Seasonal", "start": "2024-03-01", "end": "2024-05-31", "budget": 5000000},
+        {"name": "Christmas Promotion", "type": "Holiday", "start": "2023-11-01", "end": "2023-12-31", "budget": 8000000},
+        {"name": "New Product Launch", "type": "Product Launch", "start": "2024-01-15", "end": "2024-03-15", "budget": 3000000},
+        {"name": "Back to School", "type": "Seasonal", "start": "2023-06-01", "end": "2023-08-31", "budget": 4000000},
+        {"name": "Brand Awareness", "type": "Brand Building", "start": "2024-02-01", "end": "2024-04-30", "budget": 2500000},
+        {"name": "Loyalty Program", "type": "Retention", "start": "2023-09-01", "end": "2023-12-31", "budget": 2000000},
+        {"name": "Flash Sale", "type": "Promotional", "start": "2024-01-01", "end": "2024-01-07", "budget": 1500000},
+        {"name": "Regional Expansion", "type": "Market Expansion", "start": "2023-10-01", "end": "2024-03-31", "budget": 6000000},
+    ]
+    
+    for i, campaign in enumerate(campaign_data):
+        campaigns.append({
+            "campaign_key": start_id + i,
+            "campaign_id": f"C{start_id + i:03}",
+            "campaign_name": campaign["name"],
+            "campaign_type": campaign["type"],
+            "start_date": date.fromisoformat(campaign["start"]),
+            "end_date": date.fromisoformat(campaign["end"]),
+            "budget": campaign["budget"],
+            "currency": "PHP"
+        })
+    
+    return campaigns
+
+def generate_fact_sales(employees, products, retailers, campaigns, target_amount, start_date=None, end_date=None, start_id=1):
+    """Generate sales fact table"""
+    sales = []
+    sale_key = start_id
+    
+    if start_date is None:
+        start_date = date.today()
+    if end_date is None:
+        end_date = start_date
+    
+    # Filter active employees, products, and retailers
+    active_employees = [e for e in employees if e.get('employment_status') == 'Active']
+    active_products = [p for p in products if p.get('status') == 'Active']
+    
+    current_amount = 0
+    current_date = start_date
+    
+    while current_date <= end_date and current_amount < target_amount:
+        # Generate multiple sales per day
+        daily_sales_target = min(target_amount - current_amount, DAILY_SALES_AMOUNT if start_date == end_date else target_amount // 30)
+        
+        while current_amount < target_amount:
+            # Random selection
+            employee = random.choice(active_employees)
+            product = random.choice(active_products)
+            retailer = random.choice(retailers)
+            campaign = random.choice(campaigns) if random.random() < 0.3 else None
+            
+            # Generate sale quantity and calculate amounts
+            case_quantity = random.randint(1, 10)
+            unit_price = product["retail_price"]
+            discount_percent = random.uniform(0, 0.15) if campaign else 0
+            tax_rate = 0.12  # 12% VAT
+            
+            subtotal = case_quantity * unit_price
+            discount_amount = subtotal * discount_percent
+            taxable_amount = subtotal - discount_amount
+            tax_amount = taxable_amount * tax_rate
+            total_amount = taxable_amount + tax_amount
+            
+            # Commission calculation
+            commission_rate = 0.05 if campaign else 0.03
+            commission_amount = total_amount * commission_rate
+            
+            # Payment and delivery
+            payment_method = random.choice(["Cash", "Credit Card", "Bank Transfer", "Mobile Payment"])
+            payment_status = "Paid"
+            delivery_status = random.choice(["Pending", "In Transit", "Delivered"])
+            
+            expected_delivery = current_date + timedelta(days=random.randint(1, 5))
+            actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+            
+            sales.append({
+                "sale_key": sale_key,
+                "sale_date": current_date,
+                "product_key": product["product_key"],
+                "employee_key": employee["employee_key"],
+                "retailer_key": retailer["retailer_key"],
+                "campaign_key": campaign["campaign_key"] if campaign else None,
+                "case_quantity": case_quantity,
+                "unit_price": unit_price,
+                "discount_percent": discount_percent,
+                "tax_rate": tax_rate,
+                "total_amount": total_amount,
+                "commission_amount": commission_amount,
+                "currency": "PHP",
+                "payment_method": payment_method,
+                "payment_status": payment_status,
+                "delivery_status": delivery_status,
+                "expected_delivery_date": expected_delivery,
+                "actual_delivery_date": actual_delivery,
+            })
+            
+            current_amount += total_amount
+            sale_key += 1
+            
+            # Break if we've reached the target
+            if current_amount >= target_amount:
+                break
+        
+        current_date += timedelta(days=1)
+    
+    return sales
+
+def generate_fact_operating_costs(target_amount, start_date=None, end_date=None, start_id=1):
+    """Generate operating costs fact table"""
+    costs = []
+    cost_key = start_id
+    
+    if start_date is None:
+        start_date = date.today() - timedelta(days=365)
+    if end_date is None:
+        end_date = date.today()
+    
+    cost_categories = [
+        {"category": "Salaries & Wages", "types": ["Base Salary", "Overtime Pay", "Bonuses"]},
+        {"category": "Rent & Utilities", "types": ["Office Rent", "Warehouse Rent", "Electricity", "Water", "Internet"]},
+        {"category": "Marketing & Sales", "types": ["Advertising", "Promotions", "Sales Commissions"]},
+        {"category": "Operations", "types": ["Logistics", "Distribution", "Maintenance"]},
+        {"category": "Administrative", "types": ["Office Supplies", "Insurance", "Legal Fees"]},
+    ]
+    
+    current_amount = 0
+    daily_target = target_amount / 365
+    
+    for category_data in cost_categories:
+        category = category_data["category"]
+        for cost_type in category_data["types"]:
+            # Generate monthly costs for this type
+            monthly_amount = daily_target * 30 * random.uniform(0.1, 0.3)
+            
+            current_date = start_date
+            while current_date <= end_date:
+                costs.append({
+                    "cost_key": cost_key,
+                    "cost_date": current_date,
+                    "category": category,
+                    "cost_type": cost_type,
+                    "amount": monthly_amount / 30,  # Daily amount
+                    "currency": "PHP"
+                })
+                
+                current_amount += monthly_amount / 30
+                cost_key += 1
+                current_date += timedelta(days=1)
+    
+    return costs
+
+def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end_date=None, start_id=1):
+    """Generate marketing costs fact table"""
+    costs = []
+    cost_key = start_id
+    
+    if start_date is None:
+        start_date = date.today() - timedelta(days=365)
+    if end_date is None:
+        end_date = date.today()
+    
+    cost_categories = [
+        "Digital Advertising", "Print Media", "TV/Radio", "Events", "Sponsorships", 
+        "Social Media", "Content Creation", "Market Research", "Brand Materials"
+    ]
+    
+    for campaign in campaigns:
+        # Generate costs for each campaign
+        campaign_budget = campaign["budget"]
+        cost_per_category = campaign_budget / len(cost_categories)
+        
+        for category in cost_categories:
+            # Generate costs during campaign period
+            current_date = max(start_date, campaign["start_date"])
+            end_campaign_date = min(end_date, campaign["end_date"])
+            
+            while current_date <= end_campaign_date:
+                daily_cost = cost_per_category / ((campaign["end_date"] - campaign["start_date"]).days + 1)
+                
+                costs.append({
+                    "marketing_cost_key": cost_key,
+                    "cost_date": current_date,
+                    "campaign_key": campaign["campaign_key"],
+                    "campaign_id": campaign["campaign_id"],
+                    "campaign_type": campaign["campaign_type"],
+                    "cost_category": category,
+                    "amount": daily_cost * random.uniform(0.8, 1.2),  # Add some variation
+                    "currency": "PHP"
+                })
+                
+                cost_key += 1
+                current_date += timedelta(days=1)
+    
+    return costs

@@ -188,11 +188,13 @@ def main():
                     b.bank_name,
                     i.provider_name as health_insurance_provider,
                     ef.monthly_salary, ef.performance_rating, ef.last_review_date,
-                    ef.training_completed, ef.skills, ef.benefit_enrollment_date,
+                    ef.training_hours_completed, ef.certifications_count, ef.benefit_enrollment_date,
                     ef.years_of_service, ef.attendance_rate, ef.overtime_hours_monthly,
                     ef.engagement_score, ef.satisfaction_index,
                     ef.vacation_leave_balance, ef.sick_leave_balance, ef.personal_leave_balance,
-                    ef.account_number, ef.account_name
+                    ef.annual_bonus, ef.total_compensation, ef.promotion_eligible,
+                    ef.productivity_score, ef.retention_risk_score, ef.skill_gap_score,
+                    ef.health_utilization_rate, ef.salary_grade, ef.cost_center_allocation
                 FROM `{DIM_EMPLOYEES}` e
                 LEFT JOIN `{DIM_JOBS}` j ON e.job_key = j.job_key
                 LEFT JOIN `{DIM_DEPARTMENTS}` d ON j.department_key = d.department_key
