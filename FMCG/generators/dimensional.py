@@ -663,7 +663,7 @@ def generate_dim_campaigns(start_id=1):
     return campaigns
 
 def generate_fact_sales(employees, products, retailers, campaigns, target_amount, start_date=None, end_date=None, start_id=1):
-    """Generate sales fact table with optimized batch processing"""
+    """Generate sales fact table with realistic growth over time"""
     sales = []
     sale_key = start_id
     
@@ -676,28 +676,39 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     active_employees = [e for e in employees if e.get('employment_status') == 'Active']
     active_products = [p for p in products if p.get('status') == 'Active']
     
-    # Calculate total days and daily target
+    # Calculate total days and create realistic growth pattern
     total_days = (end_date - start_date).days + 1
-    daily_target = target_amount / total_days
+    
+    # Create growth factors for realistic business growth
+    # For 10-year period: start small, grow to exceed target
+    growth_start = 0.5  # Start at 50% of final daily rate
+    growth_end = 1.3   # End at 130% of target (to exceed ₱6B total)
     
     current_amount = 0
     current_date = start_date
     
     print(f"Generating sales from {start_date} to {end_date} ({total_days} days)")
-    print(f"Daily target: ₱{daily_target:,.0f}")
+    print(f"Growth pattern: {growth_start*100:.0f}% to {growth_end*100:.0f}% over period")
     
-    while current_date <= end_date and current_amount < target_amount:
-        # Calculate daily sales target with some variation
-        daily_variation = random.uniform(0.7, 1.3)  # ±30% variation
-        today_target = min(daily_target * daily_variation, target_amount - current_amount)
+    while current_date <= end_date and current_amount < target_amount * 1.4:  # Allow up to 140% of target
+        # Calculate progress through the period (0.0 to 1.0)
+        progress = (current_date - start_date).days / total_days
         
-        # Calculate number of sales for today (batch processing)
-        avg_sale_amount = 15000  # Average sale amount based on product prices
-        num_sales_today = max(1, int(today_target / avg_sale_amount))
+        # Apply realistic growth curve (exponential growth with some variation)
+        growth_factor = growth_start + (growth_end - growth_start) * (progress ** 1.2)
+        growth_variation = random.uniform(0.85, 1.15)  # ±15% daily variation
+        
+        # Calculate daily target with growth
+        base_daily_target = target_amount / total_days
+        daily_target = base_daily_target * growth_factor * growth_variation
+        
+        # Calculate number of sales for today
+        avg_sale_amount = 15000  # Average sale amount
+        num_sales_today = max(1, int(daily_target / avg_sale_amount))
         
         # Generate batch of sales for today
         for i in range(num_sales_today):
-            if current_amount >= target_amount:
+            if current_amount >= target_amount * 1.4:  # Stop if we exceed 140% of target
                 break
                 
             # Random selection
@@ -758,12 +769,13 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
         
         # Progress reporting
         if len(sales) % 10000 == 0:
-            progress = (current_amount / target_amount) * 100
-            print(f"Progress: {progress:.1f}% - Generated {len(sales):,} sales - ₱{current_amount:,.0f}")
+            progress_pct = (current_amount / target_amount) * 100
+            print(f"Progress: {progress_pct:.1f}% - Generated {len(sales):,} sales - ₱{current_amount:,.0f}")
         
         current_date += timedelta(days=1)
     
     print(f"Completed: Generated {len(sales):,} sales totaling ₱{current_amount:,.0f}")
+    print(f"Target was: ₱{target_amount:,.0f} - Achievement: {current_amount/target_amount*100:.1f}%")
     return sales
 
 def generate_fact_operating_costs(target_amount, start_date=None, end_date=None, start_id=1):
