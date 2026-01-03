@@ -643,7 +643,7 @@ def generate_dim_campaigns(start_id=1):
     return campaigns
 
 def generate_fact_sales(employees, products, retailers, campaigns, target_amount, start_date=None, end_date=None, start_id=1):
-    """Generate sales fact table"""
+    """Generate sales fact table with optimized batch processing"""
     sales = []
     sale_key = start_id
     
@@ -656,14 +656,30 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     active_employees = [e for e in employees if e.get('employment_status') == 'Active']
     active_products = [p for p in products if p.get('status') == 'Active']
     
+    # Calculate total days and daily target
+    total_days = (end_date - start_date).days + 1
+    daily_target = target_amount / total_days
+    
     current_amount = 0
     current_date = start_date
     
+    print(f"Generating sales from {start_date} to {end_date} ({total_days} days)")
+    print(f"Daily target: ₱{daily_target:,.0f}")
+    
     while current_date <= end_date and current_amount < target_amount:
-        # Generate multiple sales per day
-        daily_sales_target = min(target_amount - current_amount, DAILY_SALES_AMOUNT if start_date == end_date else target_amount // 30)
+        # Calculate daily sales target with some variation
+        daily_variation = random.uniform(0.7, 1.3)  # ±30% variation
+        today_target = min(daily_target * daily_variation, target_amount - current_amount)
         
-        while current_amount < target_amount:
+        # Calculate number of sales for today (batch processing)
+        avg_sale_amount = 15000  # Average sale amount based on product prices
+        num_sales_today = max(1, int(today_target / avg_sale_amount))
+        
+        # Generate batch of sales for today
+        for i in range(num_sales_today):
+            if current_amount >= target_amount:
+                break
+                
             # Random selection
             employee = random.choice(active_employees)
             product = random.choice(active_products)
@@ -717,13 +733,15 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
             
             current_amount += total_amount
             sale_key += 1
-            
-            # Break if we've reached the target
-            if current_amount >= target_amount:
-                break
+        
+        # Progress reporting
+        if len(sales) % 10000 == 0:
+            progress = (current_amount / target_amount) * 100
+            print(f"Progress: {progress:.1f}% - Generated {len(sales):,} sales - ₱{current_amount:,.0f}")
         
         current_date += timedelta(days=1)
     
+    print(f"Completed: Generated {len(sales):,} sales totaling ₱{current_amount:,.0f}")
     return sales
 
 def generate_fact_operating_costs(target_amount, start_date=None, end_date=None, start_id=1):

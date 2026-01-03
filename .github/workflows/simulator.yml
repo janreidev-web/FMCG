@@ -10,8 +10,12 @@ on:
 
 jobs:
   generate-data:
-    runs-on: ubuntu-latest
-    timeout-minutes: 120  # Increased from 60 to 120 minutes
+    runs-on: ubuntu-latest-4-cores
+    timeout-minutes: 180
+    
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONHASHSEED: 0
     
     steps:
     - name: Checkout repository
@@ -26,6 +30,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r FMCG/requirements.txt
+        pip install psutil
         
     - name: Authenticate to GCP
       run: |
@@ -42,12 +47,12 @@ jobs:
         echo "SCHEDULED_RUN: ${{ github.event_name == 'schedule' && 'true' || 'false' }}"
         echo "=== Python Version ==="
         python --version
-        echo "=== Disk Space ==="
-        df -h
-        echo "=== Memory ==="
-        free -h
+        echo "=== System Resources ==="
+        echo "CPU cores: $(nproc)"
+        echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
+        echo "Disk space: $(df -h / | tail -1 | awk '{print $4}')"
         
-    - name: Run data generator with enhanced logging
+    - name: Run data generator with enhanced monitoring
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
@@ -60,13 +65,14 @@ jobs:
         echo "=== Starting Data Generation ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
+        echo "Available Memory: $(free -h | grep '^Mem:' | awk '{print $7}')"
         
         # Set environment variables for debugging
         export PYTHONUNBUFFERED=1
         export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
         
         # Run with timeout and progress monitoring
-        python main.py 2>&1 | tee /tmp/generator.log
+        timeout 150m python main.py 2>&1 | tee /tmp/generator.log
         
         echo "=== Data Generation Completed ==="
         echo "Time: $(date)"
@@ -77,7 +83,8 @@ jobs:
       if: failure()
       run: |
         echo "=== Uploading error logs ==="
-        cat /tmp/generator.log
+        echo "Last 100 lines of generator log:"
+        tail -100 /tmp/generator.log || echo "No log file found"
         
     - name: Cleanup
       if: always()
