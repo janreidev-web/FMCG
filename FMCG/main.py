@@ -215,8 +215,8 @@ def main():
             # Load normalized employee data with joins
             employees_df = client.query(f"""
                 SELECT 
-                    e.employee_key, e.employee_id, e.full_name, e.employment_status, 
-                    e.hire_date, e.termination_date, e.gender, e.birth_date, e.age,
+                    e.employee_key, e.employee_id, e.first_name, e.last_name, e.employment_status, 
+                    e.hire_date, e.termination_date, e.gender, e.birth_date,
                     e.phone, e.email, e.personal_email,
                     e.tin_number, e.sss_number, e.philhealth_number, e.pagibig_number, e.blood_type,
                     e.emergency_contact_name, e.emergency_contact_relation, e.emergency_contact_phone,
@@ -225,14 +225,13 @@ def main():
                     l.city, l.province, l.region, l.country,
                     b.bank_name,
                     i.provider_name as health_insurance_provider,
-                    ef.monthly_salary, ef.performance_rating, ef.last_review_date,
+                    ef.performance_rating, ef.last_review_date,
                     ef.training_hours_completed, ef.certifications_count, ef.benefit_enrollment_date,
                     ef.years_of_service, ef.attendance_rate, ef.overtime_hours_monthly,
                     ef.engagement_score, ef.satisfaction_index,
                     ef.vacation_leave_balance, ef.sick_leave_balance, ef.personal_leave_balance,
-                    ef.annual_bonus, ef.total_compensation, ef.promotion_eligible,
                     ef.productivity_score, ef.retention_risk_score, ef.skill_gap_score,
-                    ef.health_utilization_rate, ef.salary_grade, ef.cost_center_allocation
+                    ef.health_utilization_rate
                 FROM `{DIM_EMPLOYEES}` e
                 LEFT JOIN `{DIM_JOBS}` j ON e.job_key = j.job_key
                 LEFT JOIN `{DIM_DEPARTMENTS}` d ON j.department_key = d.department_key
@@ -276,8 +275,8 @@ def main():
                 # Simplified employee query for fallback
                 employees_df = client.query(f"""
                     SELECT 
-                        e.employee_key, e.employee_id, e.full_name, e.employment_status, 
-                        e.hire_date, e.termination_date, e.gender, e.birth_date, e.age,
+                        e.employee_key, e.employee_id, e.first_name, e.last_name, e.employment_status, 
+                        e.hire_date, e.termination_date, e.gender, e.birth_date,
                         e.phone, e.email, e.personal_email,
                         e.tin_number, e.sss_number, e.philhealth_number, e.pagibig_number, e.blood_type,
                         e.emergency_contact_name, e.emergency_contact_relation, e.emergency_contact_phone,

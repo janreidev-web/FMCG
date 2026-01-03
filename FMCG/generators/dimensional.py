@@ -45,7 +45,7 @@ def generate_dim_locations(num_locations=500, start_id=1):
             "province": province,
             "region": region,
             "postal_code": postal_code,
-            "country": "PH"
+            "country": "Philippines"
         })
     
     return locations
@@ -214,6 +214,10 @@ def generate_dim_insurance(start_id=1):
 def generate_dim_employees_normalized(num_employees, locations, jobs, banks, insurance, departments=None, start_id=1):
     """Generate simplified employees dimension table with job-based compensation"""
     employees = []
+    
+    # Validate inputs
+    if not locations or not jobs or not banks or not insurance:
+        raise ValueError("All dimension data (locations, jobs, banks, insurance) must be provided")
     
     # Create lookups for robust foreign key relationships
     location_lookup = {loc["location_key"]: loc for loc in locations}
