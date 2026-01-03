@@ -803,31 +803,56 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
         "Social Media", "Content Creation", "Market Research", "Brand Materials"
     ]
     
-    for campaign in campaigns:
-        # Generate costs for each campaign
-        campaign_budget = campaign["budget"]
-        cost_per_category = campaign_budget / len(cost_categories)
+    # Ensure we have campaigns to work with
+    if not campaigns:
+        # Generate some default marketing costs even without campaigns
+        daily_target = target_amount / ((end_date - start_date).days + 1) if (end_date - start_date).days > 0 else target_amount
         
-        for category in cost_categories:
-            # Generate costs during campaign period
-            current_date = max(start_date, campaign["start_date"])
-            end_campaign_date = min(end_date, campaign["end_date"])
-            
-            while current_date <= end_campaign_date:
-                daily_cost = cost_per_category / ((campaign["end_date"] - campaign["start_date"]).days + 1)
-                
+        current_date = start_date
+        while current_date <= end_date:
+            for category in cost_categories:
                 costs.append({
                     "marketing_cost_key": cost_key,
                     "cost_date": current_date,
-                    "campaign_key": campaign["campaign_key"],
-                    "campaign_id": campaign["campaign_id"],
-                    "campaign_type": campaign["campaign_type"],
+                    "campaign_key": None,
+                    "campaign_id": None,
+                    "campaign_type": "General",
                     "cost_category": category,
-                    "amount": daily_cost * random.uniform(0.8, 1.2),  # Add some variation
+                    "amount": daily_target / len(cost_categories) * random.uniform(0.8, 1.2),
                     "currency": "PHP"
                 })
-                
                 cost_key += 1
-                current_date += timedelta(days=1)
+            current_date += timedelta(days=1)
+    else:
+        for campaign in campaigns:
+            # Generate costs for each campaign
+            campaign_budget = campaign["budget"]
+            cost_per_category = campaign_budget / len(cost_categories)
+            
+            # Use campaign date range but ensure it overlaps with requested range
+            campaign_start = max(start_date, campaign["start_date"])
+            campaign_end = min(end_date, campaign["end_date"])
+            
+            # Only generate costs if there's an overlap
+            if campaign_start <= campaign_end:
+                for category in cost_categories:
+                    current_date = campaign_start
+                    
+                    while current_date <= campaign_end:
+                        daily_cost = cost_per_category / ((campaign["end_date"] - campaign["start_date"]).days + 1)
+                        
+                        costs.append({
+                            "marketing_cost_key": cost_key,
+                            "cost_date": current_date,
+                            "campaign_key": campaign["campaign_key"],
+                            "campaign_id": campaign["campaign_id"],
+                            "campaign_type": campaign["campaign_type"],
+                            "cost_category": category,
+                            "amount": daily_cost * random.uniform(0.8, 1.2),  # Add some variation
+                            "currency": "PHP"
+                        })
+                        
+                        cost_key += 1
+                        current_date += timedelta(days=1)
     
     return costs

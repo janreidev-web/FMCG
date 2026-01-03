@@ -365,10 +365,28 @@ def main():
         if not marketing_table_exists:
             logger.info("Generating marketing costs fact...")
             try:
-                marketing_costs = generate_fact_marketing_costs(campaigns, INITIAL_SALES_AMOUNT * 0.15)  # 15% of revenue
+                # Use the same date range as sales data for consistency
+                if not table_has_data(client, FACT_SALES):
+                    # Initial run - use historical range
+                    start_date = date(2015, 1, 1)
+                    end_date = date.today() - timedelta(days=1)
+                else:
+                    # Daily run - use today's date
+                    start_date = date.today()
+                    end_date = date.today()
+                
+                marketing_costs = generate_fact_marketing_costs(
+                    campaigns, 
+                    INITIAL_SALES_AMOUNT * 0.15,  # 15% of revenue
+                    start_date=start_date,
+                    end_date=end_date
+                )
                 logger.info(f"Generated {len(marketing_costs):,} marketing cost records")
-                append_df_bq(client, pd.DataFrame(marketing_costs), FACT_MARKETING_COSTS)
-                logger.info("Marketing costs loaded successfully")
+                if len(marketing_costs) > 0:
+                    append_df_bq(client, pd.DataFrame(marketing_costs), FACT_MARKETING_COSTS)
+                    logger.info("Marketing costs loaded successfully")
+                else:
+                    logger.warning("No marketing costs generated - skipping table creation")
             except Exception as e:
                 logger.error(f"Error generating marketing costs: {str(e)}")
                 raise
