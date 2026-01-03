@@ -8,6 +8,7 @@ import os
 import logging
 import pandas as pd
 from datetime import datetime, timedelta, date
+import time
 
 from config import PROJECT_ID, DATASET, INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
 
@@ -29,7 +30,7 @@ from generators.dimensional import (
     generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs
 )
 
-# Configure simplified logging
+# Configure enhanced logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -39,10 +40,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def log_progress(step, total_steps, message, start_time=None):
+    """Log progress with percentage and elapsed time"""
+    progress = (step / total_steps) * 100
+    elapsed = time.time() - start_time if start_time else 0
+    logger.info(f"[{step}/{total_steps}] {progress:.1f}% - {message} (Elapsed: {elapsed:.1f}s)")
+
 def main():
     """
     Main entry point for FMCG Data Simulator - Dimensional Model
     """
+    start_time = time.time()
     logger.info(f"{'='*60}")
     logger.info(f"FMCG Data Simulator - Dimensional Model")
     logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -67,6 +75,7 @@ def main():
         
         # ==================== DIMENSION TABLES ====================
         logger.info("Generating normalized dimension tables...")
+        dim_start = time.time()
         
         # Generate core dimensions first (dependencies)
         if not table_has_data(client, DIM_LOCATIONS):
@@ -274,12 +283,21 @@ def main():
             yesterday = date.today() - timedelta(days=1)
             logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
             logger.info(f"Generating initial sales fact targeting ₱{INITIAL_SALES_AMOUNT:,.0f} (2015-01-01 to {yesterday})...")
+            
+            # Add progress monitoring for large data generation
+            sales_start = time.time()
+            logger.info("Starting sales data generation (this may take several minutes)...")
+            
             sales = generate_fact_sales(
                 employees, products, retailers, campaigns,
                 INITIAL_SALES_AMOUNT,
                 start_date=date(2015, 1, 1),
                 end_date=yesterday
             )
+            
+            sales_elapsed = time.time() - sales_start
+            logger.info(f"Sales generation completed in {sales_elapsed:.1f} seconds")
+            logger.info(f"Generated {len(sales):,} sales records")
         else:
             # Daily run: generate today's sales
             today = date.today()
@@ -367,9 +385,59 @@ def main():
         # ==================== SUMMARY ====================
         logger.info("Load complete!")
         
+        # Final timing and memory summary
+        total_elapsed = time.time() - start_time
+        logger.info(f"\n{'='*60}")
+        logger.info(f"EXECUTION SUMMARY")
+        logger.info(f"{'='*60}")
+        logger.info(f"Total execution time: {total_elapsed:.1f} seconds ({total_elapsed/60:.1f} minutes)")
+        
+        # Log table sizes
+        try:
+            logger.info("\nTable sizes:")
+            tables = [
+                ("Locations", DIM_LOCATIONS),
+                ("Departments", DIM_DEPARTMENTS),
+                ("Jobs", DIM_JOBS),
+                ("Banks", DIM_BANKS),
+                ("Insurance", DIM_INSURANCE),
+                ("Products", DIM_PRODUCTS),
+                ("Retailers", DIM_RETAILERS),
+                ("Campaigns", DIM_CAMPAIGNS),
+                ("Employees", DIM_EMPLOYEES),
+                ("Sales", FACT_SALES),
+                ("Employee Facts", FACT_EMPLOYEES),
+                ("Operating Costs", FACT_OPERATING_COSTS),
+                ("Marketing Costs", FACT_MARKETING_COSTS),
+                ("Inventory", FACT_INVENTORY)
+            ]
+            
+            for name, table in tables:
+                try:
+                    result = client.query(f"SELECT COUNT(*) as count FROM `{table}`").to_dataframe()
+                    count = result['count'].iloc[0]
+                    logger.info(f"  {name}: {count:,} records")
+                except Exception as e:
+                    logger.warning(f"  {name}: Error getting count - {str(e)}")
+                    
+        except Exception as e:
+            logger.warning(f"Error getting table sizes: {str(e)}")
+        
+        logger.info(f"{'='*60}\n")
+        
     except Exception as e:
         logger.error(f"\nERROR: {str(e)}")
         logger.error(f"Failed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.error(f"Elapsed time: {time.time() - start_time:.1f} seconds")
+        
+        # Log system information for debugging
+        try:
+            import psutil
+            memory = psutil.virtual_memory()
+            logger.error(f"Memory usage: {memory.percent}% ({memory.used/1024/1024:.1f} MB used)")
+        except ImportError:
+            pass
+            
         sys.exit(1)
 
 if __name__ == "__main__":
