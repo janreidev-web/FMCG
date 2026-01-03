@@ -80,12 +80,13 @@ def generate_dim_jobs(departments, start_id=1):
     job_key = start_id
 
     # Optimized salary ranges for 20% wage/revenue ratio
+    # Target: ₱6B revenue × 20% = ₱1.2B total wages ÷ 500 employees = ₱2.4M avg annual salary
     salary_ranges = {
-        "Entry": (30000, 50000),      # ₱360K-₱600K annually
-        "Junior": (50000, 80000),     # ₱600K-₱960K annually
-        "Senior": (80000, 140000),    # ₱960K-₱1.68M annually
-        "Manager": (140000, 250000),  # ₱1.68M-₱3M annually
-        "Director": (250000, 500000)  # ₱3M-₱6M annually
+        "Entry": (15000, 25000),      # ₱180K-₱300K annually
+        "Junior": (25000, 40000),     # ₱300K-₱480K annually
+        "Senior": (40000, 70000),    # ₱480K-₱840K annually
+        "Manager": (70000, 120000),  # ₱840K-₱1.44M annually
+        "Director": (120000, 200000)  # ₱1.44M-₱2.4M annually
     }
 
     # Job positions by department
