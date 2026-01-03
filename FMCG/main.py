@@ -352,10 +352,20 @@ def main():
         
         if not table_has_data(client, FACT_OPERATING_COSTS):
             logger.info("\nGenerating operating costs fact...")
-            costs = generate_fact_operating_costs(INITIAL_SALES_AMOUNT * 0.6)  # 60% of revenue
+            costs = generate_fact_operating_costs(INITIAL_SALES_AMOUNT * 0.25)  # 25% of revenue (realistic business ratio)
             append_df_bq(client, pd.DataFrame(costs), FACT_OPERATING_COSTS)
         else:
-            logger.info("Operating costs table already exists. Skipping.")
+            logger.info("Dropping existing operating costs table to regenerate with correct ratios...")
+            try:
+                client.delete_table(FACT_OPERATING_COSTS)
+                logger.info("Operating costs table dropped successfully")
+                logger.info("\nGenerating operating costs fact...")
+                costs = generate_fact_operating_costs(INITIAL_SALES_AMOUNT * 0.25)  # 25% of revenue (realistic business ratio)
+                append_df_bq(client, pd.DataFrame(costs), FACT_OPERATING_COSTS)
+                logger.info("Operating costs regenerated with correct ratios")
+            except Exception as e:
+                logger.warning(f"Could not regenerate operating costs table: {e}")
+                logger.info("Operating costs table already exists. Skipping.")
         
         # Marketing costs generation
         logger.info(f"\nChecking marketing costs table: {FACT_MARKETING_COSTS}")
@@ -390,7 +400,7 @@ def main():
                 
                 marketing_costs = generate_fact_marketing_costs(
                     campaigns, 
-                    INITIAL_SALES_AMOUNT * 0.15,  # 15% of revenue
+                    INITIAL_SALES_AMOUNT * 0.08,  # 8% of revenue (realistic marketing spend)
                     start_date=start_date,
                     end_date=end_date
                 )
