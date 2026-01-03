@@ -618,14 +618,34 @@ def generate_dim_campaigns(start_id=1):
     campaigns = []
     
     campaign_data = [
+        # Historical campaigns (2015-2022)
+        {"name": "Launch Campaign 2015", "type": "Product Launch", "start": "2015-01-01", "end": "2015-03-31", "budget": 3000000},
+        {"name": "Holiday Season 2015", "type": "Holiday", "start": "2015-11-01", "end": "2015-12-31", "budget": 5000000},
+        {"name": "Summer Promotion 2016", "type": "Seasonal", "start": "2016-06-01", "end": "2016-08-31", "budget": 4000000},
+        {"name": "Brand Building 2016", "type": "Brand Building", "start": "2016-02-01", "end": "2016-05-31", "budget": 3500000},
+        {"name": "Year End Sale 2017", "type": "Seasonal", "start": "2017-11-15", "end": "2017-12-31", "budget": 6000000},
+        {"name": "Spring Campaign 2017", "type": "Seasonal", "start": "2017-03-01", "end": "2017-05-31", "budget": 4500000},
+        {"name": "Back to School 2018", "type": "Seasonal", "start": "2018-05-15", "end": "2018-06-30", "budget": 3000000},
+        {"name": "Festival Season 2018", "type": "Holiday", "start": "2018-10-01", "end": "2018-12-31", "budget": 7000000},
+        {"name": "Market Expansion 2019", "type": "Market Expansion", "start": "2019-01-01", "end": "2019-06-30", "budget": 8000000},
+        {"name": "Digital Push 2019", "type": "Brand Building", "start": "2019-07-01", "end": "2019-12-31", "budget": 5500000},
+        {"name": "Growth Campaign 2020", "type": "Market Expansion", "start": "2020-01-01", "end": "2020-12-31", "budget": 10000000},
+        {"name": "Recovery Campaign 2021", "type": "Brand Building", "start": "2021-01-15", "end": "2021-12-31", "budget": 8500000},
+        {"name": "Anniversary Sale 2022", "type": "Seasonal", "start": "2022-09-01", "end": "2022-11-30", "budget": 6500000},
+        
+        # Recent campaigns (2023-2025)
+        {"name": "Christmas Promotion 2023", "type": "Holiday", "start": "2023-11-01", "end": "2023-12-31", "budget": 8000000},
+        {"name": "Back to School 2023", "type": "Seasonal", "start": "2023-06-01", "end": "2023-08-31", "budget": 4000000},
+        {"name": "Loyalty Program 2023", "type": "Retention", "start": "2023-09-01", "end": "2023-12-31", "budget": 2000000},
+        {"name": "Regional Expansion 2023", "type": "Market Expansion", "start": "2023-10-01", "end": "2024-03-31", "budget": 6000000},
+        {"name": "Flash Sale 2024", "type": "Promotional", "start": "2024-01-01", "end": "2024-01-07", "budget": 1500000},
+        {"name": "New Product Launch 2024", "type": "Product Launch", "start": "2024-01-15", "end": "2024-03-15", "budget": 3000000},
+        {"name": "Brand Awareness 2024", "type": "Brand Building", "start": "2024-02-01", "end": "2024-04-30", "budget": 2500000},
         {"name": "Summer Sale 2024", "type": "Seasonal", "start": "2024-03-01", "end": "2024-05-31", "budget": 5000000},
-        {"name": "Christmas Promotion", "type": "Holiday", "start": "2023-11-01", "end": "2023-12-31", "budget": 8000000},
-        {"name": "New Product Launch", "type": "Product Launch", "start": "2024-01-15", "end": "2024-03-15", "budget": 3000000},
-        {"name": "Back to School", "type": "Seasonal", "start": "2023-06-01", "end": "2023-08-31", "budget": 4000000},
-        {"name": "Brand Awareness", "type": "Brand Building", "start": "2024-02-01", "end": "2024-04-30", "budget": 2500000},
-        {"name": "Loyalty Program", "type": "Retention", "start": "2023-09-01", "end": "2023-12-31", "budget": 2000000},
-        {"name": "Flash Sale", "type": "Promotional", "start": "2024-01-01", "end": "2024-01-07", "budget": 1500000},
-        {"name": "Regional Expansion", "type": "Market Expansion", "start": "2023-10-01", "end": "2024-03-31", "budget": 6000000},
+        {"name": "Spring Festival 2025", "type": "Holiday", "start": "2025-01-20", "end": "2025-02-28", "budget": 4500000},
+        {"name": "Summer Campaign 2025", "type": "Seasonal", "start": "2025-06-01", "end": "2025-08-31", "budget": 5500000},
+        {"name": "Back to School 2025", "type": "Seasonal", "start": "2025-05-15", "end": "2025-06-30", "budget": 3500000},
+        {"name": "Year End Sale 2025", "type": "Seasonal", "start": "2025-11-01", "end": "2025-12-31", "budget": 7000000},
     ]
     
     for i, campaign in enumerate(campaign_data):
