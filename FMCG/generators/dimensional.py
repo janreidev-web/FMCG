@@ -427,18 +427,17 @@ def generate_fact_employee_wages(employees, jobs, start_date=None, end_date=None
             current_salary = int(current_salary * (1 + raise_percentage))
         
         # Calculate salary for the employment period
-        # Both monthly and annual should follow the same logic: hire to termination/present
+        # Both monthly and annual should represent total wages earned during employment
         if employee["employment_status"] == "Terminated":
-            # Calculate total months worked from hire to termination
+            # For terminated employees: calculate total wages earned from hire to termination
             months_worked = max(1, (end_employment.year - hire_date.year) * 12 + (end_employment.month - hire_date.month) + 1)
-            annual_salary = current_salary * months_worked
-            monthly_salary = current_salary * months_worked  # Total monthly salary for entire period
+            annual_salary = current_salary * months_worked  # Total wages earned during employment
+            monthly_salary = current_salary  # Final monthly salary at termination
             effective_date = end_employment
         else:
-            # For active employees: calculate from hire to present
-            months_worked = max(1, (date.today().year - hire_date.year) * 12 + (date.today().month - hire_date.month) + 1)
-            annual_salary = current_salary * months_worked
-            monthly_salary = current_salary * months_worked  # Total monthly salary for entire period
+            # For active employees: current year annual salary (12 months)
+            annual_salary = current_salary * 12
+            monthly_salary = current_salary  # Current monthly salary
             effective_date = date.today()
         
         # Generate single wage record
