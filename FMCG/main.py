@@ -23,7 +23,7 @@ from helpers import table_has_data, append_df_bq, append_df_bq_safe, update_deli
 from generators.dimensional import (
     generate_dim_products, generate_dim_employees_normalized, generate_dim_locations,
     generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
-    generate_fact_employees, generate_dim_retailers_normalized,
+    generate_fact_employees, generate_fact_employee_wages, generate_dim_retailers_normalized,
     generate_dim_campaigns, generate_fact_sales,
     generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
     generate_dim_dates, validate_relationships
@@ -182,6 +182,14 @@ def main():
             
             employee_facts = generate_fact_employees(employees, jobs_data)
             append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
+            
+            # Generate employee wage history
+            logger.info("Generating employee wage history...")
+            employee_wages = generate_fact_employee_wages(employees, jobs_data)
+            # Create a new table for wages
+            wages_table = f"{PROJECT_ID}.{DATASET}.fact_employee_wages"
+            append_df_bq(client, pd.DataFrame(employee_wages), wages_table)
+            logger.info(f"Generated {len(employee_wages)} wage records")
         else:
             logger.info("Employee facts already exist or no employees found. Skipping.")
         
