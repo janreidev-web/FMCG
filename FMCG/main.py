@@ -223,7 +223,7 @@ def main():
                 LEFT JOIN `{DIM_LOCATIONS}` l ON r.location_key = l.location_key
             """).to_dataframe()
             
-            campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}` WHERE end_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 2 YEAR)").to_dataframe()
+            campaigns_df = client.query(f"SELECT campaign_key, campaign_id, campaign_name, campaign_type, start_date, end_date, budget, currency FROM `{DIM_CAMPAIGNS}`").to_dataframe()
         except Exception as e:
             if "readsessions.create" in str(e):
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
@@ -376,15 +376,10 @@ def main():
         if not marketing_table_exists:
             logger.info("Generating marketing costs fact...")
             try:
-                # Use the same date range as sales data for consistency
-                if not table_has_data(client, FACT_SALES):
-                    # Initial run - use historical range
-                    start_date = date(2015, 1, 1)
-                    end_date = date.today() - timedelta(days=1)
-                else:
-                    # Daily run - use today's date
-                    start_date = date.today()
-                    end_date = date.today()
+                # Always use historical range for marketing costs to match campaigns
+                # Marketing costs should cover the full campaign period regardless of sales table status
+                start_date = date(2015, 1, 1)
+                end_date = date.today() - timedelta(days=1)
                 
                 logger.info(f"Marketing costs date range: {start_date} to {end_date}")
                 logger.info(f"Number of campaigns available: {len(campaigns)}")
