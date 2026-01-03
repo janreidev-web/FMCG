@@ -387,7 +387,12 @@ def main():
         
         if not table_has_data(client, FACT_OPERATING_COSTS):
             logger.info("\nGenerating operating costs fact...")
-            costs = generate_fact_operating_costs(INITIAL_SALES_AMOUNT * 0.25)  # 25% of revenue (realistic business ratio)
+            # Generate operating costs from 2015 to present with reduced values (15% of revenue)
+            costs = generate_fact_operating_costs(
+                INITIAL_SALES_AMOUNT * 0.15,  # Reduced from 25% to 15% of revenue
+                start_date=date(2015, 1, 1),
+                end_date=date.today()
+            )
             append_df_bq(client, pd.DataFrame(costs), FACT_OPERATING_COSTS)
         else:
             logger.info("Dropping existing operating costs table to regenerate with correct ratios...")
@@ -395,7 +400,11 @@ def main():
                 client.delete_table(FACT_OPERATING_COSTS)
                 logger.info("Operating costs table dropped successfully")
                 logger.info("\nGenerating operating costs fact...")
-                costs = generate_fact_operating_costs(INITIAL_SALES_AMOUNT * 0.25)  # 25% of revenue (realistic business ratio)
+                costs = generate_fact_operating_costs(
+                    INITIAL_SALES_AMOUNT * 0.15,  # Reduced from 25% to 15% of revenue
+                    start_date=date(2015, 1, 1),
+                    end_date=date.today()
+                )
                 append_df_bq(client, pd.DataFrame(costs), FACT_OPERATING_COSTS)
                 logger.info("Operating costs regenerated with correct ratios")
             except Exception as e:
