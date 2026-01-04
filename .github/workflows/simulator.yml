@@ -4,8 +4,8 @@ on:
   schedule:
     # Production schedule: Runs at 12 AM PHT (UTC+8) = 16:00 UTC
     #- cron: '0 16 * * *'
-    # Testing schedule: Runs every 1 minute
-    - cron: '*/1 * * * *'
+    # Testing schedule: Runs every 2 minute
+    - cron: '*/2 * * * *'
   workflow_dispatch:
 
 jobs:

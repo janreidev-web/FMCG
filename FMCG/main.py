@@ -323,7 +323,7 @@ def main():
             insurance = insurance_df.to_dict("records")
             
             # Use more efficient queries with specific fields only
-            products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
+            products_df = client.query(f"SELECT product_key, product_id, product_name, category_key, brand_key, subcategory_key, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
             
             # Load normalized employee data with joins
             employees_df = client.query(f"""
@@ -383,7 +383,7 @@ def main():
             if "readsessions.create" in str(e):
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
                 # Use smaller queries without read sessions
-                products_df = client.query(f"SELECT product_key, product_id, product_name, category, subcategory, brand, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}`").to_dataframe()
+                products_df = client.query(f"SELECT product_key, product_id, product_name, category_key, brand_key, subcategory_key, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}`").to_dataframe()
                 
                 # Simplified employee query for fallback
                 employees_df = client.query(f"""
