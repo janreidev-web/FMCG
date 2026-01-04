@@ -262,7 +262,13 @@ def main():
                     insurance=insurance,
                     num_employees=350
                 )
-                append_df_bq(client, pd.DataFrame(employees), DIM_EMPLOYEES)
+                # Convert termination_date None values to pd.NaT for consistent data type
+                employees_df = pd.DataFrame(employees)
+                if 'termination_date' in employees_df.columns:
+                    employees_df['termination_date'] = employees_df['termination_date'].apply(
+                        lambda x: pd.NaT if x is None else x
+                    )
+                append_df_bq(client, employees_df, DIM_EMPLOYEES)
             else:
                 logger.info("Employees dimension already exists. Skipping.")
             
