@@ -391,8 +391,11 @@ def main():
                 departments_data = departments_df.to_dict("records")
                 
                 # Check and regenerate employee facts if needed
-                if not table_has_data(client, FACT_EMPLOYEES):
-                    logger.info("Generating employee facts...")
+                if not table_has_data(client, FACT_EMPLOYEES) or force_refresh:
+                    if force_refresh:
+                        logger.info("FORCE_REFRESH: Regenerating employee facts...")
+                    else:
+                        logger.info("Generating employee facts...")
                     employee_facts = generate_fact_employees(employees_active, jobs_data)
                     append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
                 else:
@@ -878,8 +881,11 @@ def main():
             else:
                 logger.info("Marketing costs table already exists. Skipping.")
             
-            if not table_has_data(client, FACT_INVENTORY):
-                logger.info("\nGenerating inventory fact...")
+            if not table_has_data(client, FACT_INVENTORY) or force_refresh:
+                if force_refresh:
+                    logger.info("\nFORCE_REFRESH: Regenerating inventory fact...")
+                else:
+                    logger.info("\nGenerating inventory fact...")
                 inventory = generate_fact_inventory(products)
                 append_df_bq(client, pd.DataFrame(inventory), FACT_INVENTORY)
             else:
