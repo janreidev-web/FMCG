@@ -265,11 +265,13 @@ def main():
                 # Convert None values to appropriate types for BigQuery compatibility
                 employees_df = pd.DataFrame(employees)
                 
-                # Handle termination_date - convert None to pd.NaT
-                if 'termination_date' in employees_df.columns:
-                    employees_df['termination_date'] = employees_df['termination_date'].apply(
-                        lambda x: pd.NaT if x is None else x
-                    )
+                # Handle all date fields - convert to datetime with proper null handling
+                date_columns = ['hire_date', 'termination_date', 'birth_date']
+                for col in date_columns:
+                    if col in employees_df.columns:
+                        # Convert to datetime, coercing errors to NaT
+                        employees_df[col] = pd.to_datetime(employees_df[col], errors='coerce')
+                        # For BigQuery, NaT (Not a Time) is the proper null representation for datetime fields
                 
                 # Handle job_id - ensure it's never empty, use first job as default
                 if 'job_id' in employees_df.columns:
