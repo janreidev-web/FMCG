@@ -721,8 +721,24 @@ def main():
                     append_df_bq_safe(client, sample_schema_df, FACT_SALES, "sale_id")
                     logger.info("Created table schema with sample record")
             
-            append_df_bq_safe(client, sales_df, FACT_SALES, "sale_id")
-            logger.info("Sales data append completed")
+            # Use appropriate loading method based on force_refresh
+            if force_refresh:
+                # Force refresh: truncate table and load fresh data (no duplicate checking)
+                logger.info("FORCE_REFRESH: Truncating sales table and loading fresh data...")
+                try:
+                    # Delete existing sales data
+                    client.delete_table(FACT_SALES)
+                    logger.info("Deleted existing sales table for force refresh")
+                except Exception:
+                    logger.info("Sales table doesn't exist or couldn't delete (continuing)")
+                
+                # Load fresh data without duplicate checking
+                append_df_bq(client, sales_df, FACT_SALES, write_disposition="WRITE_TRUNCATE")
+                logger.info("Sales data force refresh completed")
+            else:
+                # Normal run: check for duplicates and append
+                append_df_bq_safe(client, sales_df, FACT_SALES, "sale_id")
+                logger.info("Sales data append completed")
         except Exception as e:
             logger.error(f"Error appending sales data: {e}")
             import traceback
