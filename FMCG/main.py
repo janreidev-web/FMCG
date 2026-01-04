@@ -886,7 +886,7 @@ def main():
                     logger.info("\nFORCE_REFRESH: Regenerating inventory fact...")
                 else:
                     logger.info("\nGenerating inventory fact...")
-                inventory = generate_fact_inventory(products)
+                inventory = generate_fact_inventory(products, locations)
                 append_df_bq(client, pd.DataFrame(inventory), FACT_INVENTORY)
             else:
                 logger.info("Inventory table already exists. Skipping.")

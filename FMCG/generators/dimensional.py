@@ -622,11 +622,19 @@ def generate_fact_employees(employees, jobs, start_id=1):
         
         # Performance metrics - ensure no empty values
         performance_rating = random.choices([5, 4, 3, 2, 1], weights=[0.15, 0.35, 0.30, 0.15, 0.05])[0]
-        last_review_date = fake.date_between_dates(date_start=employee["hire_date"], date_end=date.today())
+        # Convert hire_date to date if it's a Timestamp for date_between_dates
+        hire_date_for_review = employee["hire_date"]
+        if hasattr(hire_date_for_review, 'date'):
+            hire_date_for_review = hire_date_for_review.date()
+        last_review_date = fake.date_between_dates(date_start=hire_date_for_review, date_end=date.today())
         promotion_eligible = performance_rating >= 4 and random.random() < 0.6
         
         # Work metrics - ensure no empty values
-        years_of_service = (date.today() - employee["hire_date"]).days // 365
+        # Convert hire_date to date if it's a Timestamp
+        hire_date = employee["hire_date"]
+        if hasattr(hire_date, 'date'):
+            hire_date = hire_date.date()
+        years_of_service = (date.today() - hire_date).days // 365
         attendance_rate = round(random.uniform(0.85, 0.98), 3)
         overtime_hours_monthly = random.randint(0, 20) if job["work_type"] == "Full-time" else 0
         productivity_score = random.randint(60, 100)  # Always generate a value
@@ -690,23 +698,23 @@ def generate_fact_employees(employees, jobs, start_id=1):
     
     return employee_facts
 
-def generate_fact_inventory(products, start_id=1):
+def generate_fact_inventory(products, locations=None, start_id=1):
     """Generate inventory fact table with normalized location references"""
     inventory = []
     
-    # Define warehouse locations (using existing locations)
-    warehouse_locations = [
-        "NCR - Main Warehouse",
-        "Laguna - South Warehouse", 
-        "Cebu - Visayas Warehouse",
-        "Davao - Mindanao Warehouse"
-    ]
+    # If no locations provided, generate some sample location IDs
+    if locations:
+        # Use actual location IDs from the locations dimension
+        location_ids = [loc["location_id"] for loc in locations[:4]]  # Use first 4 locations as warehouses
+    else:
+        # Fallback to sample location IDs
+        location_ids = ["LOC000001", "LOC000002", "LOC000003", "LOC000004"]
     
     inventory_sequence = 0
     
     for product in products:
         # Generate inventory records for each warehouse location
-        for location in warehouse_locations:
+        for location_id in location_ids:
             # Random inventory levels
             cases_on_hand = random.randint(50, 5000)
             
@@ -716,14 +724,13 @@ def generate_fact_inventory(products, start_id=1):
             
             # Generate inventory date (recent snapshot)
             inventory_date = fake.date_between_dates(date_start=date.today() - timedelta(days=30), date_end=date.today())
-            location_id = random.randint(1, 500)  # Random location id from dim_locations
             
             inventory_sequence += 1
             inventory.append({
                 "inventory_id": generate_unique_inventory_key(product["product_id"], location_id, inventory_date, inventory_sequence),
                 "inventory_date": inventory_date,
                 "product_id": product["product_id"],
-                "location_id": location_id,
+                "location_id": location_id,  # Now using string location_id
                 "cases_on_hand": cases_on_hand,
                 "unit_cost": unit_cost,
                 "currency": "PHP"

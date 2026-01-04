@@ -17,7 +17,8 @@ try:
         generate_dim_banks, generate_dim_insurance, generate_dim_categories,
         generate_dim_brands, generate_dim_subcategories, generate_dim_products,
         generate_dim_employees_normalized, generate_dim_retailers_normalized,
-        generate_dim_campaigns, generate_dim_dates
+        generate_dim_campaigns, generate_dim_dates,
+        generate_fact_employees, generate_fact_inventory
     )
     print("✅ Successfully imported all generators")
 except ImportError as e:
@@ -158,6 +159,34 @@ def test_data_types():
         print(f"   Sample date_id: {dates_df['date_id'].iloc[0]}")
     
     print(f"   Final data types: {dict(dates_df.dtypes)}")
+    
+    # Test employee facts
+    print("\n👥 Testing FACT_EMPLOYEES...")
+    # Use processed employees data with proper date handling
+    # Ensure we have active employees for fact generation
+    active_employees = employees_df[employees_df['employment_status'] == 'Active'].head(3)
+    if len(active_employees) == 0:
+        # If no active employees, create a sample active employee
+        active_employees = employees_df.head(1).copy()
+        active_employees['employment_status'] = 'Active'
+    
+    employee_facts = generate_fact_employees(active_employees.to_dict("records"), jobs[:3])
+    employee_facts_df = pd.DataFrame(employee_facts)
+    
+    if employee_facts_df.empty:
+        print("   No employee facts generated (no active employees found)")
+    else:
+        print(f"   Columns: {list(employee_facts_df.columns)}")
+        print(f"   Data types: {dict(employee_facts_df.dtypes)}")
+        print(f"   Sample employee_fact_id: {employee_facts_df['employee_fact_id'].iloc[0]}")
+    
+    # Test inventory
+    print("\n📦 Testing FACT_INVENTORY...")
+    inventory = generate_fact_inventory(products[:3], locations[:2])
+    inventory_df = pd.DataFrame(inventory)
+    print(f"   Columns: {list(inventory_df.columns)}")
+    print(f"   Data types: {dict(inventory_df.dtypes)}")
+    print(f"   Sample inventory_id: {inventory_df['inventory_id'].iloc[0]}")
     
     print("\n✅ Data type testing completed!")
     print("=" * 60)

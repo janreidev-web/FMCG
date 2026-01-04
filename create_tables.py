@@ -262,7 +262,7 @@ def main():
         }],
         
         FACT_INVENTORY: [{
-            "inventory_id": 1,
+            "inventory_id": "INV000000000000001",
             "inventory_date": date.today(),
             "product_id": "PROD000001",
             "location_id": "LOC000001",
