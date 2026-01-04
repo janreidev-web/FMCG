@@ -266,12 +266,22 @@ def main():
                 employees_df = pd.DataFrame(employees)
                 
                 # Handle all date fields - convert to datetime with proper null handling
-                date_columns = ['hire_date', 'birth_date', 'termination_date']
+                date_columns = ['hire_date', 'birth_date']
                 for col in date_columns:
                     if col in employees_df.columns:
                         # Convert to datetime, coercing errors to NaT
                         employees_df[col] = pd.to_datetime(employees_df[col], errors='coerce')
                         logger.info(f"Converted {col}: {employees_df[col].dtype}, null count: {employees_df[col].isna().sum()}")
+                
+                # Handle termination_date separately - convert to string to avoid PyArrow issues
+                if 'termination_date' in employees_df.columns:
+                    # Convert to datetime first
+                    employees_df['termination_date'] = pd.to_datetime(employees_df['termination_date'], errors='coerce')
+                    # Convert to string format YYYY-MM-DD for BigQuery compatibility
+                    employees_df['termination_date'] = employees_df['termination_date'].dt.strftime('%Y-%m-%d')
+                    # Replace NaT (which becomes 'NaT') with None for proper null handling
+                    employees_df['termination_date'] = employees_df['termination_date'].replace('NaT', None)
+                    logger.info(f"termination_date converted to string, null count: {employees_df['termination_date'].isna().sum()}")
                 
                 # Add tenure column (years since hire date)
                 if 'hire_date' in employees_df.columns:
