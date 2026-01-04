@@ -368,7 +368,10 @@ def main():
         logger.info("Generating fact tables...")
         
         # Generate fact tables
-        if not table_has_data(client, FACT_SALES):
+        sales_table_exists = table_has_data(client, FACT_SALES)
+        logger.info(f"Sales table exists check result: {sales_table_exists}")
+        
+        if not sales_table_exists:
             # Initial run: generate historical sales
             yesterday = date.today() - timedelta(days=1)
             logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
@@ -378,16 +381,29 @@ def main():
             sales_start = time.time()
             logger.info("Starting sales data generation (this may take several minutes)...")
             
-            sales = generate_fact_sales(
-                employees, products, retailers, campaigns,
-                INITIAL_SALES_AMOUNT,
-                start_date=date(2015, 1, 1),
-                end_date=yesterday
-            )
-            
-            sales_elapsed = time.time() - sales_start
-            logger.info(f"Sales generation completed in {sales_elapsed:.1f} seconds")
-            logger.info(f"Generated {len(sales):,} sales records")
+            try:
+                sales = generate_fact_sales(
+                    employees, products, retailers, campaigns,
+                    INITIAL_SALES_AMOUNT,
+                    start_date=date(2015, 1, 1),
+                    end_date=yesterday
+                )
+                
+                sales_elapsed = time.time() - sales_start
+                logger.info(f"Sales generation completed in {sales_elapsed:.1f} seconds")
+                logger.info(f"Generated {len(sales):,} sales records")
+                
+                # Debug: check if sales list is empty
+                if not sales:
+                    logger.warning("Sales generation returned empty list!")
+                else:
+                    logger.info(f"First few sales records: {len(sales)} records generated")
+                    
+            except Exception as e:
+                logger.error(f"Error during sales generation: {e}")
+                import traceback
+                logger.error(f"Traceback: {traceback.format_exc()}")
+                sales = []
         else:
             # Daily run: generate today's sales
             today = date.today()
@@ -412,6 +428,23 @@ def main():
                 end_date=today,
                 start_id=1  # Not used anymore, but kept for compatibility
             )
+        
+        # Fallback: If no sales were generated (either due to table existing check or empty result), 
+        # try to generate historical sales anyway
+        if 'sales' not in locals() or not sales:
+            logger.warning("No sales generated in previous step, attempting historical sales generation as fallback...")
+            yesterday = date.today() - timedelta(days=1)
+            try:
+                sales = generate_fact_sales(
+                    employees, products, retailers, campaigns,
+                    INITIAL_SALES_AMOUNT,
+                    start_date=date(2015, 1, 1),
+                    end_date=yesterday
+                )
+                logger.info(f"Fallback sales generation completed: {len(sales):,} records")
+            except Exception as e:
+                logger.error(f"Fallback sales generation failed: {e}")
+                sales = []
         
         append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_key")
         
