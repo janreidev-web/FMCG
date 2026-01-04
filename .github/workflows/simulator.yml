@@ -60,6 +60,7 @@ jobs:
       run: |
         echo "=== Pre-creating BigQuery Tables ==="
         echo "Time: $(date)"
+        echo "Working Directory: $(pwd)"
         
         # Set environment variables
         export PYTHONUNBUFFERED=1

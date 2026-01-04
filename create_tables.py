@@ -10,8 +10,11 @@ from datetime import date, timedelta
 import pandas as pd
 
 # BigQuery configuration
-PROJECT_ID = os.getenv("BIGQUERY_PROJECT_ID")
+PROJECT_ID = os.getenv("GCP_PROJECT_ID") or os.getenv("BIGQUERY_PROJECT_ID")
 DATASET = os.getenv("BIGQUERY_DATASET", "fmcg_analytics")
+
+if not PROJECT_ID:
+    raise ValueError("PROJECT_ID not set. Please set GCP_PROJECT_ID or BIGQUERY_PROJECT_ID environment variable.")
 
 # Table names
 DIM_LOCATIONS = f"{PROJECT_ID}.{DATASET}.dim_locations"
