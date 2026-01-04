@@ -4,14 +4,23 @@ Generates data for the normalized schema to reduce redundancy
 """
 
 import random
-from datetime import date, timedelta, datetime
+from datetime import datetime, timedelta, date
 from faker import Faker
 import pandas as pd
 import hashlib
-from ..helpers import random_date_range
-from ..geography import PH_GEOGRAPHY, pick_ph_location
-from ..config import DAILY_SALES_AMOUNT
-from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key
+
+# Handle both relative and absolute imports
+try:
+    from ..helpers import random_date_range
+    from ..geography import PH_GEOGRAPHY, pick_ph_location
+    from ..config import DAILY_SALES_AMOUNT
+    from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key
+except ImportError:
+    # Fallback to absolute imports when running as script
+    from helpers import random_date_range
+    from geography import PH_GEOGRAPHY, pick_ph_location
+    from config import DAILY_SALES_AMOUNT
+    from id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key
 
 fake = Faker()
 

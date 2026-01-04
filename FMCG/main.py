@@ -10,31 +10,60 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 import time
 
-from .config import (
-    PROJECT_ID, DATASET, INITIAL_EMPLOYEES, INITIAL_PRODUCTS, INITIAL_RETAILERS,
-    EMPLOYEES_TABLE, PRODUCTS_TABLE, RETAILERS_TABLE, SALES_TABLE, COSTS_TABLE, INVENTORY_TABLE, MARKETING_TABLE, DATES_TABLE,
-    DIM_EMPLOYEES, DIM_PRODUCTS, DIM_RETAILERS, DIM_CAMPAIGNS,
-    DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
-    DIM_CATEGORIES, DIM_BRANDS, DIM_SUBCATEGORIES, DIM_DATES,
-    FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES,
-    INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
-)
-from .auth import get_bigquery_client
-from .helpers import table_has_data, append_df_bq, append_df_bq_safe, update_delivery_status
-from .generators.dimensional import (
-    generate_dim_products, generate_dim_employees_normalized, generate_dim_locations,
-    generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
-    generate_fact_employees, generate_fact_employee_wages, generate_dim_retailers_normalized,
-    generate_dim_campaigns, generate_fact_sales, generate_daily_sales_with_delivery_updates,
-    generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
-    generate_dim_dates, generate_dim_categories, generate_dim_brands, generate_dim_subcategories,
-    validate_relationships
-)
-from .generators.bigquery_updates import (
-    execute_method_1_overwrite, execute_method_2_append, execute_method_3_staging,
-    create_current_delivery_status_view, get_delivery_status_summary,
-    compare_update_methods
-)
+# Handle both relative and absolute imports
+try:
+    from .config import (
+        PROJECT_ID, DATASET, INITIAL_EMPLOYEES, INITIAL_PRODUCTS, INITIAL_RETAILERS,
+        EMPLOYEES_TABLE, PRODUCTS_TABLE, RETAILERS_TABLE, SALES_TABLE, COSTS_TABLE, INVENTORY_TABLE, MARKETING_TABLE, DATES_TABLE,
+        DIM_EMPLOYEES, DIM_PRODUCTS, DIM_RETAILERS, DIM_CAMPAIGNS,
+        DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
+        DIM_CATEGORIES, DIM_BRANDS, DIM_SUBCATEGORIES, DIM_DATES,
+        FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES,
+        INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
+    )
+    from .auth import get_bigquery_client
+    from .helpers import table_has_data, append_df_bq, append_df_bq_safe, update_delivery_status
+    from .generators.dimensional import (
+        generate_dim_products, generate_dim_employees_normalized, generate_dim_locations,
+        generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
+        generate_fact_employees, generate_fact_employee_wages, generate_dim_retailers_normalized,
+        generate_dim_campaigns, generate_fact_sales, generate_daily_sales_with_delivery_updates,
+        generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
+        generate_dim_dates, generate_dim_categories, generate_dim_brands, generate_dim_subcategories,
+        validate_relationships
+    )
+    from .generators.bigquery_updates import (
+        execute_method_1_overwrite, execute_method_2_append, execute_method_3_staging,
+        create_current_delivery_status_view, get_delivery_status_summary,
+        compare_update_methods
+    )
+except ImportError:
+    # Fallback to absolute imports when running as script
+    from config import (
+        PROJECT_ID, DATASET, INITIAL_EMPLOYEES, INITIAL_PRODUCTS, INITIAL_RETAILERS,
+        EMPLOYEES_TABLE, PRODUCTS_TABLE, RETAILERS_TABLE, SALES_TABLE, COSTS_TABLE, INVENTORY_TABLE, MARKETING_TABLE, DATES_TABLE,
+        DIM_EMPLOYEES, DIM_PRODUCTS, DIM_RETAILERS, DIM_CAMPAIGNS,
+        DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
+        DIM_CATEGORIES, DIM_BRANDS, DIM_SUBCATEGORIES, DIM_DATES,
+        FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES,
+        INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
+    )
+    from auth import get_bigquery_client
+    from helpers import table_has_data, append_df_bq, append_df_bq_safe, update_delivery_status
+    from generators.dimensional import (
+        generate_dim_products, generate_dim_employees_normalized, generate_dim_locations,
+        generate_dim_departments, generate_dim_jobs, generate_dim_banks, generate_dim_insurance,
+        generate_fact_employees, generate_fact_employee_wages, generate_dim_retailers_normalized,
+        generate_dim_campaigns, generate_fact_sales, generate_daily_sales_with_delivery_updates,
+        generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
+        generate_dim_dates, generate_dim_categories, generate_dim_brands, generate_dim_subcategories,
+        validate_relationships
+    )
+    from generators.bigquery_updates import (
+        execute_method_1_overwrite, execute_method_2_append, execute_method_3_staging,
+        create_current_delivery_status_view, get_delivery_status_summary,
+        compare_update_methods
+    )
 
 # Configure simplified logging for GitHub Actions
 is_github_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
