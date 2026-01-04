@@ -60,7 +60,6 @@ DIM_EMPLOYEES_SCHEMA = [
 # Location dimension - normalized address information
 DIM_LOCATIONS_SCHEMA = [
     {"name": "location_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "street_address", "type": "STRING", "mode": "REQUIRED"},
     {"name": "city", "type": "STRING", "mode": "REQUIRED"},
     {"name": "province", "type": "STRING", "mode": "REQUIRED"},
     {"name": "region", "type": "STRING", "mode": "REQUIRED"},

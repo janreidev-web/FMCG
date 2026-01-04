@@ -8,11 +8,46 @@ from datetime import date, timedelta, datetime
 from faker import Faker
 import pandas as pd
 import hashlib
+import uuid
+import time
 from helpers import random_date_range
 from geography import PH_GEOGRAPHY, pick_ph_location
 from config import DAILY_SALES_AMOUNT
 
 fake = Faker()
+
+# Global ID generation state to ensure uniqueness across all runs
+ID_GENERATOR_STATE = {
+    'sequence_counters': {},
+    'session_id': str(uuid.uuid4())[:8],
+    'timestamp_base': int(time.time() * 1000)
+}
+
+def generate_unique_id(entity_type, use_timestamp=True):
+    """Generate truly unique IDs using entity type, session, timestamp, and sequence"""
+    # Get or initialize sequence counter for this entity type
+    if entity_type not in ID_GENERATOR_STATE['sequence_counters']:
+        ID_GENERATOR_STATE['sequence_counters'][entity_type] = 0
+    
+    # Increment sequence counter
+    ID_GENERATOR_STATE['sequence_counters'][entity_type] += 1
+    sequence = ID_GENERATOR_STATE['sequence_counters'][entity_type]
+    
+    if use_timestamp:
+        # Use timestamp + session + entity type + sequence for uniqueness
+        timestamp_ms = ID_GENERATOR_STATE['timestamp_base'] + sequence
+        unique_str = f"{ID_GENERATOR_STATE['session_id']}{entity_type}{timestamp_ms}{sequence}"
+        # Create hash to ensure reasonable length
+        unique_hash = hashlib.md5(unique_str.encode()).hexdigest()[:12]
+        return int(unique_hash, 16)
+    else:
+        # For cases where we want more readable IDs
+        return sequence
+
+def generate_readable_id(prefix, entity_type, padding=4):
+    """Generate readable but unique IDs with prefix"""
+    unique_num = generate_unique_id(entity_type, use_timestamp=False)
+    return f"{prefix}{unique_num:0{padding}d}"
 
 def generate_unique_sale_key(sale_date, product_key, employee_key, retailer_key, sequence_num, timestamp_ms=None):
     """Generate unique sale key using date + key fields + sequence + timestamp"""
@@ -83,11 +118,10 @@ def generate_dim_locations(num_locations=500, start_id=1):
         max_attempts = 50
         for _ in range(max_attempts):
             region, province, city = pick_ph_location()
-            street_address = fake.street_address()
             postal_code = fake.postcode()
             
             # Create unique key
-            location_key = f"{street_address}|{city}|{province}|{region}"
+            location_key = f"{city}|{province}|{region}"
             
             if location_key not in location_set:
                 location_set.add(location_key)
@@ -95,12 +129,10 @@ def generate_dim_locations(num_locations=500, start_id=1):
         else:
             # If we can't find a unique location, use a generic one
             region, province, city = pick_ph_location()
-            street_address = f"Address {i+1}"
             postal_code = fake.postcode()
         
         locations.append({
-            "location_key": start_id + i,
-            "street_address": street_address,
+            "location_key": generate_unique_id("location"),
             "city": city,
             "province": province,
             "region": region,
@@ -113,31 +145,39 @@ def generate_dim_locations(num_locations=500, start_id=1):
 def generate_dim_departments(start_id=1):
     """Generate departments dimension table"""
     departments = [
-        {"department_key": start_id, "department_name": "Sales", "department_code": "SLS", "parent_department_key": None},
-        {"department_key": start_id + 1, "department_name": "Marketing", "department_code": "MKT", "parent_department_key": None},
-        {"department_key": start_id + 2, "department_name": "Operations", "department_code": "OPS", "parent_department_key": None},
-        {"department_key": start_id + 3, "department_name": "Finance", "department_code": "FIN", "parent_department_key": None},
-        {"department_key": start_id + 4, "department_name": "Human Resources", "department_code": "HR", "parent_department_key": None},
-        {"department_key": start_id + 5, "department_name": "Supply Chain", "department_code": "SCH", "parent_department_key": None},
-        {"department_key": start_id + 6, "department_name": "Quality Assurance", "department_code": "QA", "parent_department_key": None},
-        {"department_key": start_id + 7, "department_name": "IT", "department_code": "IT", "parent_department_key": None},
-        {"department_key": start_id + 8, "department_name": "Customer Service", "department_code": "CS", "parent_department_key": None},
-        {"department_key": start_id + 9, "department_name": "Administration", "department_code": "ADM", "parent_department_key": None},
-        
-        # Sub-departments (optional hierarchical structure)
-        {"department_key": start_id + 10, "department_name": "Field Sales", "department_code": "SLS-FS", "parent_department_key": start_id},
-        {"department_key": start_id + 11, "department_name": "Inside Sales", "department_code": "SLS-IS", "parent_department_key": start_id},
-        {"department_key": start_id + 12, "department_name": "Digital Marketing", "department_code": "MKT-DM", "parent_department_key": start_id + 1},
-        {"department_key": start_id + 13, "department_name": "Brand Marketing", "department_code": "MKT-BM", "parent_department_key": start_id + 1},
-        {"department_key": start_id + 14, "department_name": "Warehouse Operations", "department_code": "OPS-WH", "parent_department_key": start_id + 2},
+        {"department_key": generate_unique_id("department"), "department_name": "Sales", "department_code": "SLS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Marketing", "department_code": "MKT", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Operations", "department_code": "OPS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Finance", "department_code": "FIN", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Human Resources", "department_code": "HR", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Supply Chain", "department_code": "SCH", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Quality Assurance", "department_code": "QA", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "IT", "department_code": "IT", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Customer Service", "department_code": "CS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_name": "Administration", "department_code": "ADM", "parent_department_key": None},
     ]
+    
+    # Store the generated keys for parent relationships
+    sales_key = departments[0]["department_key"]
+    marketing_key = departments[1]["department_key"]
+    operations_key = departments[2]["department_key"]
+    
+    # Add sub-departments with parent relationships
+    sub_departments = [
+        {"department_key": generate_unique_id("department"), "department_name": "Field Sales", "department_code": "SLS-FS", "parent_department_key": sales_key},
+        {"department_key": generate_unique_id("department"), "department_name": "Inside Sales", "department_code": "SLS-IS", "parent_department_key": sales_key},
+        {"department_key": generate_unique_id("department"), "department_name": "Digital Marketing", "department_code": "MKT-DM", "parent_department_key": marketing_key},
+        {"department_key": generate_unique_id("department"), "department_name": "Brand Marketing", "department_code": "MKT-BM", "parent_department_key": marketing_key},
+        {"department_key": generate_unique_id("department"), "department_name": "Warehouse Operations", "department_code": "OPS-WH", "parent_department_key": operations_key},
+    ]
+    
+    departments.extend(sub_departments)
     
     return departments
 
 def generate_dim_jobs(departments, start_id=1):
     """Generate jobs dimension table with optimized salary ranges for realistic wage/revenue ratio"""
     jobs = []
-    job_key = start_id
 
     # Optimized salary ranges for 20% wage/revenue ratio
     # Target: ₱40B revenue over 10 years × 20% = ₱8B total wages ÷ 500 employees = ₱1.6M avg annual salary per employee
@@ -241,7 +281,7 @@ def generate_dim_jobs(departments, start_id=1):
                 min_sal, max_sal = salary_ranges[level]
                 
                 jobs.append({
-                    "job_key": job_key,
+                    "job_key": generate_unique_id("job"),
                     "job_title": position["title"],
                     "job_level": level,
                     "department_key": dept_key,
@@ -250,23 +290,22 @@ def generate_dim_jobs(departments, start_id=1):
                     "base_salary_min": min_sal,
                     "base_salary_max": max_sal,
                 })
-                job_key += 1
 
     return jobs
 
 def generate_dim_banks(start_id=1):
     """Generate banks dimension table"""
     banks = [
-        {"bank_key": start_id, "bank_name": "BDO", "bank_code": "BDO", "branch_code": None},
-        {"bank_key": start_id + 1, "bank_name": "BPI", "bank_code": "BPI", "branch_code": None},
-        {"bank_key": start_id + 2, "bank_name": "Metrobank", "bank_code": "MB", "branch_code": None},
-        {"bank_key": start_id + 3, "bank_name": "Landbank", "bank_code": "LBP", "branch_code": None},
-        {"bank_key": start_id + 4, "bank_name": "PNB", "bank_code": "PNB", "branch_code": None},
-        {"bank_key": start_id + 5, "bank_name": "UnionBank", "bank_code": "UB", "branch_code": None},
-        {"bank_key": start_id + 6, "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": None},
-        {"bank_key": start_id + 7, "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": None},
-        {"bank_key": start_id + 8, "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": None},
-        {"bank_key": start_id + 9, "bank_name": "PSBank", "bank_code": "PSB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "BDO", "bank_code": "BDO", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "BPI", "bank_code": "BPI", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "Metrobank", "bank_code": "MB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "Landbank", "bank_code": "LBP", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "PNB", "bank_code": "PNB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "UnionBank", "bank_code": "UB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_name": "PSBank", "bank_code": "PSB", "branch_code": None},
     ]
     
     return banks
@@ -274,14 +313,14 @@ def generate_dim_banks(start_id=1):
 def generate_dim_insurance(start_id=1):
     """Generate insurance dimension table"""
     insurance = [
-        {"insurance_key": start_id, "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_key": start_id + 1, "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_key": start_id + 2, "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_key": start_id + 3, "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
-        {"insurance_key": start_id + 4, "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
-        {"insurance_key": start_id + 5, "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
-        {"insurance_key": start_id + 6, "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_key": start_id + 7, "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
     ]
     
     return insurance
@@ -326,12 +365,14 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
             jobs_by_dept[dept_name] = []
         jobs_by_dept[dept_name].append(job)
     
-    employee_id = start_id
     for dept_name, percentage in dept_distribution.items():
         dept_count = int(num_employees * percentage)
         dept_jobs = jobs_by_dept.get(dept_name, [])
         
         for i in range(dept_count):
+            # Generate unique employee key
+            employee_key = generate_unique_id("employee")
+            employee_id = generate_readable_id("EMP", "employee", 6)
             # Generate personal information
             gender = random.choice(["Male", "Female", "Non-binary"]) if random.random() < 0.05 else random.choice(["Male", "Female"])
             
@@ -403,8 +444,8 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
             emergency_contact_phone = fake.phone_number()
             
             employees.append({
-                "employee_key": employee_id,
-                "employee_id": f"EMP{employee_id:06d}",
+                "employee_key": employee_key,
+                "employee_id": employee_id,
                 "first_name": first_name,
                 "last_name": last_name,
                 "gender": gender,
@@ -428,8 +469,6 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
                 "emergency_contact_relation": emergency_contact_relation,
                 "emergency_contact_phone": emergency_contact_phone
             })
-            
-            employee_id += 1
     
     return employees
 
@@ -707,11 +746,14 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
         "SM Hypermarket", "S&R Membership Shopping", "Landmark", "Rustans"
     ]
     
-    retailer_id = start_id
     for retailer_type, percentage in type_distribution.items():
         type_count = int(num_retailers * percentage)
         
         for i in range(type_count):
+            # Generate unique retailer key
+            retailer_key = generate_unique_id("retailer")
+            retailer_id = generate_readable_id("R", "retailer", 5)
+            
             # Select location
             location = random.choice(locations)
             location_key = location["location_key"]
@@ -730,14 +772,12 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
                 retailer_name = f"{fake.company().split()[0]} {retailer_type}"
             
             retailers.append({
-                "retailer_key": retailer_id,
-                "retailer_id": f"R{retailer_id:04}",
+                "retailer_key": retailer_key,
+                "retailer_id": retailer_id,
                 "retailer_name": retailer_name,
                 "retailer_type": retailer_type,
                 "location_key": location_key,
             })
-            
-            retailer_id += 1
     
     return retailers
 
@@ -810,8 +850,8 @@ def generate_dim_products(start_id=1):
         status = "Delisted" if random.random() < delist_probability else "Active"
         
         products.append({
-            "product_key": start_id + i,
-            "product_id": f"P{start_id + i:03}",
+            "product_key": generate_unique_id("product"),
+            "product_id": generate_readable_id("P", "product", 4),
             "product_name": product["name"],
             "category": product["category"],
             "subcategory": product["subcategory"],
@@ -848,7 +888,7 @@ def generate_dim_dates(start_id=1):
         is_weekend = day_of_week_number in {6, 7}  # Saturday=6, Sunday=7
         
         dates.append({
-            "date_key": date_key,
+            "date_key": generate_unique_id("date"),
             "date": current_date,
             "year": year,
             "year_month": year_month,
@@ -861,8 +901,6 @@ def generate_dim_dates(start_id=1):
             "day_of_week_number": day_of_week_number,
             "is_weekend": is_weekend
         })
-        
-        date_key += 1
         current_date += timedelta(days=1)
     
     return dates
@@ -911,8 +949,8 @@ def generate_dim_campaigns(start_id=1):
     
     for i, campaign in enumerate(campaign_data):
         campaigns.append({
-            "campaign_key": start_id + i,
-            "campaign_id": f"C{start_id + i:03}",
+            "campaign_key": generate_unique_id("campaign"),
+            "campaign_id": generate_readable_id("C", "campaign", 4),
             "campaign_name": campaign["name"],
             "campaign_type": campaign["type"],
             "start_date": date.fromisoformat(campaign["start"]),
@@ -1126,10 +1164,27 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     growth_start = 0.5  # Start at 50% of final daily rate
     growth_end = 1.3   # End at 130% of target (to exceed ₱40B total)
     
-    current_amount = 0
-    current_date = start_date
+    # Find the earliest date when we have both employees and products available
+    earliest_employee_date = min(e.get('hire_date', date.today()) for e in employees)
+    earliest_product_date = min(p.get('created_date', date.today()) for p in products)
+    earliest_available_date = max(earliest_employee_date, earliest_product_date)
     
-    print(f"Generating sales from {start_date} to {end_date} ({total_days} days)")
+    # Start sales from the later of: requested start_date or earliest_available_date
+    actual_start_date = max(start_date, earliest_available_date)
+    
+    # Check if the adjusted start date is after the end date
+    if actual_start_date > end_date:
+        print(f"Cannot generate sales: adjusted start date {actual_start_date} is after end date {end_date}")
+        print(f"No employees or products were available in the requested date range")
+        return []
+    
+    if actual_start_date != start_date:
+        print(f"Adjusted start date from {start_date} to {actual_start_date} to ensure available employees and products")
+    
+    current_amount = 0
+    current_date = actual_start_date
+    
+    print(f"Generating sales from {actual_start_date} to {end_date} ({(end_date - actual_start_date).days + 1} days)")
     print(f"Growth pattern: {growth_start*100:.0f}% to {growth_end*100:.0f}% over period")
     
     while current_date <= end_date and current_amount < target_amount * 1.4:  # Allow up to 140% of target

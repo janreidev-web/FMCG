@@ -17,13 +17,10 @@ DATES_TABLE = f"{PROJECT_ID}.{DATASET}.dates"
 INITIAL_EMPLOYEES = 440  # Optimized for better profitability while maintaining operations
 INITIAL_PRODUCTS = 150   # More product variety for realistic FMCG
 INITIAL_RETAILERS = 500  # Wider distribution network
-# Initial: ₱40B total sales over 10 years (~₱4B/year average)
-# Adjusted for realistic FMCG scale: ₱40B total over 10 years (~₱4B/year average)
-# This will generate realistic yearly sales from ₱2B to ₱5.5B
-INITIAL_SALES_AMOUNT = int(os.environ.get("INITIAL_SALES_AMOUNT", "40000000000"))
+INITIAL_SALES_AMOUNT = int(os.environ.get("INITIAL_SALES_AMOUNT", "7000000000"))
 # Daily: ₱16.44M daily sales (₱6B/year ÷ 365 days ≈ ₱16.44M/day) - optimized for 15-20% profit margin
 # Note: Daily amount is for ongoing operations, scaled proportionally to initial amount
-DAILY_SALES_AMOUNT = int(os.environ.get("DAILY_SALES_AMOUNT", "16440000"))
+DAILY_SALES_AMOUNT = int(os.environ.get("DAILY_SALES_AMOUNT", "1644000"))
 NEW_PRODUCTS_PER_RUN = random.randint(1, 5)
 NEW_HIRES_PER_RUN = random.randint(2, 15)
 
