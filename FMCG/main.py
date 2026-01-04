@@ -273,6 +273,12 @@ def main():
                         employees_df[col] = pd.to_datetime(employees_df[col], errors='coerce')
                         logger.info(f"Converted {col}: {employees_df[col].dtype}, null count: {employees_df[col].isna().sum()}")
                 
+                # Add tenure column (years since hire date)
+                if 'hire_date' in employees_df.columns:
+                    today = pd.Timestamp.now().normalize()
+                    employees_df['tenure_years'] = ((today - employees_df['hire_date']).dt.days / 365.25).round(2)
+                    logger.info(f"Added tenure_years, range: {employees_df['tenure_years'].min():.2f} to {employees_df['tenure_years'].max():.2f} years")
+                
                 # Handle job_id - ensure it's never empty, use first job as default
                 if 'job_id' in employees_df.columns:
                     # Find first valid job_id as default

@@ -148,6 +148,7 @@ def main():
             "employment_status": "Active",
             "hire_date": date.today(),
             "termination_date": None,
+            "tenure_years": 1.5,
             "gender": "Male",
             "birth_date": date(1990, 1, 1),
             "phone": "09123456789",
