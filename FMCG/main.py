@@ -126,6 +126,7 @@ def main():
         
         # Check if this is a scheduled run
         is_scheduled = os.environ.get("SCHEDULED_RUN", "false").lower() == "true"
+        force_refresh = os.environ.get("FORCE_REFRESH", "false").lower() == "true"
         is_last_day = is_last_day_of_month()
         
         if is_scheduled:
@@ -135,6 +136,8 @@ def main():
                 logger.info("Daily run - Sales data only")
         else:
             logger.info("Manual run - Full refresh")
+            if force_refresh:
+                logger.info("FORCE_REFRESH: Will regenerate all data regardless of existing tables")
         
         if is_scheduled and not table_has_data(client, FACT_SALES):
             logger.warning("SCHEDULED RUN SKIPPED: No initial data found.")
@@ -144,7 +147,7 @@ def main():
         
         # ==================== DIMENSION TABLES ====================
         # Only generate dimensions on manual runs or last day of month
-        should_update_dimensions = not is_scheduled or is_last_day
+        should_update_dimensions = not is_scheduled or is_last_day or force_refresh
         
         if should_update_dimensions:
             logger.info("Building dimensions...")
@@ -154,8 +157,10 @@ def main():
         
         if should_update_dimensions:
             # Generate core dimensions first (dependencies)
-            if not table_has_data(client, DIM_LOCATIONS):
+            if not table_has_data(client, DIM_LOCATIONS) or force_refresh:
                 logger.info("Creating locations...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating locations table")
                 locations = generate_dim_locations(num_locations=500)
                 append_df_bq(client, pd.DataFrame(locations), DIM_LOCATIONS)
             else:
@@ -164,7 +169,7 @@ def main():
                 locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
                 locations = locations_df.to_dict("records")
             
-            if not table_has_data(client, DIM_DEPARTMENTS):
+            if not table_has_data(client, DIM_DEPARTMENTS) or force_refresh:
                 logger.info("Generating departments dimension...")
                 departments = generate_dim_departments()
                 append_df_bq(client, pd.DataFrame(departments), DIM_DEPARTMENTS)
@@ -173,8 +178,10 @@ def main():
                 departments_df = client.query(f"SELECT * FROM `{DIM_DEPARTMENTS}`").to_dataframe()
                 departments = departments_df.to_dict("records")
             
-            if not table_has_data(client, DIM_JOBS):
+            if not table_has_data(client, DIM_JOBS) or force_refresh:
                 logger.info("Generating jobs dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating jobs table")
                 jobs = generate_dim_jobs(departments)
                 append_df_bq(client, pd.DataFrame(jobs), DIM_JOBS)
             else:
@@ -182,8 +189,10 @@ def main():
                 jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
                 jobs = jobs_df.to_dict("records")
             
-            if not table_has_data(client, DIM_BANKS):
+            if not table_has_data(client, DIM_BANKS) or force_refresh:
                 logger.info("Generating banks dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating banks table")
                 banks = generate_dim_banks()
                 append_df_bq(client, pd.DataFrame(banks), DIM_BANKS)
             else:
@@ -191,8 +200,10 @@ def main():
                 banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
                 banks = banks_df.to_dict("records")
             
-            if not table_has_data(client, DIM_INSURANCE):
+            if not table_has_data(client, DIM_INSURANCE) or force_refresh:
                 logger.info("Generating insurance dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating insurance table")
                 insurance = generate_dim_insurance()
                 append_df_bq(client, pd.DataFrame(insurance), DIM_INSURANCE)
             else:
@@ -201,8 +212,10 @@ def main():
                 insurance = insurance_df.to_dict("records")
             
             # Generate normalized reference dimensions first
-            if not table_has_data(client, DIM_CATEGORIES):
+            if not table_has_data(client, DIM_CATEGORIES) or force_refresh:
                 logger.info("Generating categories dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating categories table")
                 categories = generate_dim_categories()
                 append_df_bq(client, pd.DataFrame(categories), DIM_CATEGORIES)
             else:
@@ -210,8 +223,10 @@ def main():
                 categories_df = client.query(f"SELECT * FROM `{DIM_CATEGORIES}`").to_dataframe()
                 categories = categories_df.to_dict("records")
             
-            if not table_has_data(client, DIM_BRANDS):
+            if not table_has_data(client, DIM_BRANDS) or force_refresh:
                 logger.info("Generating brands dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating brands table")
                 brands = generate_dim_brands()
                 append_df_bq(client, pd.DataFrame(brands), DIM_BRANDS)
             else:
@@ -219,8 +234,10 @@ def main():
                 brands_df = client.query(f"SELECT brand_id, brand_name, brand_code FROM `{DIM_BRANDS}`").to_dataframe()
                 brands = brands_df.to_dict("records")
             
-            if not table_has_data(client, DIM_SUBCATEGORIES):
+            if not table_has_data(client, DIM_SUBCATEGORIES) or force_refresh:
                 logger.info("Generating subcategories dimension...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating subcategories table")
                 subcategories = generate_dim_subcategories()
                 append_df_bq(client, pd.DataFrame(subcategories), DIM_SUBCATEGORIES)
             else:
@@ -229,34 +246,40 @@ def main():
                 subcategories = subcategories_df.to_dict("records")
             
             # Generate dependent dimensions
-            if not table_has_data(client, DIM_PRODUCTS):
+            if not table_has_data(client, DIM_PRODUCTS) or force_refresh:
                 logger.info("Generating products dimension with foreign keys...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating products table")
                 products = generate_dim_products(
-                    num_products=INITIAL_PRODUCTS,
                     categories=categories,
                     brands=brands,
-                    subcategories=subcategories
+                    subcategories=subcategories,
+                    num_products=25
                 )
                 append_df_bq(client, pd.DataFrame(products), DIM_PRODUCTS)
             else:
                 logger.info("Products dimension already exists. Skipping.")
             
-            if not table_has_data(client, DIM_EMPLOYEES):
+            if not table_has_data(client, DIM_EMPLOYEES) or force_refresh:
                 logger.info("Generating normalized employees dimension...")
-                employees = generate_dim_employees_normalized(
-                    num_employees=INITIAL_EMPLOYEES, 
-                    locations=locations, 
-                    jobs=jobs, 
-                    banks=banks, 
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating employees table")
+                employees = generate_dim_employees(
+                    locations=locations,
+                    departments=departments,
+                    jobs=jobs,
+                    banks=banks,
                     insurance=insurance,
-                    departments=departments  # Pass departments for robust relationships
+                    num_employees=350
                 )
                 append_df_bq(client, pd.DataFrame(employees), DIM_EMPLOYEES)
             else:
                 logger.info("Employees dimension already exists. Skipping.")
             
-            if not table_has_data(client, DIM_RETAILERS):
+            if not table_has_data(client, DIM_RETAILERS) or force_refresh:
                 logger.info("Creating retailers...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating retailers table")
                 retailers = generate_dim_retailers_normalized(
                     num_retailers=INITIAL_RETAILERS, 
                     locations=locations
@@ -270,8 +293,10 @@ def main():
                 retailers_df = client.query(f"SELECT * FROM `{DIM_RETAILERS}`").to_dataframe()
                 retailers = retailers_df.to_dict("records")
             
-            if not table_has_data(client, DIM_CAMPAIGNS):
+            if not table_has_data(client, DIM_CAMPAIGNS) or force_refresh:
                 logger.info("Creating campaigns...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating campaigns table")
                 campaigns = generate_dim_campaigns()
                 append_df_bq(client, pd.DataFrame(campaigns), DIM_CAMPAIGNS)
             else:
@@ -280,8 +305,10 @@ def main():
                 campaigns_df = client.query(f"SELECT * FROM `{DIM_CAMPAIGNS}`").to_dataframe()
                 campaigns = campaigns_df.to_dict("records")
             
-            if not table_has_data(client, DIM_DATES):
+            if not table_has_data(client, DIM_DATES) or force_refresh:
                 logger.info("Creating dates...")
+                if force_refresh:
+                    logger.info("FORCE_REFRESH: Regenerating dates table")
                 dates = generate_dim_dates()
                 append_df_bq(client, pd.DataFrame(dates), DIM_DATES)
             else:

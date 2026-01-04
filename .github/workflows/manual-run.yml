@@ -75,6 +75,7 @@ jobs:
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '1644000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         SCHEDULED_RUN: false  # Force manual mode
+        FORCE_REFRESH: true   # Force regenerate all data
       run: |
         cd FMCG
         echo "=== Starting Manual Data Generation ==="
