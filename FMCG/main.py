@@ -343,6 +343,9 @@ def main():
             jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
             banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
             insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
+            categories_df = client.query(f"SELECT * FROM `{DIM_CATEGORIES}`").to_dataframe()
+            brands_df = client.query(f"SELECT * FROM `{DIM_BRANDS}`").to_dataframe()
+            subcategories_df = client.query(f"SELECT * FROM `{DIM_SUBCATEGORIES}`").to_dataframe()
             
             # Convert to dictionaries for validation
             locations = locations_df.to_dict("records")
@@ -350,6 +353,9 @@ def main():
             jobs = jobs_df.to_dict("records")
             banks = banks_df.to_dict("records")
             insurance = insurance_df.to_dict("records")
+            categories = categories_df.to_dict("records")
+            brands = brands_df.to_dict("records")
+            subcategories = subcategories_df.to_dict("records")
             
             # Use more efficient queries with specific fields only
             products_df = client.query(f"SELECT product_id, product_name, category_id, brand_id, subcategory_id, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}` WHERE status = 'Active'").to_dataframe()
@@ -413,6 +419,26 @@ def main():
                 logger.warning(f"BigQuery read sessions permission error. Using alternative approach...")
                 # Use smaller queries without read sessions
                 products_df = client.query(f"SELECT product_id, product_name, category_id, brand_id, subcategory_id, wholesale_price, retail_price, status, created_date FROM `{DIM_PRODUCTS}`").to_dataframe()
+                
+                # Load dimensions for fallback
+                locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
+                departments_df = client.query(f"SELECT * FROM `{DIM_DEPARTMENTS}`").to_dataframe()
+                jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
+                banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
+                insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
+                categories_df = client.query(f"SELECT * FROM `{DIM_CATEGORIES}`").to_dataframe()
+                brands_df = client.query(f"SELECT * FROM `{DIM_BRANDS}`").to_dataframe()
+                subcategories_df = client.query(f"SELECT * FROM `{DIM_SUBCATEGORIES}`").to_dataframe()
+                
+                # Convert to dictionaries
+                locations = locations_df.to_dict("records")
+                departments = departments_df.to_dict("records")
+                jobs = jobs_df.to_dict("records")
+                banks = banks_df.to_dict("records")
+                insurance = insurance_df.to_dict("records")
+                categories = categories_df.to_dict("records")
+                brands = brands_df.to_dict("records")
+                subcategories = subcategories_df.to_dict("records")
                 
                 # Simplified employee query for fallback
                 employees_df = client.query(f"""
