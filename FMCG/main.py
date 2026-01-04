@@ -368,6 +368,16 @@ def main():
                 employees_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}`").to_dataframe()
                 employees_all = employees_df.to_dict("records")
                 
+                # Convert termination_date back to datetime for wage generation
+                for emp in employees_all:
+                    if emp.get('termination_date') and emp['termination_date'] != '':
+                        try:
+                            emp['termination_date'] = pd.to_datetime(emp['termination_date']).date()
+                        except:
+                            emp['termination_date'] = None
+                    else:
+                        emp['termination_date'] = None
+                
                 # Load active employees for fact table
                 employees_active_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}` WHERE employment_status = 'Active'").to_dataframe()
                 employees_active = employees_active_df.to_dict("records")
