@@ -484,12 +484,12 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
     wage_sequence = 0
     
     # Create job lookup
-    job_lookup = {job["job_key"]: job for job in jobs}
+    job_lookup = {job["job_id"]: job for job in jobs}
     
     # Create department lookup if departments are provided
     dept_lookup = {}
     if departments:
-        dept_lookup = {dept["department_key"]: dept["department_name"] for dept in departments}
+        dept_lookup = {dept["department_id"]: dept["department_name"] for dept in departments}
     
     # Default start date is 2015-01-01 for historical data
     if start_date is None:
@@ -500,7 +500,7 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
         end_date = date.today()
     
     for employee in employees:
-        job = job_lookup.get(employee["job_key"])
+        job = job_lookup.get(employee["job_id"])
         if not job:
             continue
         
@@ -520,7 +520,7 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
             continue
         
         # Get department name
-        department_name = dept_lookup.get(job.get("department_key"), "Unknown")
+        department_name = dept_lookup.get(job.get("department_id"), "Unknown")
         
         # Initial salary based on job (back-calculated for 2015)
         base_salary = random.randint(job["base_salary_min"], job["base_salary_max"])
@@ -612,13 +612,13 @@ def generate_fact_employees(employees, jobs, start_id=1):
     fact_sequence = 0
     
     # Create job lookup
-    job_lookup = {job["job_key"]: job for job in jobs}
+    job_lookup = {job["job_id"]: job for job in jobs}
     
     for employee in employees:
         if employee["employment_status"] != "Active":
             continue  # Only generate facts for active employees
         
-        job = job_lookup.get(employee["job_key"])
+        job = job_lookup.get(employee["job_id"])
         if not job:
             continue
         
@@ -718,14 +718,14 @@ def generate_fact_inventory(products, start_id=1):
             
             # Generate inventory date (recent snapshot)
             inventory_date = fake.date_between_dates(date_start=date.today() - timedelta(days=30), date_end=date.today())
-            location_key = random.randint(1, 500)  # Random location key from dim_locations
+            location_id = random.randint(1, 500)  # Random location id from dim_locations
             
             inventory_sequence += 1
             inventory.append({
-                "inventory_key": generate_unique_inventory_key(product["product_key"], location_key, inventory_date, inventory_sequence),
+                "inventory_key": generate_unique_inventory_key(product["product_id"], location_id, inventory_date, inventory_sequence),
                 "inventory_date": inventory_date,
-                "product_key": product["product_key"],
-                "location_key": location_key,
+                "product_id": product["product_id"],
+                "location_id": location_id,
                 "cases_on_hand": cases_on_hand,
                 "unit_cost": unit_cost,
                 "currency": "PHP"
@@ -1473,7 +1473,6 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
                 costs.append({
                     "marketing_cost_key": generate_unique_marketing_cost_key(None, current_date, category, cost_sequence),
                     "cost_date": current_date,
-                    "campaign_key": None,
                     "campaign_id": None,
                     "campaign_type": "General",
                     "cost_category": category,
@@ -1494,14 +1493,13 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
             if active_campaigns:
                 # Distribute daily target across active campaigns
                 daily_per_campaign = daily_target / len(active_campaigns)
-                
+
                 for campaign in active_campaigns:
                     for category in cost_categories:
                         cost_sequence += 1
                         costs.append({
-                            "marketing_cost_key": generate_unique_marketing_cost_key(campaign["campaign_key"], current_date, category, cost_sequence),
+                            "marketing_cost_key": generate_unique_marketing_cost_key(campaign["campaign_id"], current_date, category, cost_sequence),
                             "cost_date": current_date,
-                            "campaign_key": campaign["campaign_key"],
                             "campaign_id": campaign["campaign_id"],
                             "campaign_type": campaign["campaign_type"],
                             "cost_category": category,
@@ -1515,7 +1513,6 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
                     costs.append({
                         "marketing_cost_key": generate_unique_marketing_cost_key(None, current_date, category, cost_sequence),
                         "cost_date": current_date,
-                        "campaign_key": None,
                         "campaign_id": None,
                         "campaign_type": "General",
                         "cost_category": category,
