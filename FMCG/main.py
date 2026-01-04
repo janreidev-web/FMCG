@@ -262,12 +262,44 @@ def main():
                     insurance=insurance,
                     num_employees=350
                 )
-                # Convert termination_date None values to pd.NaT for consistent data type
+                # Convert None values to appropriate types for BigQuery compatibility
                 employees_df = pd.DataFrame(employees)
+                
+                # Handle termination_date - convert None to pd.NaT
                 if 'termination_date' in employees_df.columns:
                     employees_df['termination_date'] = employees_df['termination_date'].apply(
                         lambda x: pd.NaT if x is None else x
                     )
+                
+                # Handle job_id - ensure it's never empty, use first job as default
+                if 'job_id' in employees_df.columns:
+                    # Find first valid job_id as default
+                    default_job_id = jobs[0]['job_id'] if jobs else ''
+                    employees_df['job_id'] = employees_df['job_id'].fillna(default_job_id)
+                    # Replace any empty strings with default
+                    employees_df['job_id'] = employees_df['job_id'].replace('', default_job_id)
+                
+                # Handle other potential None values in string columns
+                string_columns = ['gender', 'phone', 'email', 'personal_email', 'employment_status', 
+                                'tin_number', 'sss_number', 'philhealth_number', 'pagibig_number', 'blood_type', 
+                                'emergency_contact_name', 'emergency_contact_relation', 'emergency_contact_phone']
+                
+                for col in string_columns:
+                    if col in employees_df.columns:
+                        employees_df[col] = employees_df[col].fillna('')
+                
+                # Ensure all foreign key IDs are never empty
+                fk_columns = {
+                    'location_id': locations[0]['location_id'] if locations else '',
+                    'bank_id': banks[0]['bank_id'] if banks else '',
+                    'insurance_id': insurance[0]['insurance_id'] if insurance else ''
+                }
+                
+                for col, default_value in fk_columns.items():
+                    if col in employees_df.columns:
+                        employees_df[col] = employees_df[col].fillna(default_value)
+                        employees_df[col] = employees_df[col].replace('', default_value)
+                
                 append_df_bq(client, employees_df, DIM_EMPLOYEES)
             else:
                 logger.info("Employees dimension already exists. Skipping.")
