@@ -105,20 +105,40 @@ def generate_unique_cost_key(cost_date, category_code, sequence_num):
 
 def generate_unique_inventory_key(product_key, location_key, inventory_date, sequence_num):
     """Generate unique inventory key using product + location + date + sequence"""
-    # Format: product_key (4 digits) + location_key (3 digits) + YYYYMMDD + sequence (4 digits)
+    # Use hash-based approach for large keys
     date_str = inventory_date.strftime("%Y%m%d")
-    return int(f"{product_key:04d}{location_key:03d}{date_str}{sequence_num:04d}")
+    combined_str = f"{product_key}{location_key}{date_str}{sequence_num}"
+    # Create hash to ensure reasonable length and fit within BigQuery limits
+    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
+    unique_id = int(unique_hash, 16)
+    
+    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
+    max_safe_int = 9223372036854775807
+    if unique_id > max_safe_int:
+        unique_id = unique_id % max_safe_int
+    
+    return unique_id
 
 def generate_unique_marketing_cost_key(campaign_key, cost_date, category_code, sequence_num):
     """Generate unique marketing cost key using campaign + date + category + sequence"""
-    # Format: campaign_key (3 digits) + YYYYMMDD + category_code (2 digits) + sequence (4 digits)
+    # Use hash-based approach for large campaign keys
     date_str = cost_date.strftime("%Y%m%d")
     category_map = {"Digital Advertising": 10, "Print Media": 20, "TV/Radio": 30, "Events": 40,
                     "Sponsorships": 50, "Social Media": 60, "Content Creation": 70, 
                     "Market Research": 80, "Brand Materials": 90}
     cat_code = category_map.get(category_code, 99)
     camp_key = campaign_key if campaign_key else 0
-    return int(f"{camp_key:03d}{date_str}{cat_code:02d}{sequence_num:04d}")
+    combined_str = f"{camp_key}{date_str}{cat_code}{sequence_num}"
+    # Create hash to ensure reasonable length and fit within BigQuery limits
+    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
+    unique_id = int(unique_hash, 16)
+    
+    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
+    max_safe_int = 9223372036854775807
+    if unique_id > max_safe_int:
+        unique_id = unique_id % max_safe_int
+    
+    return unique_id
 
 def generate_unique_employee_fact_key(employee_key, effective_date, sequence_num):
     """Generate unique employee fact key using employee + date + sequence"""
