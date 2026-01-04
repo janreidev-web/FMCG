@@ -14,7 +14,7 @@ INVENTORY_TABLE = f"{PROJECT_ID}.{DATASET}.inventory"
 MARKETING_TABLE = f"{PROJECT_ID}.{DATASET}.marketing_campaigns"
 DATES_TABLE = f"{PROJECT_ID}.{DATASET}.dates"
 
-INITIAL_EMPLOYEES = 440  # Optimized for better profitability while maintaining operations
+INITIAL_EMPLOYEES = 350  # Optimized for regional FMCG distributor with ₱8B revenue
 INITIAL_PRODUCTS = 150   # More product variety for realistic FMCG
 INITIAL_RETAILERS = 500  # Wider distribution network
 INITIAL_SALES_AMOUNT = int(os.environ.get("INITIAL_SALES_AMOUNT", "8000000000"))
@@ -22,7 +22,7 @@ INITIAL_SALES_AMOUNT = int(os.environ.get("INITIAL_SALES_AMOUNT", "8000000000"))
 # Note: Daily amount is for ongoing operations, scaled proportionally to initial amount
 DAILY_SALES_AMOUNT = int(os.environ.get("DAILY_SALES_AMOUNT", "2192000"))
 NEW_PRODUCTS_PER_RUN = random.randint(1, 5)
-NEW_HIRES_PER_RUN = random.randint(2, 15)
+NEW_HIRES_PER_RUN = random.randint(2, 12)
 
 # Dimension table names (for BigQuery)
 DIM_EMPLOYEES = f"{PROJECT_ID}.{DATASET}.dim_employees"

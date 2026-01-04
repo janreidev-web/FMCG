@@ -165,14 +165,14 @@ def generate_dim_jobs(departments, start_id=1):
     """Generate jobs dimension table with optimized salary ranges for realistic wage/revenue ratio"""
     jobs = []
 
-    # Optimized salary ranges for 20% wage/revenue ratio
-    # Target: ₱40B revenue over 10 years × 20% = ₱8B total wages ÷ 500 employees = ₱1.6M avg annual salary per employee
+    # Optimized salary ranges for Philippine FMCG industry standards
+    # Target: ₱8B revenue over 10 years × 20% = ₱1.6B total wages ÷ 350 employees = ₱228K avg annual salary per employee
     salary_ranges = {
-        "Entry": (15000, 25000),      # ₱180K-₱300K annually
-        "Junior": (25000, 40000),     # ₱300K-₱480K annually
-        "Senior": (40000, 70000),    # ₱480K-₱840K annually
-        "Manager": (70000, 120000),  # ₱840K-₱1.44M annually
-        "Director": (120000, 200000)  # ₱1.44M-₱2.4M annually
+        "Entry": (18000, 25000),     # ₱216K-₱300K annually - Fresh grads, assistants
+        "Junior": (25000, 40000),     # ₱300K-₱480K annually - 1-3 yrs experience
+        "Senior": (40000, 70000),     # ₱480K-₱840K annually - Specialists / leads
+        "Manager": (70000, 120000),   # ₱840K-₱1.44M annually - People + budget ownership
+        "Director": (120000, 200000)  # ₱1.44M-₱2.4M annually - Exec / VP / C-level
     }
 
     # Job positions by department
@@ -1173,7 +1173,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     # Create growth factors for realistic business growth
     # For 10-year period: start small, grow to exceed target
     growth_start = 0.5  # Start at 50% of final daily rate
-    growth_end = 1.3   # End at 130% of target (to exceed ₱40B total)
+    growth_end = 1.3   # End at 130% of target (to exceed ₱8B total)
     
     # Find the earliest date when we have both employees and products available
     # Use 2015-01-01 as minimum for historical data, but consider actual availability
