@@ -63,7 +63,7 @@ def generate_unique_inventory_key(product_key, location_key, inventory_date, seq
     if unique_id > max_safe_int:
         unique_id = unique_id % max_safe_int
     
-    return unique_id
+    return f"INV{unique_id:015d}"  # Return as string with INV prefix
 
 def generate_unique_marketing_cost_key(campaign_key, cost_date, category_code, sequence_num):
     """Generate unique marketing cost key using campaign + date + category + sequence"""
@@ -96,11 +96,10 @@ def generate_unique_employee_fact_key(employee_id, effective_date, sequence_num)
     unique_id = int(unique_hash, 16)
     
     # Ensure it fits in 19 digits (BigQuery INTEGER limit)
-    max_safe_int = 9223372036854775807
-    if unique_id > max_safe_int:
-        unique_id = unique_id % max_safe_int
+    max_19_digit = 9999999999999999999
+    unique_id = unique_id % max_19_digit
     
-    return unique_id
+    return f"EF{unique_id:016d}"  # Return as string with EF prefix
 
 def generate_dim_locations(num_locations=500, start_id=1):
     """Generate locations dimension table with normalized address data"""
