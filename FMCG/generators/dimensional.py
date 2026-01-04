@@ -118,11 +118,12 @@ def generate_dim_locations(num_locations=500, start_id=1):
         
         locations.append({
             "location_key": generate_unique_id("location"),
+            "location_id": generate_readable_id("LOC", "location", 4),
             "city": city,
             "province": province,
             "region": region,
-            "postal_code": postal_code,
-            "country": "Philippines"
+            "country": "Philippines",
+            "postal_code": postal_code
         })
     
     return locations
@@ -130,16 +131,16 @@ def generate_dim_locations(num_locations=500, start_id=1):
 def generate_dim_departments(start_id=1):
     """Generate departments dimension table"""
     departments = [
-        {"department_key": generate_unique_id("department"), "department_name": "Sales", "department_code": "SLS", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Marketing", "department_code": "MKT", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Operations", "department_code": "OPS", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Finance", "department_code": "FIN", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Human Resources", "department_code": "HR", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Supply Chain", "department_code": "SCH", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Quality Assurance", "department_code": "QA", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "IT", "department_code": "IT", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Customer Service", "department_code": "CS", "parent_department_key": None},
-        {"department_key": generate_unique_id("department"), "department_name": "Administration", "department_code": "ADM", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Sales", "department_code": "SLS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Marketing", "department_code": "MKT", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Operations", "department_code": "OPS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Finance", "department_code": "FIN", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Human Resources", "department_code": "HR", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Supply Chain", "department_code": "SCH", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Quality Assurance", "department_code": "QA", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "IT", "department_code": "IT", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Customer Service", "department_code": "CS", "parent_department_key": None},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Administration", "department_code": "ADM", "parent_department_key": None},
     ]
     
     # Store the generated keys for parent relationships
@@ -149,11 +150,11 @@ def generate_dim_departments(start_id=1):
     
     # Add sub-departments with parent relationships
     sub_departments = [
-        {"department_key": generate_unique_id("department"), "department_name": "Field Sales", "department_code": "SLS-FS", "parent_department_key": sales_key},
-        {"department_key": generate_unique_id("department"), "department_name": "Inside Sales", "department_code": "SLS-IS", "parent_department_key": sales_key},
-        {"department_key": generate_unique_id("department"), "department_name": "Digital Marketing", "department_code": "MKT-DM", "parent_department_key": marketing_key},
-        {"department_key": generate_unique_id("department"), "department_name": "Brand Marketing", "department_code": "MKT-BM", "parent_department_key": marketing_key},
-        {"department_key": generate_unique_id("department"), "department_name": "Warehouse Operations", "department_code": "OPS-WH", "parent_department_key": operations_key},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Field Sales", "department_code": "SLS-FS", "parent_department_key": sales_key},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Inside Sales", "department_code": "SLS-IS", "parent_department_key": sales_key},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Digital Marketing", "department_code": "MKT-DM", "parent_department_key": marketing_key},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Brand Marketing", "department_code": "MKT-BM", "parent_department_key": marketing_key},
+        {"department_key": generate_unique_id("department"), "department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Warehouse Operations", "department_code": "OPS-WH", "parent_department_key": operations_key},
     ]
     
     departments.extend(sub_departments)
@@ -267,6 +268,7 @@ def generate_dim_jobs(departments, start_id=1):
                 
                 jobs.append({
                     "job_key": generate_unique_id("job"),
+                    "job_id": generate_readable_id("JOB", "job", 5),
                     "job_title": position["title"],
                     "job_level": level,
                     "department_key": dept_key,
@@ -281,16 +283,16 @@ def generate_dim_jobs(departments, start_id=1):
 def generate_dim_banks(start_id=1):
     """Generate banks dimension table"""
     banks = [
-        {"bank_key": generate_unique_id("bank"), "bank_name": "BDO", "bank_code": "BDO", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "BPI", "bank_code": "BPI", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "Metrobank", "bank_code": "MB", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "Landbank", "bank_code": "LBP", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "PNB", "bank_code": "PNB", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "UnionBank", "bank_code": "UB", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": None},
-        {"bank_key": generate_unique_id("bank"), "bank_name": "PSBank", "bank_code": "PSB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "BDO", "bank_code": "BDO", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "BPI", "bank_code": "BPI", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Metrobank", "bank_code": "MB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Landbank", "bank_code": "LBP", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "PNB", "bank_code": "PNB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "UnionBank", "bank_code": "UB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": None},
+        {"bank_key": generate_unique_id("bank"), "bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "PSBank", "bank_code": "PSB", "branch_code": None},
     ]
     
     return banks
@@ -298,14 +300,14 @@ def generate_dim_banks(start_id=1):
 def generate_dim_insurance(start_id=1):
     """Generate insurance dimension table"""
     insurance = [
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_key": generate_unique_id("insurance"), "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_key": generate_unique_id("insurance"), "insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
     ]
     
     return insurance
