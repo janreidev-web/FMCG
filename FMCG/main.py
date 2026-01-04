@@ -368,10 +368,13 @@ def main():
         logger.info("Generating fact tables...")
         
         # Generate fact tables
+        logger.info("About to check if sales table exists...")
         sales_table_exists = table_has_data(client, FACT_SALES)
         logger.info(f"Sales table exists check result: {sales_table_exists}")
         
+        logger.info("About to enter sales generation logic...")
         if not sales_table_exists:
+            logger.info("Entering historical sales generation branch...")
             # Initial run: generate historical sales
             yesterday = date.today() - timedelta(days=1)
             logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
@@ -382,6 +385,7 @@ def main():
             logger.info("Starting sales data generation (this may take several minutes)...")
             
             try:
+                logger.info("About to call generate_fact_sales...")
                 sales = generate_fact_sales(
                     employees, products, retailers, campaigns,
                     INITIAL_SALES_AMOUNT,
@@ -405,6 +409,7 @@ def main():
                 logger.error(f"Traceback: {traceback.format_exc()}")
                 sales = []
         else:
+            logger.info("Entering daily sales generation branch...")
             # Daily run: generate today's sales
             today = date.today()
             logger.info(f"DAILY_SALES_AMOUNT from config: {DAILY_SALES_AMOUNT:,}")
@@ -421,6 +426,7 @@ def main():
             
             # Note: IDs are now date-based and unique, no need to track max key
             # The unique ID generation ensures no duplicates even on multiple runs
+            logger.info("About to call generate_daily_sales_with_delivery_updates...")
             sales = generate_daily_sales_with_delivery_updates(
                 employees, products, retailers, campaigns,
                 DAILY_SALES_AMOUNT,
@@ -429,6 +435,7 @@ def main():
                 start_id=1  # Not used anymore, but kept for compatibility
             )
         
+        logger.info("About to check for fallback sales generation...")
         # Fallback: If no sales were generated (either due to table existing check or empty result), 
         # try to generate historical sales anyway
         if 'sales' not in locals() or not sales:
@@ -445,7 +452,10 @@ def main():
             except Exception as e:
                 logger.error(f"Fallback sales generation failed: {e}")
                 sales = []
+        else:
+            logger.info(f"Sales generated successfully: {len(sales)} records")
         
+        logger.info("About to append sales data to BigQuery...")
         append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_key")
         
         # Log sales generation summary
