@@ -254,7 +254,7 @@ def main():
             
             if not table_has_data(client, DIM_EMPLOYEES) or force_refresh:
                 logger.info("Generating normalized employees dimension...")
-                employees = generate_dim_employees(
+                employees = generate_dim_employees_normalized(
                     locations=locations,
                     departments=departments,
                     jobs=jobs,
