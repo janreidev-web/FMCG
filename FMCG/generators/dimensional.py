@@ -451,7 +451,15 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
                 max_birth_date = date(2006, 1, 1)
             
             birth_date = fake.date_between_dates(date_start=min_birth_date, date_end=max_birth_date)
-            hire_date = fake.date_between_dates(date_start=date(2015, 1, 1), date_end=date.today())
+            
+            # Ensure good distribution of hire dates from 2015 onwards
+            # 60% hired in first 3 years (2015-2017), 40% distributed across remaining years
+            if random.random() < 0.6:
+                # Early hires (2015-2017) to ensure sales generation works
+                hire_date = fake.date_between_dates(date_start=date(2015, 1, 1), date_end=date(2017, 12, 31))
+            else:
+                # Later hires (2018-today)
+                hire_date = fake.date_between_dates(date_start=date(2018, 1, 1), date_end=date.today())
             
             # Assign random job from department
             job = random.choice(dept_jobs) if dept_jobs else None
@@ -873,8 +881,14 @@ def generate_dim_products(start_id=1):
     ]
     
     for i, product in enumerate(product_data):
-        # Generate created_date from 2015 to present to match historical data range
-        created_date = fake.date_between_dates(date_start=date(2015, 1, 1), date_end=date.today())
+        # Ensure good distribution of created dates from 2015 onwards
+        # 70% created in first 3 years (2015-2017), 30% distributed across remaining years
+        if random.random() < 0.7:
+            # Early products (2015-2017) to ensure sales generation works
+            created_date = fake.date_between_dates(date_start=date(2015, 1, 1), date_end=date(2017, 12, 31))
+        else:
+            # Later products (2018-today)
+            created_date = fake.date_between_dates(date_start=date(2018, 1, 1), date_end=date.today())
         
         # Determine product status based on age
         # Older products are more likely to be delisted
