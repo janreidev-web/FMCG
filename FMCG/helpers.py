@@ -121,21 +121,56 @@ def append_df_bq_safe(client, df, table_id, id_column, write_disposition="WRITE_
         ids_to_check = df[id_column].unique().tolist()
         
         if ids_to_check:
-            # Build SQL query with proper escaping for IN clause
-            escaped_ids = [str(id_val).replace("'", "''") for id_val in ids_to_check]
-            id_list_str = ", ".join([f"'{id_val}'" for id_val in escaped_ids])
+            logger.info(f"Checking {len(ids_to_check):,} IDs for duplicates...")
             
-            existing_ids_query = f"""
-                SELECT DISTINCT `{id_column}` as existing_id
-                FROM `{table_id}`
-                WHERE `{id_column}` IN ({id_list_str})
-                LIMIT 1000
-            """
+            # Process IDs in batches to avoid query size limits
+            batch_size = 1000  # Process 1000 IDs at a time
+            existing_ids_set = set()
             
-            existing_ids_df = client.query(existing_ids_query).to_dataframe()
+            for i in range(0, len(ids_to_check), batch_size):
+                batch_ids = ids_to_check[i:i + batch_size]
+                escaped_ids = [str(id_val).replace("'", "''") for id_val in batch_ids]
+                id_list_str = ", ".join([f"'{id_val}'" for id_val in escaped_ids])
+                
+                existing_ids_query = f"""
+                    SELECT DISTINCT `{id_column}` as existing_id
+                    FROM `{table_id}`
+                    WHERE `{id_column}` IN ({id_list_str})
+                """
+                
+                try:
+                    existing_ids_df = client.query(existing_ids_query).to_dataframe()
+                    if not existing_ids_df.empty:
+                        existing_ids_set.update(existing_ids_df['existing_id'].tolist())
+                except Exception as batch_error:
+                    if "too large" in str(batch_error).lower() or "limit" in str(batch_error).lower():
+                        # If still too large, reduce batch size further
+                        smaller_batch_size = 500
+                        for j in range(0, len(batch_ids), smaller_batch_size):
+                            smaller_batch = batch_ids[j:j + smaller_batch_size]
+                            smaller_escaped = [str(id_val).replace("'", "''") for id_val in smaller_batch]
+                            smaller_id_list = ", ".join([f"'{id_val}'" for id_val in smaller_escaped])
+                            
+                            smaller_query = f"""
+                                SELECT DISTINCT `{id_column}` as existing_id
+                                FROM `{table_id}`
+                                WHERE `{id_column}` IN ({smaller_id_list})
+                                LIMIT 100
+                            """
+                            
+                            try:
+                                smaller_df = client.query(smaller_query).to_dataframe()
+                                if not smaller_df.empty:
+                                    existing_ids_set.update(smaller_df['existing_id'].tolist())
+                            except Exception:
+                                # If still fails, skip this batch and continue
+                                logger.warning(f"Could not check batch {j//smaller_batch_size + 1}, skipping...")
+                                continue
+                    else:
+                        logger.warning(f"Batch {i//batch_size + 1} failed: {batch_error}")
+                        continue
             
-            if not existing_ids_df.empty:
-                existing_ids_set = set(existing_ids_df['existing_id'].tolist())
+            if existing_ids_set:
                 duplicate_count = len(df[df[id_column].isin(existing_ids_set)])
                 
                 if duplicate_count > 0:
@@ -148,6 +183,10 @@ def append_df_bq_safe(client, df, table_id, id_column, write_disposition="WRITE_
                         return 0
                     
                     logger.info(f"✓ Filtered to {len(df):,} unique records (removed {duplicate_count:,} duplicates)")
+                else:
+                    logger.info(f"✓ No duplicates found. All {len(df):,} records are unique.")
+            else:
+                logger.info(f"✓ No existing IDs found. All {len(df):,} records are new.")
     except Exception as e:
         # If table doesn't exist or query fails, proceed with append (first load scenario)
         if "Not found" in str(e) or "does not exist" in str(e).lower():
