@@ -187,7 +187,7 @@ def main():
                 append_df_bq(client, pd.DataFrame(brands), DIM_BRANDS)
             else:
                 logger.info("Brands dimension already exists. Skipping.")
-                brands_df = client.query(f"SELECT * FROM `{DIM_BRANDS}`").to_dataframe()
+                brands_df = client.query(f"SELECT brand_key, brand_id, brand_name, brand_code FROM `{DIM_BRANDS}`").to_dataframe()
                 brands = brands_df.to_dict("records")
             
             if not table_has_data(client, DIM_SUBCATEGORIES):
