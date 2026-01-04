@@ -350,7 +350,12 @@ def main():
             if not table_has_data(client, DIM_DATES) or force_refresh:
                 logger.info("Creating dates...")
                 dates = generate_dim_dates()
-                append_df_bq(client, pd.DataFrame(dates), DIM_DATES)
+                # Convert date_id to string to match schema and avoid PyArrow issues
+                dates_df = pd.DataFrame(dates)
+                if 'date_id' in dates_df.columns:
+                    dates_df['date_id'] = dates_df['date_id'].astype(str)
+                    logger.info(f"Converted date_id to string, sample: {dates_df['date_id'].iloc[0]}")
+                append_df_bq(client, dates_df, DIM_DATES)
             else:
                 logger.info("Dates ready")
             
