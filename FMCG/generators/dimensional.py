@@ -130,8 +130,7 @@ def generate_dim_locations(num_locations=500, start_id=1):
             "city": city,
             "province": province,
             "region": region,
-            "country": "Philippines",
-            "postal_code": postal_code
+            "country": "Philippines"
         })
     
     return locations

@@ -43,7 +43,7 @@ def create_table_with_schema(client, table_id, schema_sample_data):
     try:
         # Check if table exists
         table_ref = client.get_table(table_id)
-        print(f"✅ Table {table_ref.table_id} already exists")
+        print(f"Table {table_ref.table_id} already exists")
         return True
     except:
         # Table doesn't exist, create it
@@ -51,43 +51,38 @@ def create_table_with_schema(client, table_id, schema_sample_data):
             sample_df = pd.DataFrame(schema_sample_data)
             job = client.load_table_from_dataframe(sample_df, table_id)
             job.result()  # Wait for the job to complete
-            print(f"✅ Created table: {table_id}")
+            print(f"Created table: {table_id}")
             return True
         except Exception as e:
-            print(f"❌ Failed to create table {table_id}: {e}")
+            print(f"Failed to create table {table_id}: {e}")
             return False
 
 def main():
     """Pre-create all tables with correct schema"""
-    print("🚀 Pre-creating BigQuery tables...")
+    print("Pre-creating BigQuery tables...")
     
     # Initialize BigQuery client
     try:
         client = bigquery.Client(project=PROJECT_ID)
-        print(f"✅ Connected to BigQuery project: {PROJECT_ID}")
+        print(f"Connected to BigQuery project: {PROJECT_ID}")
     except Exception as e:
-        print(f"❌ Failed to connect to BigQuery: {e}")
+        print(f"Failed to connect to BigQuery: {e}")
         return
     
     # Schema definitions for each table
     schemas = {
         DIM_LOCATIONS: [{
             "location_id": "LOC000001",
-            "address_line_1": "123 Main St",
             "city": "Manila",
             "province": "Metro Manila",
             "region": "NCR",
-            "country": "Philippines",
-            "postal_code": "1000",
-            "created_date": date.today(),
-            "updated_date": date.today()
+            "country": "Philippines"
         }],
         
         DIM_DEPARTMENTS: [{
             "department_id": "DEPT001",
             "department_name": "Sales",
-            "department_code": "SLS",
-            "created_date": date.today()
+            "department_code": "SLS"
         }],
         
         DIM_JOBS: [{
@@ -98,8 +93,7 @@ def main():
             "work_setup": "On-site",
             "work_type": "Full-time",
             "base_salary_min": 15000,
-            "base_salary_max": 25000,
-            "created_date": date.today()
+            "base_salary_max": 25000
         }],
         
         DIM_BANKS: [{
@@ -112,8 +106,8 @@ def main():
         DIM_INSURANCE: [{
             "insurance_id": "INS001",
             "provider_name": "PhilHealth",
-            "policy_type": "Health",
-            "coverage_amount": 100000
+            "provider_type": "Health",
+            "coverage_level": "Standard"
         }],
         
         DIM_CATEGORIES: [{
@@ -132,7 +126,7 @@ def main():
             "subcategory_id": "SUBCAT001",
             "subcategory_name": "Soft Drinks",
             "subcategory_code": "SD",
-            "category_id": "CAT001"
+            "category_code": "BEV"
         }],
         
         DIM_PRODUCTS: [{
@@ -191,7 +185,7 @@ def main():
         }],
         
         DIM_DATES: [{
-            "date_id": 1,
+            "date_id": "DATE001",
             "date": date.today(),
             "year": date.today().year,
             "year_month": f"{date.today().year}-{date.today().month:02d}",
@@ -253,7 +247,9 @@ def main():
             "case_quantity": 10,
             "unit_price": 55.00,
             "discount_percent": 0.0,
+            "discount_amount": 0.0,
             "tax_rate": 0.12,
+            "tax_amount": 66.00,
             "total_amount": 616.00,
             "commission_amount": 18.48,
             "currency": "PHP",
@@ -302,12 +298,12 @@ def main():
         if create_table_with_schema(client, table_id, sample_data):
             success_count += 1
     
-    print(f"\n📊 Summary: {success_count}/{total_count} tables created successfully")
+    print(f"\nSummary: {success_count}/{total_count} tables created successfully")
     
     if success_count == total_count:
-        print("🎉 All tables are ready! You can now run the data generator.")
+        print("All tables are ready! You can now run the data generator.")
     else:
-        print("⚠️  Some tables failed to create. Check the errors above.")
+        print("Some tables failed to create. Check the errors above.")
 
 if __name__ == "__main__":
     main()

@@ -214,8 +214,6 @@ def main():
             # Generate normalized reference dimensions first
             if not table_has_data(client, DIM_CATEGORIES) or force_refresh:
                 logger.info("Generating categories dimension...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating categories table")
                 categories = generate_dim_categories()
                 append_df_bq(client, pd.DataFrame(categories), DIM_CATEGORIES)
             else:
@@ -225,8 +223,6 @@ def main():
             
             if not table_has_data(client, DIM_BRANDS) or force_refresh:
                 logger.info("Generating brands dimension...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating brands table")
                 brands = generate_dim_brands()
                 append_df_bq(client, pd.DataFrame(brands), DIM_BRANDS)
             else:
@@ -236,8 +232,6 @@ def main():
             
             if not table_has_data(client, DIM_SUBCATEGORIES) or force_refresh:
                 logger.info("Generating subcategories dimension...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating subcategories table")
                 subcategories = generate_dim_subcategories()
                 append_df_bq(client, pd.DataFrame(subcategories), DIM_SUBCATEGORIES)
             else:
@@ -248,8 +242,6 @@ def main():
             # Generate dependent dimensions
             if not table_has_data(client, DIM_PRODUCTS) or force_refresh:
                 logger.info("Generating products dimension with foreign keys...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating products table")
                 products = generate_dim_products(
                     categories=categories,
                     brands=brands,
@@ -262,8 +254,6 @@ def main():
             
             if not table_has_data(client, DIM_EMPLOYEES) or force_refresh:
                 logger.info("Generating normalized employees dimension...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating employees table")
                 employees = generate_dim_employees(
                     locations=locations,
                     departments=departments,
@@ -278,8 +268,6 @@ def main():
             
             if not table_has_data(client, DIM_RETAILERS) or force_refresh:
                 logger.info("Creating retailers...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating retailers table")
                 retailers = generate_dim_retailers_normalized(
                     num_retailers=INITIAL_RETAILERS, 
                     locations=locations
@@ -295,8 +283,6 @@ def main():
             
             if not table_has_data(client, DIM_CAMPAIGNS) or force_refresh:
                 logger.info("Creating campaigns...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating campaigns table")
                 campaigns = generate_dim_campaigns()
                 append_df_bq(client, pd.DataFrame(campaigns), DIM_CAMPAIGNS)
             else:
@@ -307,8 +293,6 @@ def main():
             
             if not table_has_data(client, DIM_DATES) or force_refresh:
                 logger.info("Creating dates...")
-                if force_refresh:
-                    logger.info("FORCE_REFRESH: Regenerating dates table")
                 dates = generate_dim_dates()
                 append_df_bq(client, pd.DataFrame(dates), DIM_DATES)
             else:
