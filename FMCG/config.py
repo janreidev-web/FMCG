@@ -34,6 +34,10 @@ DIM_DEPARTMENTS = f"{PROJECT_ID}.{DATASET}.dim_departments"
 DIM_JOBS = f"{PROJECT_ID}.{DATASET}.dim_jobs"
 DIM_BANKS = f"{PROJECT_ID}.{DATASET}.dim_banks"
 DIM_INSURANCE = f"{PROJECT_ID}.{DATASET}.dim_insurance"
+DIM_CATEGORIES = f"{PROJECT_ID}.{DATASET}.dim_categories"
+DIM_BRANDS = f"{PROJECT_ID}.{DATASET}.dim_brands"
+DIM_SUBCATEGORIES = f"{PROJECT_ID}.{DATASET}.dim_subcategories"
+DIM_DATES = f"{PROJECT_ID}.{DATASET}.dim_dates"
 
 # Fact table names (for BigQuery)
 FACT_SALES = f"{PROJECT_ID}.{DATASET}.fact_sales"

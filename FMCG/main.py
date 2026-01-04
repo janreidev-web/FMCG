@@ -11,10 +11,11 @@ from datetime import datetime, timedelta, date
 import time
 
 from config import (
-    PROJECT_ID, DATASET,
+    PROJECT_ID, DATASET, INITIAL_EMPLOYEES, INITIAL_PRODUCTS, INITIAL_RETAILERS,
     EMPLOYEES_TABLE, PRODUCTS_TABLE, RETAILERS_TABLE, SALES_TABLE, COSTS_TABLE, INVENTORY_TABLE, MARKETING_TABLE, DATES_TABLE,
     DIM_EMPLOYEES, DIM_PRODUCTS, DIM_RETAILERS, DIM_CAMPAIGNS,
     DIM_LOCATIONS, DIM_DEPARTMENTS, DIM_JOBS, DIM_BANKS, DIM_INSURANCE,
+    DIM_CATEGORIES, DIM_BRANDS, DIM_SUBCATEGORIES, DIM_DATES,
     FACT_SALES, FACT_OPERATING_COSTS, FACT_INVENTORY, FACT_MARKETING_COSTS, FACT_EMPLOYEES,
     INITIAL_SALES_AMOUNT, DAILY_SALES_AMOUNT
 )
@@ -26,7 +27,8 @@ from generators.dimensional import (
     generate_fact_employees, generate_fact_employee_wages, generate_dim_retailers_normalized,
     generate_dim_campaigns, generate_fact_sales, generate_daily_sales_with_delivery_updates,
     generate_fact_operating_costs, generate_fact_inventory, generate_fact_marketing_costs,
-    generate_dim_dates, validate_relationships
+    generate_dim_dates, generate_dim_categories, generate_dim_brands, generate_dim_subcategories,
+    validate_relationships
 )
 from generators.bigquery_updates import (
     execute_method_1_overwrite, execute_method_2_append, execute_method_3_staging,
@@ -34,21 +36,35 @@ from generators.bigquery_updates import (
     compare_update_methods
 )
 
-# Configure enhanced logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler()
-    ]
-)
+# Configure simplified logging for GitHub Actions
+is_github_actions = os.environ.get('GITHUB_ACTIONS') == 'true'
+
+if is_github_actions:
+    # Simplified logging for GitHub Actions
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(levelname)s: %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+else:
+    # Enhanced logging for local development
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+
 logger = logging.getLogger(__name__)
 
 def log_progress(step, total_steps, message, start_time=None):
     """Log progress with percentage and elapsed time"""
-    progress = (step / total_steps) * 100
-    elapsed = time.time() - start_time if start_time else 0
-    logger.info(f"[{step}/{total_steps}] {progress:.1f}% - {message} (Elapsed: {elapsed:.1f}s)")
+    if not is_github_actions:
+        progress = (step / total_steps) * 100
+        elapsed = time.time() - start_time if start_time else 0
+        logger.info(f"[{step}/{total_steps}] {progress:.1f}% - {message} (Elapsed: {elapsed:.1f}s)")
+    else:
+        # Simplified progress for GitHub Actions
+        logger.info(f"✅ {message} [{step}/{total_steps}]")
 
 def is_last_day_of_month():
     """Check if today is the last day of the month"""
@@ -66,28 +82,30 @@ def main():
     from datetime import datetime, timedelta, date
     
     start_time = time.time()
-    logger.info(f"{'='*60}")
-    logger.info(f"FMCG Data Simulator - Dimensional Model")
-    logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info(f"{'='*60}\n")
+    
+    if not is_github_actions:
+        logger.info(f"{'='*60}")
+        logger.info(f"FMCG Data Simulator - Dimensional Model")
+        logger.info(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(f"{'='*60}\n")
     
     try:
         # Initialize BigQuery client
-        logger.info("Authenticating with Google Cloud...")
+        logger.info("🔐 Connecting to Google Cloud...")
         client = get_bigquery_client(PROJECT_ID)
-        logger.info(f"Connected to project: {PROJECT_ID}")
+        logger.info(f"✅ Connected to: {PROJECT_ID}")
         
         # Check if this is a scheduled run
         is_scheduled = os.environ.get("SCHEDULED_RUN", "false").lower() == "true"
         is_last_day = is_last_day_of_month()
-        run_type = "SCHEDULED RUN" if is_scheduled else "MANUAL RUN"
-        logger.info(f"Run type: {run_type}")
         
         if is_scheduled:
             if is_last_day:
-                logger.info("🗓️  Last day of month - Full monthly update")
+                logger.info("📅 Monthly update - Full refresh")
             else:
-                logger.info("📅 Daily run - Sales data only")
+                logger.info("📊 Daily run - Sales data only")
+        else:
+            logger.info("🔧 Manual run - Full refresh")
         
         if is_scheduled and not table_has_data(client, FACT_SALES):
             logger.warning("⚠ SCHEDULED RUN SKIPPED: No initial data found.")
@@ -100,19 +118,19 @@ def main():
         should_update_dimensions = not is_scheduled or is_last_day
         
         if should_update_dimensions:
-            logger.info("Generating normalized dimension tables...")
+            logger.info("🏗️  Building dimensions...")
             dim_start = time.time()
         else:
-            logger.info("Skipping dimension tables (daily run - sales only)")
+            logger.info("⏭️  Skipping dimensions (daily run)")
         
         if should_update_dimensions:
             # Generate core dimensions first (dependencies)
             if not table_has_data(client, DIM_LOCATIONS):
-                logger.info("Generating locations dimension...")
+                logger.info("📍 Creating locations...")
                 locations = generate_dim_locations(num_locations=500)
                 append_df_bq(client, pd.DataFrame(locations), DIM_LOCATIONS)
             else:
-                logger.info("Locations dimension already exists. Skipping.")
+                logger.info("✅ Locations ready")
                 # Load existing locations for dependency
                 locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
                 locations = locations_df.to_dict("records")
@@ -153,10 +171,43 @@ def main():
                 insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
                 insurance = insurance_df.to_dict("records")
             
+            # Generate normalized reference dimensions first
+            if not table_has_data(client, DIM_CATEGORIES):
+                logger.info("Generating categories dimension...")
+                categories = generate_dim_categories()
+                append_df_bq(client, pd.DataFrame(categories), DIM_CATEGORIES)
+            else:
+                logger.info("Categories dimension already exists. Skipping.")
+                categories_df = client.query(f"SELECT * FROM `{DIM_CATEGORIES}`").to_dataframe()
+                categories = categories_df.to_dict("records")
+            
+            if not table_has_data(client, DIM_BRANDS):
+                logger.info("Generating brands dimension...")
+                brands = generate_dim_brands()
+                append_df_bq(client, pd.DataFrame(brands), DIM_BRANDS)
+            else:
+                logger.info("Brands dimension already exists. Skipping.")
+                brands_df = client.query(f"SELECT * FROM `{DIM_BRANDS}`").to_dataframe()
+                brands = brands_df.to_dict("records")
+            
+            if not table_has_data(client, DIM_SUBCATEGORIES):
+                logger.info("Generating subcategories dimension...")
+                subcategories = generate_dim_subcategories()
+                append_df_bq(client, pd.DataFrame(subcategories), DIM_SUBCATEGORIES)
+            else:
+                logger.info("Subcategories dimension already exists. Skipping.")
+                subcategories_df = client.query(f"SELECT * FROM `{DIM_SUBCATEGORIES}`").to_dataframe()
+                subcategories = subcategories_df.to_dict("records")
+            
             # Generate dependent dimensions
             if not table_has_data(client, DIM_PRODUCTS):
-                logger.info("Generating products dimension...")
-                products = generate_dim_products()
+                logger.info("Generating products dimension with foreign keys...")
+                products = generate_dim_products(
+                    num_products=INITIAL_PRODUCTS,
+                    categories=categories,
+                    brands=brands,
+                    subcategories=subcategories
+                )
                 append_df_bq(client, pd.DataFrame(products), DIM_PRODUCTS)
             else:
                 logger.info("Products dimension already exists. Skipping.")
@@ -164,7 +215,7 @@ def main():
             if not table_has_data(client, DIM_EMPLOYEES):
                 logger.info("Generating normalized employees dimension...")
                 employees = generate_dim_employees_normalized(
-                    num_employees=500, 
+                    num_employees=INITIAL_EMPLOYEES, 
                     locations=locations, 
                     jobs=jobs, 
                     banks=banks, 
@@ -178,7 +229,7 @@ def main():
             if not table_has_data(client, DIM_RETAILERS):
                 logger.info("Generating normalized retailers dimension...")
                 retailers = generate_dim_retailers_normalized(
-                    num_retailers=500, 
+                    num_retailers=INITIAL_RETAILERS, 
                     locations=locations
                 )
                 append_df_bq(client, pd.DataFrame(retailers), DIM_RETAILERS)
@@ -192,10 +243,10 @@ def main():
             else:
                 logger.info("Campaigns dimension already exists. Skipping.")
             
-            if not table_has_data(client, DATES_TABLE):
+            if not table_has_data(client, DIM_DATES):
                 logger.info("Generating dates dimension...")
                 dates = generate_dim_dates()
-                append_df_bq(client, pd.DataFrame(dates), DATES_TABLE)
+                append_df_bq(client, pd.DataFrame(dates), DIM_DATES)
             else:
                 logger.info("Dates dimension already exists. Skipping.")
             
@@ -313,7 +364,7 @@ def main():
             
             # Validate all relationships before fact table generation
             logger.info("🔍 Validating table relationships...")
-            if not validate_relationships(employees, products, retailers, campaigns, locations, departments, jobs, banks, insurance):
+            if not validate_relationships(employees, products, retailers, campaigns, locations, departments, jobs, banks, insurance, categories, brands, subcategories):
                 logger.error("❌ Relationship validation failed! Skipping fact table generation.")
                 return
             else:

@@ -786,68 +786,113 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
     
     return retailers
 
-def generate_dim_products(start_id=1):
-    """Generate products dimension table"""
+def generate_dim_categories(start_id=1):
+    """Generate product categories dimension table"""
+    categories = [
+        {"category_key": generate_unique_id("category"), "category_id": generate_readable_id("CAT", "category", 2), "category_name": "Beverages", "category_code": "BEV"},
+        {"category_key": generate_unique_id("category"), "category_id": generate_readable_id("CAT", "category", 2), "category_name": "Food", "category_code": "FOD"},
+        {"category_key": generate_unique_id("category"), "category_id": generate_readable_id("CAT", "category", 2), "category_name": "Personal Care", "category_code": "PER"},
+        {"category_key": generate_unique_id("category"), "category_id": generate_readable_id("CAT", "category", 2), "category_name": "Household", "category_code": "HH"},
+        {"category_key": generate_unique_id("category"), "category_id": generate_readable_id("CAT", "category", 2), "category_name": "Health", "category_code": "HLH"},
+    ]
+    return categories
+
+def generate_dim_brands(start_id=1):
+    """Generate brands dimension table"""
+    brands = [
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Nestlé", "brand_code": "NES"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Unilever", "brand_code": "UNI"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Procter & Gamble", "brand_code": "P&G"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Coca-Cola", "brand_code": "COK"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "PepsiCo", "brand_code": "PEP"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Mondelez", "brand_code": "MON"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Johnson & Johnson", "brand_code": "JNJ"},
+        {"brand_key": generate_unique_id("brand"), "brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Colgate-Palmolive", "brand_code": "COL"},
+    ]
+    return brands
+
+def generate_dim_subcategories(start_id=1):
+    """Generate product subcategories dimension table"""
+    subcategories = [
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Soft Drinks", "category_code": "BEV"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Juices", "category_code": "BEV"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Water", "category_code": "BEV"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Snacks", "category_code": "FOD"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Dairy", "category_code": "FOD"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Bakery", "category_code": "FOD"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Soap", "category_code": "PER"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Shampoo", "category_code": "PER"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Cleaning", "category_code": "HH"},
+        {"subcategory_key": generate_unique_id("subcategory"), "subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Vitamins", "category_code": "HLH"},
+    ]
+    return subcategories
+
+def generate_dim_products(num_products, categories, brands, subcategories, start_id=1):
+    """Generate products dimension table with normalized foreign keys"""
     products = []
+    
+    # Create lookup dictionaries for foreign keys
+    category_lookup = {cat["category_name"]: cat for cat in categories}
+    brand_lookup = {brand["brand_name"]: brand for brand in brands}
+    subcategory_lookup = {sub["subcategory_name"]: sub for sub in subcategories}
     
     # FMCG product categories and data
     product_data = [
         # Food Products
-        {"category": "Food", "subcategory": "Rice", "brand": "Datu", "name": "Premium Jasmine Rice", "wholesale": 45.50, "retail": 52.00},
-        {"category": "Food", "subcategory": "Rice", "brand": "Villar", "name": "Regular Milled Rice", "wholesale": 38.00, "retail": 43.00},
-        {"category": "Food", "subcategory": "Noodles", "brand": "Lucky Me", "name": "Instant Noodles Original", "wholesale": 8.50, "retail": 10.00},
-        {"category": "Food", "subcategory": "Noodles", "brand": "Nissin", "name": "Ramen Noodles", "wholesale": 12.00, "retail": 14.50},
-        {"category": "Food", "subcategory": "Canned Goods", "brand": "Mega", "name": "Sardines in Tomato Sauce", "wholesale": 15.50, "retail": 18.00},
-        {"category": "Food", "subcategory": "Canned Goods", "brand": "Century", "name": "Tuna Flakes in Oil", "wholesale": 28.00, "retail": 32.00},
-        {"category": "Food", "subcategory": "Biscuits", "brand": "Monde", "name": "Chocolate Sandwich Cookies", "wholesale": 22.50, "retail": 26.00},
-        {"category": "Food", "subcategory": "Biscuits", "brand": "Rebisco", "name": "Cream Sandwich", "wholesale": 18.00, "retail": 21.00},
-        {"category": "Food", "subcategory": "Coffee", "brand": "Nescafe", "name": "3-in-1 Coffee", "wholesale": 6.50, "retail": 8.00},
-        {"category": "Food", "subcategory": "Coffee", "brand": "Great Taste", "name": "White Coffee", "wholesale": 7.00, "retail": 8.50},
+        {"category": "Food", "subcategory": "Snacks", "brand": "Mondelez", "name": "Chocolate Sandwich Cookies", "wholesale": 22.50, "retail": 26.00},
+        {"category": "Food", "subcategory": "Snacks", "brand": "Mondelez", "name": "Cream Sandwich", "wholesale": 18.00, "retail": 21.00},
+        {"category": "Food", "subcategory": "Dairy", "brand": "Nestlé", "name": "3-in-1 Coffee", "wholesale": 6.50, "retail": 8.00},
+        {"category": "Food", "subcategory": "Dairy", "brand": "Nestlé", "name": "White Coffee", "wholesale": 7.00, "retail": 8.50},
+        {"category": "Food", "subcategory": "Bakery", "brand": "Mondelez", "name": "Premium Crackers", "wholesale": 15.50, "retail": 18.00},
+        {"category": "Food", "subcategory": "Bakery", "brand": "Mondelez", "name": "Assorted Biscuits", "wholesale": 12.00, "retail": 14.50},
         
         # Beverages
         {"category": "Beverages", "subcategory": "Soft Drinks", "brand": "Coca-Cola", "name": "Coca-Cola 1.5L", "wholesale": 45.00, "retail": 52.00},
-        {"category": "Beverages", "subcategory": "Soft Drinks", "brand": "Pepsi", "name": "Pepsi 1.5L", "wholesale": 44.00, "retail": 51.00},
-        {"category": "Beverages", "subcategory": "Juice", "brand": "Zesto", "name": "Orange Juice 1L", "wholesale": 28.50, "retail": 33.00},
-        {"category": "Beverages", "subcategory": "Juice", "brand": "Del Monte", "name": "Pineapple Juice 1L", "wholesale": 35.00, "retail": 40.00},
-        {"category": "Beverages", "subcategory": "Water", "brand": "Nestle", "name": "Pure Life Water 500ml", "wholesale": 8.00, "retail": 10.00},
-        {"category": "Beverages", "subcategory": "Water", "brand": "Wilkins", "name": "Distilled Water 500ml", "wholesale": 9.00, "retail": 11.00},
+        {"category": "Beverages", "subcategory": "Soft Drinks", "brand": "PepsiCo", "name": "Pepsi 1.5L", "wholesale": 44.00, "retail": 51.00},
+        {"category": "Beverages", "subcategory": "Juices", "brand": "Nestlé", "name": "Orange Juice 1L", "wholesale": 28.50, "retail": 33.00},
+        {"category": "Beverages", "subcategory": "Juices", "brand": "Nestlé", "name": "Pineapple Juice 1L", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Beverages", "subcategory": "Water", "brand": "Nestlé", "name": "Pure Life Water 500ml", "wholesale": 8.00, "retail": 10.00},
+        {"category": "Beverages", "subcategory": "Water", "brand": "Nestlé", "name": "Distilled Water 500ml", "wholesale": 9.00, "retail": 11.00},
         
         # Personal Care
-        {"category": "Personal Care", "subcategory": "Soap", "brand": "Safeguard", "name": "Antibacterial Soap", "wholesale": 18.50, "retail": 22.00},
-        {"category": "Personal Care", "subcategory": "Soap", "brand": "Dove", "name": "Beauty Bath Soap", "wholesale": 25.00, "retail": 29.00},
-        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Head & Shoulders", "name": "Anti-Dandruff Shampoo", "wholesale": 32.00, "retail": 37.00},
-        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Pantene", "name": "Smooth & Silky Shampoo", "wholesale": 35.00, "retail": 40.00},
-        {"category": "Personal Care", "subcategory": "Toothpaste", "brand": "Colgate", "name": "Total Toothpaste", "wholesale": 45.00, "retail": 52.00},
-        {"category": "Personal Care", "subcategory": "Toothpaste", "brand": "Close Up", "name": "Red Hot Toothpaste", "wholesale": 42.00, "retail": 48.00},
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Procter & Gamble", "name": "Antibacterial Soap", "wholesale": 18.50, "retail": 22.00},
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Unilever", "name": "Beauty Bath Soap", "wholesale": 25.00, "retail": 29.00},
+        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Procter & Gamble", "name": "Anti-Dandruff Shampoo", "wholesale": 32.00, "retail": 37.00},
+        {"category": "Personal Care", "subcategory": "Shampoo", "brand": "Procter & Gamble", "name": "Smooth & Silky Shampoo", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Colgate-Palmolive", "name": "Total Toothpaste", "wholesale": 45.00, "retail": 52.00},
+        {"category": "Personal Care", "subcategory": "Soap", "brand": "Colgate-Palmolive", "name": "Red Hot Toothpaste", "wholesale": 42.00, "retail": 48.00},
         
         # Household Care
-        {"category": "Household", "subcategory": "Detergent", "brand": "Tide", "name": "Laundry Detergent Powder", "wholesale": 28.00, "retail": 32.00},
-        {"category": "Household", "subcategory": "Detergent", "brand": "Surf", "name": "Laundry Detergent Powder", "wholesale": 25.00, "retail": 29.00},
-        {"category": "Household", "subcategory": "Fabric Softener", "brand": "Downy", "name": "Fabric Softener", "wholesale": 22.00, "retail": 26.00},
-        {"category": "Household", "subcategory": "Fabric Softener", "brand": "Comfort", "name": "Fabric Softener", "wholesale": 20.00, "retail": 24.00},
-        {"category": "Household", "subcategory": "Disinfectant", "brand": "Domex", "name": "Bleach Disinfectant", "wholesale": 35.00, "retail": 40.00},
-        {"category": "Household", "subcategory": "Disinfectant", "brand": "Zonrox", "name": "Color Safe Bleach", "wholesale": 32.00, "retail": 37.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Procter & Gamble", "name": "Laundry Detergent Powder", "wholesale": 28.00, "retail": 32.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Unilever", "name": "Laundry Detergent Powder", "wholesale": 25.00, "retail": 29.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Procter & Gamble", "name": "Fabric Softener", "wholesale": 22.00, "retail": 26.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Unilever", "name": "Fabric Softener", "wholesale": 20.00, "retail": 24.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Unilever", "name": "Bleach Disinfectant", "wholesale": 35.00, "retail": 40.00},
+        {"category": "Household", "subcategory": "Cleaning", "brand": "Unilever", "name": "Color Safe Bleach", "wholesale": 32.00, "retail": 37.00},
+        
+        # Health
+        {"category": "Health", "subcategory": "Vitamins", "brand": "Johnson & Johnson", "name": "Multivitamin Tablets", "wholesale": 150.00, "retail": 180.00},
+        {"category": "Health", "subcategory": "Vitamins", "brand": "Johnson & Johnson", "name": "Vitamin C Supplement", "wholesale": 85.00, "retail": 100.00},
     ]
     
     for i, product in enumerate(product_data):
+        # Get foreign key references
+        category_ref = category_lookup.get(product["category"])
+        brand_ref = brand_lookup.get(product["brand"])
+        subcategory_ref = subcategory_lookup.get(product["subcategory"])
+        
+        if not category_ref or not brand_ref or not subcategory_ref:
+            continue  # Skip if foreign key references not found
+        
         # Ensure good distribution of created dates from 2015 onwards
-        # 70% created in first 3 years (2015-2017), 30% distributed across remaining years
         if random.random() < 0.7:
-            # Early products (2015-2017) to ensure sales generation works
             created_date = fake.date_between_dates(date_start=date(2015, 1, 1), date_end=date(2017, 12, 31))
         else:
-            # Later products (2018-today)
             created_date = fake.date_between_dates(date_start=date(2018, 1, 1), date_end=date.today())
         
         # Determine product status based on age
-        # Older products are more likely to be delisted
         years_since_creation = (date.today() - created_date).days / 365.0
         
-        # Calculate delisting probability based on age
-        # Products older than 8 years: 40% chance of delisting
-        # Products 5-8 years old: 25% chance of delisting
-        # Products 3-5 years old: 15% chance of delisting
-        # Products less than 3 years old: 5% chance of delisting
         if years_since_creation > 8:
             delist_probability = 0.40
         elif years_since_creation > 5:
@@ -857,16 +902,15 @@ def generate_dim_products(start_id=1):
         else:
             delist_probability = 0.05
         
-        # Determine status
         status = "Delisted" if random.random() < delist_probability else "Active"
         
         products.append({
             "product_key": generate_unique_id("product"),
             "product_id": generate_readable_id("P", "product", 4),
             "product_name": product["name"],
-            "category": product["category"],
-            "subcategory": product["subcategory"],
-            "brand": product["brand"],
+            "category_key": category_ref["category_key"],
+            "brand_key": brand_ref["brand_key"],
+            "subcategory_key": subcategory_ref["subcategory_key"],
             "wholesale_price": product["wholesale"],
             "retail_price": product["retail"],
             "status": status,
@@ -972,7 +1016,7 @@ def generate_dim_campaigns(start_id=1):
     
     return campaigns
 
-def validate_relationships(employees, products, retailers, campaigns, locations, departments, jobs, banks, insurance):
+def validate_relationships(employees, products, retailers, campaigns, locations, departments, jobs, banks, insurance, categories, brands, subcategories):
     """Validate all foreign key relationships for referential integrity"""
     print("🔍 Validating table relationships...")
     
@@ -987,6 +1031,9 @@ def validate_relationships(employees, products, retailers, campaigns, locations,
     product_keys = {int(prod["product_key"]) for prod in products}
     retailer_keys = {int(ret["retailer_key"]) for ret in retailers}
     campaign_keys = {int(camp["campaign_key"]) for camp in campaigns}
+    category_keys = {int(cat["category_key"]) for cat in categories}
+    brand_keys = {int(brand["brand_key"]) for brand in brands}
+    subcategory_keys = {int(sub["subcategory_key"]) for sub in subcategories}
     
     # Helper function to safely convert BigQuery values to int
     def safe_int(value):
@@ -1033,6 +1080,19 @@ def validate_relationships(employees, products, retailers, campaigns, locations,
         loc_key = safe_int(ret.get("location_key"))
         if loc_key is not None and loc_key not in location_keys:
             issues.append(f"Retailer {ret['retailer_key']}: Invalid location_key {loc_key}")
+    
+    # Validate product relationships (NEW)
+    for prod in products:
+        category_key = safe_int(prod.get("category_key"))
+        brand_key = safe_int(prod.get("brand_key"))
+        subcategory_key = safe_int(prod.get("subcategory_key"))
+        
+        if category_key is not None and category_key not in category_keys:
+            issues.append(f"Product {prod['product_key']}: Invalid category_key {category_key}")
+        if brand_key is not None and brand_key not in brand_keys:
+            issues.append(f"Product {prod['product_key']}: Invalid brand_key {brand_key}")
+        if subcategory_key is not None and subcategory_key not in subcategory_keys:
+            issues.append(f"Product {prod['product_key']}: Invalid subcategory_key {subcategory_key}")
     
     if issues:
         print(f"❌ Found {len(issues)} relationship issues:")
@@ -1173,7 +1233,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     # Create growth factors for realistic business growth
     # For 10-year period: start small, grow to exceed target
     growth_start = 0.5  # Start at 50% of final daily rate
-    growth_end = 1.3   # End at 130% of target (to exceed ₱8B total)
+    growth_end = 1.5   # End at 140% of target (to exceed ₱8B total)
     
     # Find the earliest date when we have both employees and products available
     # Use 2015-01-01 as minimum for historical data, but consider actual availability
