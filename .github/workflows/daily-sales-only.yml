@@ -36,7 +36,7 @@ jobs:
         
     - name: Setup environment
       env:
-        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
@@ -59,7 +59,7 @@ jobs:
         
     - name: Run Daily Sales Only
       env:
-        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}

@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     """Application settings with environment variable support"""
     
     # Google Cloud Configuration
-    gcp_project_id: str = Field(default="fmcg-analytics", env="GCP_PROJECT_ID")
+    gcp_project_id: str = Field(default="fmcg-data-generator", env="GCP_PROJECT_ID")
     gcp_dataset: str = Field(default="fmcg_warehouse", env="GCP_DATASET")
     gcp_credentials_path: Optional[str] = Field(default=None, env="GOOGLE_APPLICATION_CREDENTIALS")
     

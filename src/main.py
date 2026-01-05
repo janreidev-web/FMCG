@@ -7,13 +7,21 @@ import os
 from pathlib import Path
 from typing import Dict, Any
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add parent directory to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from src.utils.bigquery_client import BigQueryManager
-from src.utils.logger import setup_logger
-from src.etl.pipeline import ETLPipeline
-from config.settings import settings
+try:
+    from src.utils.bigquery_client import BigQueryManager
+    from src.utils.logger import setup_logger
+    from src.etl.pipeline import ETLPipeline
+    from config.settings import settings
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Current working directory:", os.getcwd())
+    print("Python path:", sys.path)
+    print("Project root:", project_root)
+    sys.exit(1)
 
 
 def main() -> None:

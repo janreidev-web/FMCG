@@ -7,12 +7,22 @@ import sys
 from pathlib import Path
 from typing import Dict, Any
 
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# Add parent directory to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+sys.path.insert(0, str(project_root / "src"))
 
-from src.utils.bigquery_client import BigQueryManager
-from src.utils.logger import setup_logger
-from config.settings import settings
+try:
+    from src.utils.bigquery_client import BigQueryManager
+    from src.utils.logger import setup_logger
+    from config.settings import settings
+except ImportError as e:
+    print(f"Import error: {e}")
+    print("Current working directory:", os.getcwd())
+    print("Python path:", sys.path)
+    print("Project root:", project_root)
+    print("Src path:", project_root / "src")
+    sys.exit(1)
 
 
 def create_env_file() -> None:
