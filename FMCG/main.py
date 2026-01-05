@@ -1039,6 +1039,12 @@ def main():
             if (not table_has_data(client, FACT_INVENTORY) or force_refresh or should_update_monthly_facts):
                 if force_refresh:
                     logger.info("\nFORCE_REFRESH: Regenerating inventory fact...")
+                    # Delete existing inventory table to handle schema changes
+                    try:
+                        client.delete_table(FACT_INVENTORY)
+                        logger.info("✓ Deleted existing inventory table for schema refresh")
+                    except Exception as e:
+                        logger.info(f"Inventory table doesn't exist or couldn't delete: {e}")
                 elif should_update_monthly_facts:
                     logger.info("\nMonthly update: Regenerating inventory fact...")
                 else:
@@ -1049,7 +1055,7 @@ def main():
                 logger.info("Inventory table already exists. Skipping (daily run).")
         
         # Quarterly updates: Campaign Costs Only
-        if should_update_quarterly_facts:
+        if should_update_quarterly_facts or force_refresh:
             # For scheduled runs, skip table existence checks - just regenerate
             if is_scheduled:
                 logger.info("=== SCHEDULED QUARTERLY UPDATE ===")
@@ -1076,6 +1082,23 @@ def main():
                 start_date = date(2015, 1, 1)
                 end_date = date.today() - timedelta(days=1)
                 
+            elif force_refresh:
+                logger.info("=== FORCE REFRESH: REGENERATING MARKETING COSTS ===")
+                # Load existing campaigns
+                campaigns_df = client.query(f"SELECT * FROM `{DIM_CAMPAIGNS}`").to_dataframe()
+                campaigns = campaigns_df.to_dict("records")
+                
+                # Generate marketing costs with full historical range
+                start_date = date(2015, 1, 1)
+                end_date = date.today() - timedelta(days=1)
+                
+                # Delete existing marketing costs table for clean refresh
+                try:
+                    client.delete_table(FACT_MARKETING_COSTS)
+                    logger.info("✓ Deleted existing marketing costs table for clean refresh")
+                except Exception as e:
+                    logger.info(f"Marketing costs table doesn't exist or couldn't delete: {e}")
+                    
                 logger.info(f"Marketing costs date range: {start_date} to {end_date}")
                 logger.info(f"Number of campaigns available: {len(campaigns)}")
                 
@@ -1091,63 +1114,44 @@ def main():
                     logger.info("Marketing costs loaded successfully")
                 else:
                     logger.warning("No marketing costs generated - skipping table creation")
-            else:
-                # Manual runs - check table existence
-                logger.info(f"\nChecking marketing costs table: {FACT_MARKETING_COSTS}")
-            marketing_table_exists = table_has_data(client, FACT_MARKETING_COSTS)
-            logger.info(f"Marketing costs table exists: {marketing_table_exists}")
-            
-            # Drop existing marketing costs table to force regeneration with new campaigns
-            if marketing_table_exists:
-                logger.info("Dropping existing marketing costs table to regenerate with new campaigns...")
-                try:
-                    client.delete_table(FACT_MARKETING_COSTS)
-                    logger.info("Marketing costs table dropped successfully")
-                    marketing_table_exists = False
-                except Exception as e:
-                    logger.warning(f"Could not drop marketing costs table: {e}")
-            
-            # Force regenerate marketing costs if it's missing or empty
-            if not marketing_table_exists:
-                if should_update_quarterly_facts and is_quarter_start:
-                    logger.info("Quarterly update: Generating marketing costs fact...")
-                else:
-                    logger.info("Generating marketing costs fact...")
+                    logger.warning("This might be due to date range mismatch with campaigns")
+                    
+            else:  # Manual quarterly run
+                logger.info("=== QUARTERLY UPDATE ===")
+                # Load existing campaigns
+                campaigns_df = client.query(f"SELECT * FROM `{DIM_CAMPAIGNS}`").to_dataframe()
+                campaigns = campaigns_df.to_dict("records")
                 
-                try:
-                    # Always use historical range for marketing costs to match campaigns
-                    # Marketing costs should cover the full campaign period regardless of sales table status
-                    start_date = date(2015, 1, 1)
-                    end_date = date.today() - timedelta(days=1)
-                    
-                    logger.info(f"Marketing costs date range: {start_date} to {end_date}")
-                    logger.info(f"Number of campaigns available: {len(campaigns)}")
-                    
-                    # Debug: Show campaign date ranges
-                    for i, campaign in enumerate(campaigns[:3]):  # Show first 3 campaigns
-                        logger.info(f"Campaign {i+1}: {campaign['campaign_name']} ({campaign['start_date']} to {campaign['end_date']})")
-                    
-                    marketing_costs = generate_fact_marketing_costs(
-                        campaigns, 
-                        INITIAL_SALES_AMOUNT * 0.08,  # 8% of revenue (realistic marketing spend)
-                        start_date=start_date,
-                        end_date=end_date
-                    )
-                    logger.info(f"Generated {len(marketing_costs):,} marketing cost records")
-                    if len(marketing_costs) > 0:
-                        append_df_bq(client, pd.DataFrame(marketing_costs), FACT_MARKETING_COSTS)
-                        logger.info("Marketing costs loaded successfully")
-                    else:
-                        logger.warning("No marketing costs generated - skipping table creation")
-                        logger.warning("This might be due to date range mismatch with campaigns")
-                except Exception as e:
-                    logger.error(f"Error generating marketing costs: {str(e)}")
-                    raise
-            else:
-                if is_quarter_start:
-                    logger.info("Marketing costs table already exists. Skipping (quarterly run).")
+                # Generate marketing costs
+                start_date = date(2015, 1, 1)
+                end_date = date.today() - timedelta(days=1)
+                
+                logger.info(f"Marketing costs date range: {start_date} to {end_date}")
+                logger.info(f"Number of campaigns available: {len(campaigns)}")
+                
+                marketing_costs = generate_fact_marketing_costs(
+                    campaigns, 
+                    INITIAL_SALES_AMOUNT * 0.08,  # 8% of revenue (realistic marketing spend)
+                    start_date=start_date,
+                    end_date=end_date
+                )
+                logger.info(f"Generated {len(marketing_costs):,} marketing cost records")
+                if len(marketing_costs) > 0:
+                    append_df_bq(client, pd.DataFrame(marketing_costs), FACT_MARKETING_COSTS)
+                    logger.info("Marketing costs loaded successfully")
                 else:
-                    logger.info("Marketing costs table already exists. Skipping (not quarterly).")
+                    logger.warning("No marketing costs generated - skipping table creation")
+                    logger.warning("This might be due to date range mismatch with campaigns")
+            try:
+                pass  # Placeholder for try block
+            except Exception as e:
+                logger.error(f"Error generating marketing costs: {str(e)}")
+                raise
+        else:
+            if is_quarter_start:
+                logger.info("Marketing costs table already exists. Skipping (quarterly run).")
+            else:
+                logger.info("Marketing costs table already exists. Skipping (not quarterly).")
         
         # ==================== SUMMARY ====================
         logger.info("Load complete!")
