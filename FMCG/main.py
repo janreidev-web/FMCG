@@ -585,15 +585,14 @@ def main():
         # ==================== FACT TABLES ====================
         logger.info("Generating fact tables...")
         
-        # Generate fact tables - FORCE SALES GENERATION
-        logger.info("FORCE: About to generate sales data regardless of table existence...")
-        
         # Skip daily sales for monthly/quarterly workflows
         skip_daily_sales = os.environ.get("SKIP_DAILY_SALES", "false").lower() == "true"
+        
         if skip_daily_sales:
             logger.info("SKIP_DAILY_SALES: Skipping daily sales generation for monthly/quarterly workflow")
+            logger.info("Sales are handled by daily workflow - proceeding to monthly/quarterly updates only")
         else:
-            # Always try to generate sales data (bypass table existence check for debugging)
+            # Generate sales data for daily workflow only
             yesterday = date.today() - timedelta(days=1)
             day_before_yesterday = date.today() - timedelta(days=2)
             
@@ -792,118 +791,6 @@ def main():
                     logger.warning(f"Could not update delivery statuses: {e}")
                     logger.info("Continuing with scheduled run...")
                     logger.info("Tip: You can manually update statuses using BigQuery Console with WRITE_TRUNCATE")
-        
-        # Always try to append the sales data (even if empty, this will create the table)
-        logger.info("About to append sales data to BigQuery...")
-        try:
-            logger.info(f"Creating DataFrame with {len(sales)} sales records...")
-            sales_df = pd.DataFrame(sales)
-            logger.info(f"DataFrame shape: {sales_df.shape}")
-            
-            if not sales_df.empty:
-                logger.info(f"DataFrame columns: {list(sales_df.columns)}")
-                logger.info(f"Sample data: {sales_df.head(1).to_dict()}")
-            else:
-                logger.warning("Empty DataFrame - will create table structure only")
-            
-            # Check if table exists first, if not create it
-            if not table_has_data(client, FACT_SALES):
-                logger.info(f"Table {FACT_SALES} does not exist. Creating table structure...")
-                # Create empty DataFrame with correct schema to establish table
-                if sales_df.empty:
-                    # Create a sample record to establish schema
-                    sample_schema_df = pd.DataFrame([{
-                        "sale_id": "SAL000001",
-                        "sale_date": date.today(),
-                        "product_id": "PROD000001",
-                        "retailer_id": "RET000001",
-                        "case_quantity": 1,
-                        "unit_price": 100.0,
-                        "discount_percent": 0.0,
-                        "tax_rate": 0.12,
-                        "total_amount": 112.0,
-                        "commission_amount": 3.36,
-                        "currency": "PHP",
-                        "payment_method": "Cash",
-                        "payment_status": "Paid",
-                        "delivery_status": "Pending",
-                        "expected_delivery_date": date.today() + timedelta(days=1),
-                        "actual_delivery_date": None
-                    }])
-                    append_df_bq_safe(client, sample_schema_df, FACT_SALES, "sale_id")
-                    logger.info("Created table schema with sample record")
-            
-            # Use appropriate loading method based on force_refresh
-            if force_refresh:
-                # Force refresh: truncate table and load fresh data (no duplicate checking)
-                logger.info("FORCE_REFRESH: Truncating sales table and loading fresh data...")
-                try:
-                    # Delete existing sales data
-                    client.delete_table(FACT_SALES)
-                    logger.info("Deleted existing sales table for force refresh")
-                except Exception:
-                    logger.info("Sales table doesn't exist or couldn't delete (continuing)")
-                
-                # Load fresh data without duplicate checking
-                append_df_bq(client, sales_df, FACT_SALES, write_disposition="WRITE_TRUNCATE")
-                logger.info("Sales data force refresh completed")
-            else:
-                # Normal run: check for duplicates and append
-                append_df_bq_safe(client, sales_df, FACT_SALES, "sale_id")
-                logger.info("Sales data append completed")
-        except Exception as e:
-            logger.error(f"Error appending sales data: {e}")
-            import traceback
-            logger.error(f"Append traceback: {traceback.format_exc()}")
-        
-        # Log sales generation summary
-        logger.info(f"Sales generation completed:")
-        logger.info(f"  Total sales records: {len(sales):,}")
-        logger.info(f"  Total sales amount: ₱{sum(s['total_amount'] for s in sales):,.2f}")
-        
-        # Update delivery status for all runs (daily and scheduled)
-        logger.info("Checking delivery status...")
-        # For free tier, we can only monitor, not update directly
-        # The actual status updates will be handled using BigQuery free tier methods
-        update_delivery_status(client, FACT_SALES)
-        
-        # For scheduled runs, update delivery statuses using official BigQuery methods
-        if is_scheduled:
-            logger.info("Updating delivery statuses using BigQuery free tier methods...")
-            
-            try:
-                # Method 1: Direct table overwrite (simple, no audit trail)
-                logger.info("Method 1: Direct table overwrite...")
-                method1_success = execute_method_1_overwrite(client, PROJECT_ID, DATASET, FACT_SALES)
-                
-                if method1_success:
-                    logger.info("Delivery statuses updated successfully")
-                    
-                    # Get updated status summary
-                    summary_df = get_delivery_status_summary(client, PROJECT_ID, DATASET)
-                    if not summary_df.empty:
-                        logger.info("Current Delivery Status Summary:")
-                        for _, row in summary_df.iterrows():
-                            logger.info(f"   {row['current_delivery_status']}: {row['order_count']:,} orders (PHP {row['total_value']:,.2f})")
-                else:
-                    logger.warning("Method 1 failed, trying Method 2...")
-                    
-                    # Method 2: Append update records (with audit trail)
-                    logger.info("Method 2: Append update records...")
-                    method2_success = execute_method_2_append(client, PROJECT_ID, DATASET, 'delivery_status_updates')
-                    
-                    if method2_success:
-                        # Create current status view
-                        view_query = create_current_delivery_status_view(PROJECT_ID, DATASET, FACT_SALES, 'delivery_status_updates')
-                        client.query(view_query).result()
-                        logger.info("Delivery status updates appended and view created")
-                    else:
-                        logger.warning("All update methods failed, continuing with run...")
-                        
-            except Exception as e:
-                logger.warning(f"Could not update delivery statuses: {e}")
-                logger.info("Continuing with scheduled run...")
-                logger.info("Tip: You can manually update statuses using BigQuery Console with WRITE_TRUNCATE")
         
         # Generate other fact tables based on schedule
         # Daily: Only sales (handled above)
