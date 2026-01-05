@@ -1365,8 +1365,8 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
     # Find the earliest date when we have both employees and products available
     # Use 2015-01-01 as minimum for historical data, but consider actual availability
     historical_start_date = date(2015, 1, 1)
-    earliest_employee_date = min(e.get('hire_date', date.today()) for e in employees)
-    earliest_product_date = min(p.get('created_date', date.today()) for p in products)
+    earliest_employee_date = min((e.get('hire_date', date.today()).date() if hasattr(e.get('hire_date', date.today()), 'date') else e.get('hire_date', date.today())) for e in employees)
+    earliest_product_date = min((p.get('created_date', date.today()).date() if hasattr(p.get('created_date', date.today()), 'date') else p.get('created_date', date.today())) for p in products)
     earliest_available_date = max(historical_start_date, earliest_employee_date, earliest_product_date)
     
     # Start sales from the later of: requested start_date or earliest_available_date
