@@ -27,36 +27,54 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r FMCG/requirements.txt
+        pip install -r requirements.txt
         
     - name: Authenticate to GCP
       run: |
         echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
         echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
+    - name: Setup environment
+      env:
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
+        DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
+        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      run: |
+        echo "=== Setting up Environment ==="
+        echo "Time: $(date)"
+        echo "Working Directory: $(pwd)"
+        
+        # Create .env file for configuration
+        cat > .env << EOF
+        GCP_PROJECT_ID=${GCP_PROJECT_ID}
+        GCP_DATASET=${BQ_DATASET}
+        INITIAL_SALES_AMOUNT=${INITIAL_SALES_AMOUNT}
+        DAILY_SALES_AMOUNT=${DAILY_SALES_AMOUNT}
+        LOG_LEVEL=INFO
+        BATCH_SIZE=1000
+        EOF
+        
+        echo "=== Environment Setup Completed ==="
+        echo "Time: $(date)"
+        
     - name: Run Monthly Update
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
-        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
         SCHEDULED_RUN: true
-        FORCE_REFRESH: false
-        FORCE_MONTHLY_UPDATE: true
-        SKIP_DAILY_SALES: true
       run: |
-        cd FMCG
         echo "=== Starting Monthly Update ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
         echo "SCHEDULED_RUN: $SCHEDULED_RUN"
         echo "This will update: Inventory, Products, Employees, Operating Costs"
         
-        # Set environment variables
-        export PYTHONUNBUFFERED=1
-        export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
-        
-        python main.py
+        # Run full pipeline for monthly updates (includes all dimensions and facts)
+        python src/main.py
         
         echo "=== Monthly Update Completed ==="
         echo "Time: $(date)"
@@ -65,3 +83,4 @@ jobs:
       if: always()
       run: |
         rm -f $HOME/gcloud-key.json
+        rm -f .env

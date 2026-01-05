@@ -11,6 +11,14 @@ on:
         options:
         - 'true'
         - 'false'
+      mode:
+        description: 'Generation mode'
+        required: false
+        default: 'full'
+        type: choice
+        options:
+        - 'full'
+        - 'incremental'
 
 jobs:
   generate-data:
@@ -33,7 +41,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r FMCG/requirements.txt
+        pip install -r requirements.txt
         pip install psutil
         
     - name: Authenticate to GCP
@@ -45,10 +53,11 @@ jobs:
       run: |
         echo "=== Environment Variables ==="
         echo "GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}"
-        echo "BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}"
-        echo "INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}"
+        echo "BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}"
+        echo "INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}"
         echo "DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}"
         echo "FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'true' }}"
+        echo "MODE: ${{ github.event.inputs.mode || 'full' }}"
         echo "=== Python Version ==="
         python --version
         echo "=== System Resources ==="
@@ -56,50 +65,67 @@ jobs:
         echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
         echo "Disk space: $(df -h / | tail-1 | awk '{print $4}')"
         
-    - name: Pre-create BigQuery tables
+    - name: Setup environment
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
-        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
+        DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       run: |
-        echo "=== Pre-creating BigQuery Tables ==="
+        echo "=== Setting up Environment ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
         
-        # Set environment variables
-        export PYTHONUNBUFFERED=1
-        export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
+        # Create .env file for configuration
+        cat > .env << EOF
+        GCP_PROJECT_ID=${GCP_PROJECT_ID}
+        GCP_DATASET=${BQ_DATASET}
+        INITIAL_SALES_AMOUNT=${INITIAL_SALES_AMOUNT}
+        DAILY_SALES_AMOUNT=${DAILY_SALES_AMOUNT}
+        LOG_LEVEL=INFO
+        BATCH_SIZE=1000
+        EOF
         
-        # Pre-create tables
-        python create_tables.py
+        echo "=== Environment Setup Completed ==="
+        echo "Time: $(date)"
         
-        echo "=== Table Creation Completed ==="
+    - name: Run setup script
+      run: |
+        echo "=== Running Setup Script ==="
+        echo "Time: $(date)"
+        
+        # Run setup to verify configuration and create dataset
+        python scripts/setup.py
+        
+        echo "=== Setup Completed ==="
         echo "Time: $(date)"
         
     - name: Run data generator with enhanced monitoring
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
-        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
-        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        SCHEDULED_RUN: false  # Force manual mode
+        MODE: ${{ github.event.inputs.mode || 'full' }}
         FORCE_REFRESH: ${{ github.event.inputs.force_refresh || 'true' }}
       run: |
-        cd FMCG
         echo "=== Starting Manual Data Generation ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
         echo "Available Memory: $(free -h | grep '^Mem:' | awk '{print $7}')"
-        echo "SCHEDULED_RUN: $SCHEDULED_RUN"
+        echo "MODE: $MODE"
         echo "FORCE_REFRESH: $FORCE_REFRESH"
         
-        # Set environment variables for debugging
-        export PYTHONUNBUFFERED=1
-        export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
-        
-        # Run with timeout and progress monitoring
-        timeout 150m python main.py 2>&1 | tee /tmp/generator.log
+        # Determine execution mode
+        if [ "$MODE" = "incremental" ]; then
+          echo "Running in incremental mode..."
+          timeout 150m python src/main.py --incremental 2>&1 | tee /tmp/generator.log
+        else
+          echo "Running in full mode..."
+          timeout 150m python src/main.py 2>&1 | tee /tmp/generator.log
+        fi
         
         echo "=== Data Generation Completed ==="
         echo "Time: $(date)"
@@ -117,3 +143,4 @@ jobs:
       if: always()
       run: |
         rm -f $HOME/gcloud-key.json
+        rm -f .env
