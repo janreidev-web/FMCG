@@ -155,6 +155,14 @@ def main():
         # Only generate dimensions on manual runs, monthly, or quarterly
         should_update_dimensions = not is_scheduled or is_last_day or is_quarter_start or force_refresh
         
+        # Generate other fact tables based on schedule
+        # Daily: Only sales (handled above)
+        # Monthly: New employees, inventory, operating costs
+        # Quarterly: Campaign costs (in addition to monthly items)
+        
+        should_update_monthly_facts = (not is_scheduled or is_last_day or force_refresh)
+        should_update_quarterly_facts = (not is_scheduled or is_quarter_start or force_refresh)
+        
         if should_update_dimensions:
             logger.info("Building dimensions...")
             dim_start = time.time()
@@ -808,9 +816,6 @@ def main():
         # Daily: Only sales (handled above)
         # Monthly: New employees, inventory, operating costs
         # Quarterly: Campaign costs (in addition to monthly items)
-        
-        should_update_monthly_facts = (not is_scheduled or is_last_day or force_refresh)
-        should_update_quarterly_facts = (not is_scheduled or is_quarter_start or force_refresh)
         
         if should_update_monthly_facts or should_update_quarterly_facts:
             if is_quarter_start:
