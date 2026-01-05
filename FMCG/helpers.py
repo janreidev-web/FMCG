@@ -45,17 +45,31 @@ def ensure_bigquery_dtypes(df, table_id):
         from schema import (
             FACT_EMPLOYEES_SCHEMA, FACT_MARKETING_COSTS_SCHEMA, 
             FACT_SALES_SCHEMA, FACT_INVENTORY_SCHEMA,
-            FACT_EMPLOYEE_WAGES_SCHEMA, FACT_OPERATING_COSTS_SCHEMA
+            FACT_EMPLOYEE_WAGES_SCHEMA, FACT_OPERATING_COSTS_SCHEMA,
+            DIM_JOBS_SCHEMA, DIM_EMPLOYEES_SCHEMA, DIM_PRODUCTS_SCHEMA,
+            DIM_RETAILERS_SCHEMA, DIM_CAMPAIGNS_SCHEMA, DIM_LOCATIONS_SCHEMA,
+            DIM_DEPARTMENTS_SCHEMA, DIM_BANKS_SCHEMA, DIM_INSURANCE_SCHEMA,
+            DELIVERY_STATUS_UPDATES_SCHEMA
         )
         
-        # Schema mapping for tables with integer ID columns
+        # Schema mapping for all tables with integer columns
         schema_map = {
             'fact_employees': FACT_EMPLOYEES_SCHEMA,
             'fact_marketing_costs': FACT_MARKETING_COSTS_SCHEMA,
             'fact_sales': FACT_SALES_SCHEMA,
             'fact_inventory': FACT_INVENTORY_SCHEMA,
             'fact_employee_wages': FACT_EMPLOYEE_WAGES_SCHEMA,
-            'fact_operating_costs': FACT_OPERATING_COSTS_SCHEMA
+            'fact_operating_costs': FACT_OPERATING_COSTS_SCHEMA,
+            'dim_jobs': DIM_JOBS_SCHEMA,
+            'dim_employees': DIM_EMPLOYEES_SCHEMA,
+            'dim_products': DIM_PRODUCTS_SCHEMA,
+            'dim_retailers': DIM_RETAILERS_SCHEMA,
+            'dim_campaigns': DIM_CAMPAIGNS_SCHEMA,
+            'dim_locations': DIM_LOCATIONS_SCHEMA,
+            'dim_departments': DIM_DEPARTMENTS_SCHEMA,
+            'dim_banks': DIM_BANKS_SCHEMA,
+            'dim_insurance': DIM_INSURANCE_SCHEMA,
+            'delivery_status_updates': DELIVERY_STATUS_UPDATES_SCHEMA
         }
         
         # Get table name from full table_id
@@ -69,8 +83,11 @@ def ensure_bigquery_dtypes(df, table_id):
                 if field['type'] == 'INTEGER' and field['name'] in df.columns:
                     col_name = field['name']
                     logger.info(f"Converting column '{col_name}' to INTEGER for BigQuery compatibility")
-                    # Convert to nullable integer type to handle missing values
-                    df[col_name] = pd.to_numeric(df[col_name], errors='coerce').astype('Int64')
+                    # Convert to regular integer type for BigQuery compatibility
+                    # First handle any missing values by filling with 0 or appropriate default
+                    df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
+                    # Fill NaN values with 0 for integer columns
+                    df[col_name] = df[col_name].fillna(0).astype('int64')
                     
         logger.info(f"Data type conversion completed for {table_name}")
         

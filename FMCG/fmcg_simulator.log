@@ -11,3 +11,13 @@ ERROR: Your default credentials were not found. To set up Application Default Cr
 2026-01-05 12:59:07,774 - INFO - Starting Daily Sales Only Process
 2026-01-05 12:59:20,054 - ERROR - Daily sales process failed: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
 2026-01-05 12:59:20,059 - ERROR - Failed at: 2026-01-05 12:59:20.054974
+2026-01-05 23:58:12,974 - INFO - ============================================================
+2026-01-05 23:58:12,974 - INFO - FMCG Data Simulator - Dimensional Model
+2026-01-05 23:58:12,975 - INFO - Started at: 2026-01-05 23:58:12
+2026-01-05 23:58:12,975 - INFO - ============================================================
+
+2026-01-05 23:58:12,975 - INFO - Connecting to Google Cloud...
+2026-01-05 23:58:25,071 - ERROR - 
+ERROR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-01-05 23:58:25,072 - ERROR - Failed at: 2026-01-05 23:58:25
+2026-01-05 23:58:25,072 - ERROR - Elapsed time: 12.1 seconds
