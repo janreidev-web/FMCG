@@ -151,7 +151,7 @@ class ETLPipeline:
         self.logger.info("Fact data generation completed")
     
     def _generate_sales_data(self, config: Dict[str, Any]) -> pd.DataFrame:
-        """Generate sales transaction data"""
+        """Generate sales transaction data - optimized for free tier"""
         initial_amount = config.get("initial_sales_amount", 8000000000)
         daily_amount = config.get("daily_sales_amount", 2000000)
         
@@ -161,29 +161,37 @@ class ETLPipeline:
         employees = self.data_cache["dim_employees"]
         campaigns = self.data_cache["dim_campaigns"]
         
-        # Generate historical sales (10 years)
+        # Calculate target transactions for 11 years (~500K total)
+        target_transactions = 500000
+        years = 11
+        days_per_year = 365
+        
+        # Calculate daily transaction targets
+        total_days = years * days_per_year
+        base_daily_transactions = target_transactions // total_days
+        
+        # Add some variation (±20%)
+        min_daily_tx = max(50, int(base_daily_transactions * 0.8))
+        max_daily_tx = int(base_daily_transactions * 1.2)
+        
+        self.logger.info(f"Target: {target_transactions:,} transactions over {years} years")
+        self.logger.info(f"Daily range: {min_daily_tx}-{max_daily_tx} transactions")
+        self.logger.info(f"Expected annual: {target_transactions // years:,} transactions")
+        
+        # Generate all sales in one go
         sales = []
         sale_id = 1
+        total_generated = 0
         
-        start_date = datetime.now() - timedelta(days=3650)  # 10 years ago
-        end_date = datetime.now()
-        
+        start_date = datetime.now() - timedelta(days=total_days)
         current_date = start_date
-        while current_date <= end_date:
-            # Generate daily sales
-            daily_target = daily_amount if current_date > (datetime.now() - timedelta(days=30)) else daily_amount * 0.8
+        
+        while current_date <= datetime.now():
+            # Calculate daily transactions with variation
+            daily_tx = random.randint(min_daily_tx, max_daily_tx)
             
-            # Calculate total transactions based on retailer distribution
-            total_transactions = 0
-            for _, retailer in retailers.iterrows():
-                retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
-                daily_tx_range = retailer_params["daily_transactions"]
-                total_transactions += random.randint(daily_tx_range[0], daily_tx_range[1])
-            
-            # Cap total transactions to reasonable limit
-            total_transactions = min(total_transactions, 200)
-            
-            for _ in range(total_transactions):
+            # Generate all transactions for this day
+            for _ in range(daily_tx):
                 product = products.sample(1).iloc[0]
                 retailer = retailers.sample(1).iloc[0]
                 employee = employees.sample(1).iloc[0]
@@ -193,7 +201,7 @@ class ETLPipeline:
                 
                 # Random campaign assignment (30% chance)
                 campaign = None
-                if random.random() < 0.3:
+                if random.random() < 0.3 and len(campaigns) > 0:
                     campaign = campaigns.sample(1).iloc[0]
                 
                 # Generate quantity and amount based on retailer type
@@ -203,50 +211,64 @@ class ETLPipeline:
                 
                 # Ensure transaction is within retailer's expected range
                 if total_amount > retailer_params["max_amount"]:
-                    # Adjust quantity to fit max amount
                     quantity = max(1, int(retailer_params["max_amount"] / unit_price))
                     total_amount = quantity * unit_price
                 elif total_amount < retailer_params["min_amount"]:
-                    # Adjust quantity to meet min amount
                     quantity = min(retailer_params["max_qty"], max(1, int(retailer_params["min_amount"] / unit_price)))
                     total_amount = quantity * unit_price
                 
-                # Apply discount (10% chance)
-                discount = 0
-                if random.random() < 0.1:
-                    discount = total_amount * random.uniform(0.05, 0.20)
-                    total_amount -= discount
+                # Calculate discount and commission
+                discount_rate = random.uniform(0.05, 0.15) if campaign else 0
+                commission_rate = random.uniform(0.02, 0.08)
                 
-                # Commission rate (5-15%)
-                commission_rate = random.uniform(0.05, 0.15)
-                
-                # Delivery date (1-7 days after order)
-                delivery_date = current_date.date() + timedelta(days=random.randint(1, 7))
-                delivery_status = random.choice(["Pending", "Shipped", "Delivered", "Cancelled"])
+                final_amount = total_amount * (1 - discount_rate)
+                commission_amount = final_amount * commission_rate
                 
                 sale = {
-                    "sale_id": sale_id,
-                    "date": current_date.date(),
+                    "sale_id": f"SAL-{sale_id:08d}",
                     "product_id": product["product_id"],
                     "retailer_id": retailer["retailer_id"],
                     "employee_id": employee["employee_id"],
-                    "campaign_id": campaign["campaign_id"] if campaign is not None else None,
+                    "campaign_id": campaign["campaign_id"] if campaign else None,
                     "quantity": quantity,
                     "unit_price": unit_price,
                     "total_amount": total_amount,
-                    "discount_amount": discount if discount > 0 else None,
+                    "discount_rate": discount_rate,
+                    "discount_amount": total_amount * discount_rate,
+                    "final_amount": final_amount,
                     "commission_rate": commission_rate,
+                    "commission_amount": commission_amount,
                     "order_date": current_date.date(),
-                    "delivery_date": delivery_date if delivery_status == "Delivered" else None,
-                    "delivery_status": delivery_status,
-                    "created_at": current_date
+                    "delivery_date": current_date.date() + timedelta(days=random.randint(1, 7)),
+                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
+                    "created_at": current_date,
+                    "updated_at": current_date
                 }
                 sales.append(sale)
                 sale_id += 1
             
+            total_generated += daily_tx
             current_date += timedelta(days=1)
         
-        return pd.DataFrame(sales)
+        # Convert to DataFrame
+        sales_df = pd.DataFrame(sales)
+        
+        # Log final results
+        self.logger.info(f"Generated {len(sales_df):,} sales transactions")
+        self.logger.info(f"Date range: {sales_df['order_date'].min()} to {sales_df['order_date'].max()}")
+        self.logger.info(f"Total sales value: ₱{sales_df['final_amount'].sum():,.0f}")
+        
+        # Estimate storage size (rough calculation: ~1KB per row)
+        estimated_storage_mb = len(sales_df) * 1024 / (1024 * 1024)
+        self.logger.info(f"Estimated storage: {estimated_storage_mb:.1f} MB for sales data")
+        
+        # Check if within free tier limits (10GB total)
+        if estimated_storage_mb < 10240:  # 10GB in MB
+            self.logger.info("✅ Within free tier storage limits!")
+        else:
+            self.logger.warning("⚠️ May exceed free tier storage limits")
+        
+        return sales_df
     
     def _generate_inventory_data(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate inventory data"""
@@ -384,21 +406,20 @@ class ETLPipeline:
         return pd.DataFrame(marketing_costs)
     
     def load_fact_data(self) -> None:
-        """Load fact data into BigQuery"""
+        """Load fact data into BigQuery - optimized for free tier"""
         self.logger.info("Loading fact data into BigQuery...")
         
         for table_name, df in self.data_cache.items():
             if table_name.startswith("fact_"):
-                # Load in batches for large datasets
-                batch_size = 1000
-                total_rows = len(df)
+                # Load all at once for better performance
+                self.logger.info(f"Loading {len(df)} rows into {table_name}")
                 
-                for i in range(0, total_rows, batch_size):
-                    batch_df = df.iloc[i:i+batch_size]
-                    write_disposition = "WRITE_APPEND" if i > 0 else "WRITE_TRUNCATE"
-                    self.bigquery_client.load_dataframe(batch_df, table_name, write_disposition)
-                
-                self.logger.info(f"Loaded {total_rows} rows into {table_name}")
+                try:
+                    self.bigquery_client.load_dataframe(df, table_name, "WRITE_TRUNCATE")
+                    self.logger.info(f"✅ Successfully loaded {len(df)} rows into {table_name}")
+                except Exception as e:
+                    self.logger.error(f"❌ Failed to load {table_name}: {e}")
+                    raise
         
         self.logger.info("Fact data loading completed")
     
