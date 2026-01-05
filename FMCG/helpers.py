@@ -27,6 +27,60 @@ def table_has_data(client, table_id):
         logger.error(f"Error checking table {table_id}: {str(e)}")
         return False
 
+def ensure_bigquery_dtypes(df, table_id):
+    """
+    Ensure DataFrame columns have proper data types for BigQuery compatibility
+    
+    Args:
+        df: pandas DataFrame to convert
+        table_id: Target BigQuery table name (for logging)
+    
+    Returns:
+        DataFrame with corrected data types
+    """
+    logger.info(f"Ensuring BigQuery data type compatibility for {table_id}...")
+    
+    # Import schema definitions
+    try:
+        from schema import (
+            FACT_EMPLOYEES_SCHEMA, FACT_MARKETING_COSTS_SCHEMA, 
+            FACT_SALES_SCHEMA, FACT_INVENTORY_SCHEMA,
+            FACT_EMPLOYEE_WAGES_SCHEMA, FACT_OPERATING_COSTS_SCHEMA
+        )
+        
+        # Schema mapping for tables with integer ID columns
+        schema_map = {
+            'fact_employees': FACT_EMPLOYEES_SCHEMA,
+            'fact_marketing_costs': FACT_MARKETING_COSTS_SCHEMA,
+            'fact_sales': FACT_SALES_SCHEMA,
+            'fact_inventory': FACT_INVENTORY_SCHEMA,
+            'fact_employee_wages': FACT_EMPLOYEE_WAGES_SCHEMA,
+            'fact_operating_costs': FACT_OPERATING_COSTS_SCHEMA
+        }
+        
+        # Get table name from full table_id
+        table_name = table_id.split('.')[-1] if '.' in table_id else table_id
+        
+        if table_name in schema_map:
+            schema = schema_map[table_name]
+            
+            # Convert integer columns to proper dtype
+            for field in schema:
+                if field['type'] == 'INTEGER' and field['name'] in df.columns:
+                    col_name = field['name']
+                    logger.info(f"Converting column '{col_name}' to INTEGER for BigQuery compatibility")
+                    # Convert to nullable integer type to handle missing values
+                    df[col_name] = pd.to_numeric(df[col_name], errors='coerce').astype('Int64')
+                    
+        logger.info(f"Data type conversion completed for {table_name}")
+        
+    except ImportError:
+        logger.warning("Could not import schema definitions for data type conversion")
+    except Exception as e:
+        logger.warning(f"Error during data type conversion: {e}")
+    
+    return df
+
 def append_df_bq(client, df, table_id, write_disposition="WRITE_APPEND"):
     """Append DataFrame to BigQuery table with proper null handling for Power BI compatibility"""
     logger.info(f"Preparing to load {len(df):,} rows into {table_id}...")
@@ -34,6 +88,9 @@ def append_df_bq(client, df, table_id, write_disposition="WRITE_APPEND"):
     try:
         # Ensure proper null handling - pandas will convert pd.NaT and None to NULL in BigQuery
         df = df.copy()
+        
+        # Ensure proper data types for BigQuery compatibility
+        df = ensure_bigquery_dtypes(df, table_id)
         
         # Replace pd.NaT in non-datetime columns with None for better compatibility
         for col in df.columns:
@@ -101,6 +158,9 @@ def append_df_bq_safe(client, df, table_id, id_column, write_disposition="WRITE_
     
     logger.info(f"Checking for duplicates in {table_id} using {id_column}...")
     df = df.copy()
+    
+    # Ensure proper data types for BigQuery compatibility
+    df = ensure_bigquery_dtypes(df, table_id)
     
     # Replace pd.NaT in non-datetime columns with None for better compatibility
     for col in df.columns:

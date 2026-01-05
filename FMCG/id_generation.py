@@ -10,13 +10,13 @@ ID_GENERATOR_STATE = {
 
 def generate_unique_id(entity_type: str) -> int:
     """
-    Generate simple sequential IDs
+    Generate unique sequential integer ID
     
     Args:
         entity_type: Type of entity (e.g., 'employee', 'product', 'retailer')
     
     Returns:
-        Sequential integer ID
+        Sequential integer ID (explicitly converted to int for BigQuery compatibility)
     """
     # Get or initialize sequence counter for this entity type
     if entity_type not in ID_GENERATOR_STATE['sequence_counters']:
@@ -24,7 +24,8 @@ def generate_unique_id(entity_type: str) -> int:
     
     # Increment sequence counter
     ID_GENERATOR_STATE['sequence_counters'][entity_type] += 1
-    return ID_GENERATOR_STATE['sequence_counters'][entity_type]
+    # Explicitly return int to ensure BigQuery compatibility
+    return int(ID_GENERATOR_STATE['sequence_counters'][entity_type])
 
 def generate_readable_id(prefix: str, entity_type: str, padding: int = 6) -> str:
     """
@@ -46,9 +47,9 @@ def generate_unique_sale_key() -> int:
     Generate simple sequential sale key
     
     Returns:
-        Sequential sale key as integer
+        Sequential sale key as integer (explicitly converted for BigQuery compatibility)
     """
-    return generate_unique_id("sale")
+    return int(generate_unique_id("sale"))
 
 def generate_unique_wage_key(employee_id: str, effective_date, sequence: int) -> str:
     """
@@ -87,9 +88,9 @@ def generate_unique_marketing_cost_key() -> int:
     Generate simple sequential marketing cost key
     
     Returns:
-        Sequential marketing cost key as integer
+        Sequential marketing cost key as integer (explicitly converted for BigQuery compatibility)
     """
-    return generate_unique_id("marketing_cost")
+    return int(generate_unique_id("marketing_cost"))
 
 def generate_unique_inventory_key(product_key, location_key, inventory_date, sequence_num) -> str:
     """
