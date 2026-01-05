@@ -46,5 +46,5 @@ jobs:
         
         echo "Manual run completed!"
       env:
-        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         PROJECT_ID: ${{ secrets.PROJECT_ID }}
