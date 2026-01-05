@@ -592,28 +592,52 @@ def main():
         yesterday = date.today() - timedelta(days=1)
         day_before_yesterday = date.today() - timedelta(days=2)
         
+        logger.info(f"=== SALES DATE LOGIC ===")
+        logger.info(f"Today: {date.today()}")
+        logger.info(f"Yesterday: {yesterday}")
+        logger.info(f"Day Before Yesterday: {day_before_yesterday}")
+        logger.info(f"Scheduled Run: {is_scheduled}")
+        logger.info(f"Force Refresh: {force_refresh}")
+        
         # Use different sales targets for scheduled vs manual runs
         if is_scheduled:
             # Daily run: check latest sales date and generate only for missing dates
+            logger.info(f"=== DAILY RUN LOGIC ===")
             try:
                 # Get the latest sales date from database
                 project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
                 dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
                 fact_sales_table = f"{project_id}.{dataset}.fact_sales"
                 latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{fact_sales_table}`"
+                logger.info(f"Checking latest sales date with query: {latest_sales_query}")
                 latest_result = client.query(latest_sales_query).to_dataframe()
                 latest_date = latest_result['latest_date'].iloc[0]
+                logger.info(f"Latest sales date from DB: {latest_date} (type: {type(latest_date)})")
                 
                 if latest_date and pd.notna(latest_date):
-                    latest_date = latest_date.date()
+                    # Convert to date if needed
+                    if isinstance(latest_date, date):
+                        # Already a date object, no conversion needed
+                        pass
+                    elif hasattr(latest_date, 'date'):
+                        # Has .date() method (datetime, Timestamp)
+                        latest_date = latest_date.date()
+                    else:
+                        # String or other format
+                        latest_date = pd.to_datetime(latest_date).date()
+                    
+                    logger.info(f"Converted latest date: {latest_date}")
+                    
                     # Generate sales from day after latest date up to yesterday
                     start_date = latest_date + timedelta(days=1)
+                    logger.info(f"Calculated start_date: {start_date}, yesterday: {yesterday}")
+                    
                     if start_date > yesterday:
-                        logger.info(f"Daily run: Sales data is up to date. Latest: {latest_date}, Yesterday: {yesterday}")
-                        logger.info("No new sales to generate.")
+                        logger.info(f"✅ Daily run: Sales data is up to date. Latest: {latest_date}, Yesterday: {yesterday}")
+                        logger.info("✅ No new sales to generate.")
                         return
                     end_date = yesterday
-                    logger.info(f"Daily run: Generating sales from {start_date} to {end_date} (missing dates)...")
+                    logger.info(f"📊 Daily run: Generating sales from {start_date} to {end_date} (missing dates)...")
                 else:
                     # No existing sales data, generate for yesterday
                     start_date = yesterday
@@ -629,10 +653,12 @@ def main():
             sales_target = DAILY_SALES_AMOUNT
         else:
             # Manual run: generate full historical data (₱8B total) up to day before yesterday
+            logger.info(f"=== MANUAL RUN LOGIC ===")
             sales_target = INITIAL_SALES_AMOUNT
             start_date = date(2015, 1, 1)
             end_date = day_before_yesterday
-            logger.info(f"Manual run: Generating ₱{sales_target:,.0f} in total sales from {start_date} to {end_date}...")
+            logger.info(f"🔧 Manual run: Generating ₱{sales_target:,.0f} in total sales from {start_date} to {end_date}...")
+            logger.info(f"🔧 Manual run will leave gap for daily run to generate: {yesterday}")
         
         logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
         logger.info(f"DAILY_SALES_AMOUNT from config: {DAILY_SALES_AMOUNT:,}")
