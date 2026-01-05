@@ -917,6 +917,67 @@ def main():
         should_update_monthly_facts = (not is_scheduled or is_last_day or force_refresh)
         should_update_quarterly_facts = (not is_scheduled or is_quarter_start or force_refresh)
         
+        # Reset ID counters for monthly/quarterly data generation
+        if is_scheduled and (should_update_monthly_facts or should_update_quarterly_facts):
+            try:
+                project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
+                dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
+                
+                # Get max cost_id for operating costs (format: YYYYMMDD + category + sequence, no prefix)
+                if should_update_monthly_facts:
+                    max_cost_query = f"""
+                        SELECT MAX(cost_id) as max_num 
+                        FROM `{project_id}.{dataset}.fact_operating_costs`
+                    """
+                    logger.info(f"Getting max cost_id for monthly update: {max_cost_query}")
+                    max_cost_result = client.query(max_cost_query).to_dataframe()
+                    max_cost_num = max_cost_result['max_num'].iloc[0]
+                    
+                    if max_cost_num and pd.notna(max_cost_num):
+                        # Extract sequence number from the end (last 6 digits)
+                        cost_str = str(int(max_cost_num))
+                        if len(cost_str) >= 6:
+                            sequence_num = int(cost_str[-6:])
+                            import id_generation
+                            id_generation.ID_GENERATOR_STATE['sequence_counters']['cost'] = sequence_num
+                            logger.info(f"Reset cost ID counter to continue from: {sequence_num}")
+                
+                # Get max inventory_id for inventory (format: INV + 15 digits)
+                if FACT_INVENTORY and should_update_monthly_facts:
+                    max_inv_query = f"""
+                        SELECT MAX(CAST(SUBSTR(inventory_id, 4) AS INT64)) as max_num 
+                        FROM `{project_id}.{dataset}.fact_inventory` 
+                        WHERE inventory_id LIKE 'INV%'
+                    """
+                    logger.info(f"Getting max inventory_id for monthly update: {max_inv_query}")
+                    max_inv_result = client.query(max_inv_query).to_dataframe()
+                    max_inv_num = max_inv_result['max_num'].iloc[0]
+                    
+                    if max_inv_num and pd.notna(max_inv_num):
+                        import id_generation
+                        id_generation.ID_GENERATOR_STATE['sequence_counters']['inventory'] = max_inv_num
+                        logger.info(f"Reset inventory ID counter to continue from: {max_inv_num}")
+                
+                # Get max marketing_cost_id for quarterly marketing costs (format: hash, no prefix)
+                if should_update_quarterly_facts:
+                    max_mkt_query = f"""
+                        SELECT MAX(marketing_cost_id) as max_num 
+                        FROM `{project_id}.{dataset}.fact_marketing_costs`
+                    """
+                    logger.info(f"Getting max marketing_cost_id for quarterly update: {max_mkt_query}")
+                    max_mkt_result = client.query(max_mkt_query).to_dataframe()
+                    max_mkt_num = max_mkt_result['max_num'].iloc[0]
+                    
+                    if max_mkt_num and pd.notna(max_mkt_num):
+                        import id_generation
+                        # For marketing costs, use the hash as the sequence counter
+                        id_generation.ID_GENERATOR_STATE['sequence_counters']['marketing_cost'] = max_mkt_num
+                        logger.info(f"Reset marketing cost ID counter to continue from: {max_mkt_num}")
+                
+            except Exception as e:
+                logger.warning(f"Could not get max IDs for monthly/quarterly update: {e}")
+                logger.info("Starting ID generation from 1")
+        
         if should_update_monthly_facts or should_update_quarterly_facts:
             if is_quarter_start:
                 logger.info("Generating quarterly fact tables (campaign costs only)...")
@@ -931,6 +992,68 @@ def main():
         if should_update_monthly_facts:
             # For scheduled runs, skip table existence checks - just regenerate
             if is_scheduled:
+                logger.info("=== SCHEDULED MONTHLY UPDATE ===")
+                
+                # Add new employees (1-5 per month)
+                logger.info(f"Adding {NEW_EMPLOYEES_PER_MONTH} new employees...")
+                try:
+                    # Load existing dimensions for new employee generation
+                    locations_df = client.query(f"SELECT * FROM `{DIM_LOCATIONS}`").to_dataframe()
+                    departments_df = client.query(f"SELECT * FROM `{DIM_DEPARTMENTS}`").to_dataframe()
+                    jobs_df = client.query(f"SELECT * FROM `{DIM_JOBS}`").to_dataframe()
+                    banks_df = client.query(f"SELECT * FROM `{DIM_BANKS}`").to_dataframe()
+                    insurance_df = client.query(f"SELECT * FROM `{DIM_INSURANCE}`").to_dataframe()
+                    
+                    locations = locations_df.to_dict("records")
+                    departments = departments_df.to_dict("records")
+                    jobs = jobs_df.to_dict("records")
+                    banks = banks_df.to_dict("records")
+                    insurance = insurance_df.to_dict("records")
+                    
+                    # Generate new employees
+                    new_employees = generate_dim_employees_normalized(
+                        locations=locations,
+                        departments=departments, 
+                        jobs=jobs,
+                        banks=banks,
+                        insurance=insurance,
+                        num_employees=NEW_EMPLOYEES_PER_MONTH
+                    )
+                    
+                    if new_employees:
+                        append_df_bq(client, pd.DataFrame(new_employees), DIM_EMPLOYEES)
+                        logger.info(f"✅ Added {len(new_employees)} new employees")
+                    
+                except Exception as e:
+                    logger.warning(f"Could not add new employees: {e}")
+                
+                # Add new products (2-6 per month)
+                logger.info(f"Adding {NEW_PRODUCTS_PER_MONTH} new products...")
+                try:
+                    # Load existing dimensions for new product generation
+                    categories_df = client.query(f"SELECT * FROM `{DIM_CATEGORIES}`").to_dataframe()
+                    brands_df = client.query(f"SELECT * FROM `{DIM_BRANDS}`").to_dataframe()
+                    subcategories_df = client.query(f"SELECT * FROM `{DIM_SUBCATEGORIES}`").to_dataframe()
+                    
+                    categories = categories_df.to_dict("records")
+                    brands = brands_df.to_dict("records")
+                    subcategories = subcategories_df.to_dict("records")
+                    
+                    # Generate new products
+                    new_products = generate_dim_products(
+                        categories=categories,
+                        brands=brands,
+                        subcategories=subcategories,
+                        num_products=NEW_PRODUCTS_PER_MONTH
+                    )
+                    
+                    if new_products:
+                        append_df_bq(client, pd.DataFrame(new_products), DIM_PRODUCTS)
+                        logger.info(f"✅ Added {len(new_products)} new products")
+                    
+                except Exception as e:
+                    logger.warning(f"Could not add new products: {e}")
+                
                 logger.info("Scheduled monthly update - regenerating employee facts...")
                 # Load existing employee data
                 employees_df = client.query(f"SELECT * FROM `{DIM_EMPLOYEES}`").to_dataframe()
@@ -940,14 +1063,19 @@ def main():
                 employee_facts = generate_fact_employees(employees)
                 append_df_bq(client, pd.DataFrame(employee_facts), FACT_EMPLOYEES)
                 
-                # Generate operating costs
-                logger.info("Scheduled monthly update - regenerating operating costs...")
+                # Generate operating costs (1 of each type for current month only)
+                logger.info("Scheduled monthly update - generating operating costs for current month...")
+                current_month_start = date.today().replace(day=1)
+                current_month_end = date.today()
+                
+                # Generate costs with 1 of each type for current month
                 costs = generate_fact_operating_costs(
-                    INITIAL_SALES_AMOUNT * 0.15,  # Reduced from 25% to 15% of revenue
-                    start_date=date(2015, 1, 1),
-                    end_date=date.today()
+                    target_amount=INITIAL_SALES_AMOUNT * 0.15 / 12,  # Monthly portion of 15% annual revenue
+                    start_date=current_month_start,
+                    end_date=current_month_end
                 )
                 append_df_bq(client, pd.DataFrame(costs), FACT_OPERATING_COSTS)
+                logger.info(f"✅ Generated {len(costs)} operating cost records for current month")
                 
                 # Generate inventory
                 logger.info("Scheduled monthly update - regenerating inventory...")
@@ -1004,6 +1132,21 @@ def main():
         if should_update_quarterly_facts:
             # For scheduled runs, skip table existence checks - just regenerate
             if is_scheduled:
+                logger.info("=== SCHEDULED QUARTERLY UPDATE ===")
+                
+                # Add 1 new campaign per quarter
+                logger.info(f"Adding {NEW_CAMPAIGNS_PER_QUARTER} new campaign...")
+                try:
+                    # Generate new campaign
+                    new_campaigns = generate_dim_campaigns(num_campaigns=NEW_CAMPAIGNS_PER_QUARTER)
+                    
+                    if new_campaigns:
+                        append_df_bq(client, pd.DataFrame(new_campaigns), DIM_CAMPAIGNS)
+                        logger.info(f"✅ Added {len(new_campaigns)} new campaign(s)")
+                    
+                except Exception as e:
+                    logger.warning(f"Could not add new campaign: {e}")
+                
                 logger.info("Scheduled quarterly update - regenerating marketing costs...")
                 # Load existing campaigns
                 campaigns_df = client.query(f"SELECT * FROM `{DIM_CAMPAIGNS}`").to_dataframe()

@@ -21,8 +21,13 @@ INITIAL_SALES_AMOUNT = int(os.environ.get("INITIAL_SALES_AMOUNT", "8000000000"))
 # Daily: Target ~₱2M for scheduled daily runs (realistic daily operations)
 # This is separate from the annual target calculation
 DAILY_SALES_AMOUNT = int(os.environ.get("DAILY_SALES_AMOUNT", "2000000"))  # ₱2M daily target
-NEW_PRODUCTS_PER_RUN = random.randint(1, 5)
-NEW_HIRES_PER_RUN = random.randint(2, 12)
+
+# Monthly update quantities
+NEW_EMPLOYEES_PER_MONTH = random.randint(1, 5)  # 1-5 new employees per month
+NEW_PRODUCTS_PER_MONTH = random.randint(2, 6)  # 2-6 new products per month
+
+# Quarterly update quantities  
+NEW_CAMPAIGNS_PER_QUARTER = 1  # 1 new campaign per quarter
 
 # Dimension table names (for BigQuery)
 DIM_EMPLOYEES = f"{PROJECT_ID}.{DATASET}.dim_employees"
