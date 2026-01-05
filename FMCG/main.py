@@ -590,6 +590,7 @@ def main():
         
         # Always try to generate sales data (bypass table existence check for debugging)
         yesterday = date.today() - timedelta(days=1)
+        day_before_yesterday = date.today() - timedelta(days=2)
         
         # Use different sales targets for scheduled vs manual runs
         if is_scheduled:
@@ -605,7 +606,7 @@ def main():
                     # Generate sales from day after latest date up to yesterday
                     start_date = latest_date + timedelta(days=1)
                     if start_date > yesterday:
-                        logger.info(f"Daily run: Sales data is up to date. Latest: {latest_date}, Today: {date.today()}")
+                        logger.info(f"Daily run: Sales data is up to date. Latest: {latest_date}, Yesterday: {yesterday}")
                         logger.info("No new sales to generate.")
                         return
                     end_date = yesterday
@@ -624,11 +625,11 @@ def main():
             
             sales_target = DAILY_SALES_AMOUNT
         else:
-            # Manual run: generate full historical data (₱8B total)
+            # Manual run: generate full historical data (₱8B total) up to day before yesterday
             sales_target = INITIAL_SALES_AMOUNT
             start_date = date(2015, 1, 1)
-            end_date = yesterday
-            logger.info(f"Manual run: Generating ₱{sales_target:,.0f} in total sales from {start_date} to {yesterday}...")
+            end_date = day_before_yesterday
+            logger.info(f"Manual run: Generating ₱{sales_target:,.0f} in total sales from {start_date} to {end_date}...")
         
         logger.info(f"INITIAL_SALES_AMOUNT from config: {INITIAL_SALES_AMOUNT:,}")
         logger.info(f"DAILY_SALES_AMOUNT from config: {DAILY_SALES_AMOUNT:,}")
