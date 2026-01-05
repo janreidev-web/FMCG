@@ -2,44 +2,62 @@ name: Daily Sales Run
 on:
   schedule:
     # Run daily at 4 AM UTC (12 PM PHT)
-    #- cron: '0 16 * * *'
-    # Testing schedule: Runs every 2 minute (TEMPORARILY ENABLED FOR TESTING)
-    - cron: '*/2 * * * *'
+    - cron: '0 4 * * *'
   workflow_dispatch:  # Allow manual trigger for testing
 
 jobs:
   daily-sales:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: production
     
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONHASHSEED: 0
+    
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.14'
         
     - name: Install dependencies
       run: |
-        cd FMCG
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
+        pip install -r FMCG/requirements.txt
+        
+    - name: Authenticate to GCP
+      run: |
+        echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
     - name: Run Daily Sales Generation
+      env:
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
+        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        SCHEDULED_RUN: true
+        FORCE_REFRESH: false
       run: |
         cd FMCG
-        # Set environment variables for daily run
-        export SCHEDULED_RUN=true
-        export FORCE_REFRESH=false
+        echo "=== Starting Daily Sales Run ==="
+        echo "Time: $(date)"
+        echo "Working Directory: $(pwd)"
+        echo "SCHEDULED_RUN: $SCHEDULED_RUN"
         
-        echo "Starting Daily Sales Run..."
-        echo "This run will only append new sales data"
-        echo "Run time: $(date)"
+        # Set environment variables
+        export PYTHONUNBUFFERED=1
+        export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
         
         python main.py
         
-        echo "Daily sales run completed!"
-      env:
-        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        PROJECT_ID: ${{ secrets.PROJECT_ID }}
+        echo "=== Daily Sales Run Completed ==="
+        echo "Time: $(date)"
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f $HOME/gcloud-key.json
