@@ -1407,7 +1407,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
         # (regardless of current status, since status represents current state, not historical)
         available_products = [
             p for p in products 
-            if p.get('created_date') and p.get('created_date') <= current_date
+            if p.get('created_date') and (p.get('created_date').date() if hasattr(p.get('created_date'), 'date') else p.get('created_date')) <= current_date
         ]
         
         # If no products available for historical dates, use all active products
@@ -1451,7 +1451,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
             # Campaign selection - only use campaigns active on current_date
             active_campaigns = [
                 c for c in campaigns 
-                if c.get('start_date') <= current_date <= c.get('end_date')
+                if (c.get('start_date').date() if hasattr(c.get('start_date'), 'date') else c.get('start_date')) <= current_date <= (c.get('end_date').date() if hasattr(c.get('end_date'), 'date') else c.get('end_date'))
             ]
             campaign = random.choice(active_campaigns) if active_campaigns and random.random() < 0.3 else None
             
@@ -1626,7 +1626,7 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
             # Find active campaigns for this date
             active_campaigns = [
                 c for c in campaigns 
-                if c['start_date'] <= current_date <= c['end_date']
+                if (c['start_date'].date() if hasattr(c['start_date'], 'date') else c['start_date']) <= current_date <= (c['end_date'].date() if hasattr(c['end_date'], 'date') else c['end_date'])
             ]
             
             if active_campaigns:
