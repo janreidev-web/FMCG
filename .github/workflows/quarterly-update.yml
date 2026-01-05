@@ -9,21 +9,31 @@ on:
 jobs:
   quarterly-update:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment: production
     
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONHASHSEED: 0
+    
     steps:
-    - name: Checkout code
+    - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup Python
-      uses: actions/setup-python@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
       with:
         python-version: '3.14'
         
     - name: Install dependencies
       run: |
-        cd FMCG
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
+        pip install -r FMCG/requirements.txt
+        
+    - name: Authenticate to GCP
+      run: |
+        echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
+        echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
     - name: Check if today is start of quarter
       run: |
@@ -45,22 +55,32 @@ jobs:
           exit 0
         fi
         
-    - name: Run Quarterly Data Generation
+    - name: Run Quarterly Campaign Update
+      env:
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
+        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}
+        SCHEDULED_RUN: true
+        FORCE_REFRESH: false
       run: |
         cd FMCG
-        # Set environment variables for quarterly run
-        export SCHEDULED_RUN=true
-        export FORCE_REFRESH=false
+        echo "=== Starting Quarterly Campaign Update ==="
+        echo "Time: $(date)"
+        echo "Working Directory: $(pwd)"
+        echo "SCHEDULED_RUN: $SCHEDULED_RUN"
+        echo "This will update: Campaign Costs Only"
         
-        echo "Starting Quarterly Campaign Update..."
-        echo "This run will update: Campaign costs + All monthly items"
-        echo "Monthly items: New employees, inventory, operating costs"
-        echo "Sales data will also be appended"
-        echo "Run time: $(date)"
+        # Set environment variables
+        export PYTHONUNBUFFERED=1
+        export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
         
         python main.py
         
-        echo "Quarterly update completed!"
-      env:
-        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        PROJECT_ID: ${{ secrets.PROJECT_ID }}
+        echo "=== Quarterly Campaign Update Completed ==="
+        echo "Time: $(date)"
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f $HOME/gcloud-key.json
