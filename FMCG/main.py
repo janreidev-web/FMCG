@@ -593,11 +593,36 @@ def main():
         
         # Use different sales targets for scheduled vs manual runs
         if is_scheduled:
-            # Daily run: generate only yesterday's sales (~₱2M)
+            # Daily run: check latest sales date and generate only for missing dates
+            try:
+                # Get the latest sales date from database
+                latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{PROJECT_ID}.{DATASET}.{FACT_SALES}`"
+                latest_result = client.query(latest_sales_query).to_dataframe()
+                latest_date = latest_result['latest_date'].iloc[0]
+                
+                if latest_date and pd.notna(latest_date):
+                    latest_date = latest_date.date()
+                    # Generate sales from day after latest date up to yesterday
+                    start_date = latest_date + timedelta(days=1)
+                    if start_date > yesterday:
+                        logger.info(f"Daily run: Sales data is up to date. Latest: {latest_date}, Today: {date.today()}")
+                        logger.info("No new sales to generate.")
+                        return
+                    end_date = yesterday
+                    logger.info(f"Daily run: Generating sales from {start_date} to {end_date} (missing dates)...")
+                else:
+                    # No existing sales data, generate for yesterday
+                    start_date = yesterday
+                    end_date = yesterday
+                    logger.info(f"Daily run: No existing sales found. Generating for {yesterday}...")
+            except Exception as e:
+                logger.warning(f"Could not check latest sales date: {e}")
+                # Fallback to yesterday
+                start_date = yesterday
+                end_date = yesterday
+                logger.info(f"Daily run: Using fallback date {yesterday}...")
+            
             sales_target = DAILY_SALES_AMOUNT
-            start_date = yesterday
-            end_date = yesterday
-            logger.info(f"Daily run: Generating ₱{sales_target:,.0f} in sales for {yesterday}...")
         else:
             # Manual run: generate full historical data (₱8B total)
             sales_target = INITIAL_SALES_AMOUNT
