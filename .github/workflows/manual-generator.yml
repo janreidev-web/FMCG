@@ -63,7 +63,7 @@ jobs:
         echo "=== System Resources ==="
         echo "CPU cores: $(nproc)"
         echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
-        echo "Disk space: $(df -h / | tail-1 | awk '{print $4}')"
+        echo "Disk space: $(df -h / | tail -n 1 | awk '{print $4}')"
         
     - name: Run setup script
       env:
