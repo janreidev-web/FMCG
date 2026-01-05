@@ -115,13 +115,13 @@ def verify_configuration() -> None:
         
         # Test connection with a simple query
         bq_manager.client.query("SELECT 1").result()
-        print("✓ BigQuery connection successful")
+        print("PASS BigQuery connection successful")
         
     except Exception as e:
-        print(f"✗ BigQuery connection failed: {e}")
+        print(f"FAIL BigQuery connection failed: {e}")
         return False
     
-    print("✓ Configuration verified successfully")
+    print("PASS Configuration verified successfully")
     return True
 
 
