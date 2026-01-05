@@ -163,30 +163,32 @@ class ETLPipeline:
         
         # Calculate target transactions for 11 years (~500K total)
         target_transactions = 500000
-        years = 11
-        days_per_year = 365
+        
+        # Set exact date range: January 1, 2015 to day before yesterday
+        start_date = datetime(2015, 1, 1)
+        end_date = datetime.now() - timedelta(days=2)  # Day before yesterday
+        total_days = (end_date - start_date).days + 1  # Include both start and end dates
         
         # Calculate daily transaction targets
-        total_days = years * days_per_year
         base_daily_transactions = target_transactions // total_days
         
         # Add some variation (±20%)
         min_daily_tx = max(50, int(base_daily_transactions * 0.8))
         max_daily_tx = int(base_daily_transactions * 1.2)
         
-        self.logger.info(f"Target: {target_transactions:,} transactions over {years} years")
+        self.logger.info(f"Target: {target_transactions:,} transactions")
+        self.logger.info(f"Date range: {start_date.date()} to {end_date.date()} ({total_days} days)")
         self.logger.info(f"Daily range: {min_daily_tx}-{max_daily_tx} transactions")
-        self.logger.info(f"Expected annual: {target_transactions // years:,} transactions")
+        self.logger.info(f"Expected annual: {target_transactions // (total_days/365):,.0f} transactions")
         
         # Generate all sales in one go
         sales = []
         sale_id = 1
         total_generated = 0
         
-        start_date = datetime.now() - timedelta(days=total_days)
         current_date = start_date
         
-        while current_date <= datetime.now():
+        while current_date <= end_date:
             # Calculate daily transactions with variation
             daily_tx = random.randint(min_daily_tx, max_daily_tx)
             
@@ -464,7 +466,7 @@ class ETLPipeline:
             raise
     
     def _generate_daily_sales(self, config: Dict[str, Any]) -> pd.DataFrame:
-        """Generate daily sales for incremental updates"""
+        """Generate daily sales for incremental updates - specifically for yesterday"""
         daily_amount = config.get("daily_sales_amount", 2000000)
         
         # Get reference data from BigQuery
@@ -475,7 +477,10 @@ class ETLPipeline:
         
         sales = []
         sale_id = 1
-        current_date = datetime.now().date()
+        # Generate for yesterday specifically (so daily workflow can run today)
+        current_date = datetime.now().date() - timedelta(days=1)
+        
+        self.logger.info(f"Generating daily sales for {current_date}")
         
         # Calculate total transactions based on retailer distribution
         total_transactions = 0
@@ -484,11 +489,12 @@ class ETLPipeline:
             daily_tx_range = retailer_params["daily_transactions"]
             total_transactions += random.randint(daily_tx_range[0], daily_tx_range[1])
         
-        # Cap total transactions to reasonable limit
+        # Cap total transactions to reasonable limit for daily run
         total_transactions = min(total_transactions, 800)
-        amount_generated = 0
         
-        while amount_generated < daily_amount and len(sales) < total_transactions:
+        self.logger.info(f"Generating {total_transactions} transactions for {current_date}")
+        
+        for _ in range(total_transactions):
             product = products.sample(1).iloc[0]
             retailer = retailers.sample(1).iloc[0]
             employee = employees.sample(1).iloc[0]
@@ -508,46 +514,43 @@ class ETLPipeline:
             
             # Ensure transaction is within retailer's expected range
             if total_amount > retailer_params["max_amount"]:
-                # Adjust quantity to fit max amount
                 quantity = max(1, int(retailer_params["max_amount"] / unit_price))
                 total_amount = quantity * unit_price
             elif total_amount < retailer_params["min_amount"]:
-                # Adjust quantity to meet min amount
                 quantity = min(retailer_params["max_qty"], max(1, int(retailer_params["min_amount"] / unit_price)))
                 total_amount = quantity * unit_price
             
-            # Apply discount (10% chance)
-            discount = 0
-            if random.random() < 0.1:
-                discount = total_amount * random.uniform(0.05, 0.20)
-                total_amount -= discount
+            # Calculate discount and commission
+            discount_rate = random.uniform(0.05, 0.15) if campaign else 0
+            commission_rate = random.uniform(0.02, 0.08)
             
-            # Commission rate (5-15%)
-            commission_rate = random.uniform(0.05, 0.15)
-            
-            # Delivery date (1-7 days from now)
-            delivery_date = current_date + timedelta(days=random.randint(1, 7))
-            delivery_status = "Pending"
+            final_amount = total_amount * (1 - discount_rate)
+            commission_amount = final_amount * commission_rate
             
             sale = {
-                "sale_id": sale_id,
-                "date": current_date,
+                "sale_id": f"SAL-{sale_id:08d}",
                 "product_id": product["product_id"],
                 "retailer_id": retailer["retailer_id"],
                 "employee_id": employee["employee_id"],
-                "campaign_id": campaign["campaign_id"] if campaign is not None else None,
+                "campaign_id": campaign["campaign_id"] if campaign else None,
                 "quantity": quantity,
                 "unit_price": unit_price,
                 "total_amount": total_amount,
-                "discount_amount": discount if discount > 0 else None,
+                "discount_rate": discount_rate,
+                "discount_amount": total_amount * discount_rate,
+                "final_amount": final_amount,
                 "commission_rate": commission_rate,
+                "commission_amount": commission_amount,
                 "order_date": current_date,
-                "delivery_date": delivery_date,
-                "delivery_status": delivery_status,
-                "created_at": datetime.now()
+                "delivery_date": current_date + timedelta(days=random.randint(1, 7)),
+                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
+                "created_at": datetime.combine(current_date, datetime.min.time()),
+                "updated_at": datetime.combine(current_date, datetime.min.time())
             }
             sales.append(sale)
-            amount_generated += total_amount
             sale_id += 1
         
-        return pd.DataFrame(sales)
+        sales_df = pd.DataFrame(sales)
+        self.logger.info(f"Generated {len(sales_df)} daily sales for {current_date}")
+        
+        return sales_df
