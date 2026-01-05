@@ -34,20 +34,6 @@ jobs:
         echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
         echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
-    - name: Check if today is last day of month
-      run: |
-        # Check if today is actually the last day of the month
-        TODAY=$(date +%d)
-        LAST_DAY=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%d)
-        
-        if [ "$TODAY" -ne "$LAST_DAY" ]; then
-          echo "Today is not the last day of the month (day $TODAY vs last day $LAST_DAY)"
-          echo "Skipping monthly update"
-          exit 0
-        fi
-        
-        echo "Today is the last day of the month! Running monthly update..."
-        
     - name: Run Monthly Update
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
@@ -56,6 +42,8 @@ jobs:
         INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}
         SCHEDULED_RUN: true
         FORCE_REFRESH: false
+        FORCE_MONTHLY_UPDATE: true
+        SKIP_DAILY_SALES: true
       run: |
         cd FMCG
         echo "=== Starting Monthly Update ==="

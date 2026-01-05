@@ -35,26 +35,6 @@ jobs:
         echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
         echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
-    - name: Check if today is start of quarter
-      run: |
-        # Check if today is the start of a quarter
-        MONTH=$(date +%m)
-        DAY=$(date +%d)
-        
-        if [ "$DAY" -ne 1 ]; then
-          echo "Today is not the first day of the month (day $DAY)"
-          echo "Skipping quarterly update"
-          exit 0
-        fi
-        
-        if [[ "$MONTH" =~ ^(1|4|7|10)$ ]]; then
-          echo "Today is the start of Q$(( (MONTH + 2) / 3 ))! Running quarterly update..."
-        else
-          echo "Month $MONTH is not the start of a quarter"
-          echo "Skipping quarterly update"
-          exit 0
-        fi
-        
     - name: Run Quarterly Campaign Update
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-simulator' }}
@@ -63,6 +43,8 @@ jobs:
         INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '9000000000' }}
         SCHEDULED_RUN: true
         FORCE_REFRESH: false
+        FORCE_QUARTERLY_UPDATE: true
+        SKIP_DAILY_SALES: true
       run: |
         cd FMCG
         echo "=== Starting Quarterly Campaign Update ==="
