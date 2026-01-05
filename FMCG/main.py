@@ -745,7 +745,21 @@ def main():
                 
                 if sales:
                     logger.info(f"Generated {len(sales):,} sales records")
-                    append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_id")
+                    if force_refresh:
+                        # Force refresh: delete table and recreate to ensure clean slate
+                        logger.info("FORCE_REFRESH: Deleting existing sales table for clean refresh...")
+                        try:
+                            client.delete_table(FACT_SALES)
+                            logger.info("✓ Deleted existing sales table")
+                        except Exception as e:
+                            logger.info(f"Sales table doesn't exist or couldn't delete: {e}")
+                        
+                        # Load new data without duplicate checking
+                        logger.info("FORCE_REFRESH: Loading new sales data (clean refresh)")
+                        append_df_bq(client, pd.DataFrame(sales), FACT_SALES)
+                    else:
+                        # Normal run: check for duplicates
+                        append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_id")
                 else:
                     logger.warning("No sales generated")
             
