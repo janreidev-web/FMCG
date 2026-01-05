@@ -597,7 +597,10 @@ def main():
             # Daily run: check latest sales date and generate only for missing dates
             try:
                 # Get the latest sales date from database
-                latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{PROJECT_ID}.{DATASET}.{FACT_SALES}`"
+                project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
+                dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
+                fact_sales_table = f"{project_id}.{dataset}.fact_sales"
+                latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{fact_sales_table}`"
                 latest_result = client.query(latest_sales_query).to_dataframe()
                 latest_date = latest_result['latest_date'].iloc[0]
                 
