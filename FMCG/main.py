@@ -425,7 +425,7 @@ def main():
                     logger.info(f"Wages table doesn't exist or couldn't drop: {e}")
                 
                 # Generate historical wage data for all employees (active and terminated)
-                employee_wages = generate_fact_employee_wages(employees_all, jobs_data, departments_data, start_date=date(2015, 1, 1), end_date=date.today())
+                employee_wages = generate_fact_employee_wages(employees_all, jobs_data, departments, start_date=date(2015, 1, 1), end_date=date.today())
                 append_df_bq(client, pd.DataFrame(employee_wages), wages_table)
                 logger.info(f"Generated {len(employee_wages)} historical wage records")
             else:
@@ -687,11 +687,13 @@ def main():
                                 logger.info(f"📊 Daily run: Generating sales from {start_date} to {end_date} (missing dates)...")
                                 sales_target = DAILY_SALES_AMOUNT
                                 sales = generate_daily_sales_with_delivery_updates(
+                                    employees=employees,
                                     products=products,
                                     retailers=retailers,
+                                    campaigns=campaigns,
+                                    target_amount=sales_target,
                                     start_date=start_date,
-                                    end_date=end_date,
-                                    target_amount=sales_target
+                                    end_date=end_date
                                 )
                                 
                                 if sales:
@@ -703,11 +705,13 @@ def main():
                             logger.info("No existing sales data found, generating from scratch...")
                             sales_target = DAILY_SALES_AMOUNT
                             sales = generate_daily_sales_with_delivery_updates(
+                                employees=employees,
                                 products=products,
                                 retailers=retailers,
+                                campaigns=campaigns,
+                                target_amount=sales_target,
                                 start_date=yesterday,
-                                end_date=yesterday,
-                                target_amount=sales_target
+                                end_date=yesterday
                             )
                             
                             if sales:
@@ -730,11 +734,13 @@ def main():
                 logger.info(f"🔧 Manual run will leave gap for daily run to generate: {yesterday}")
                 
                 sales = generate_fact_sales(
+                    employees=employees,
                     products=products,
                     retailers=retailers,
+                    campaigns=campaigns,
+                    target_amount=sales_target,
                     start_date=start_date,
-                    end_date=end_date,
-                    target_amount=sales_target
+                    end_date=end_date
                 )
                 
                 if sales:
