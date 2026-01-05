@@ -24,6 +24,13 @@ class ETLPipeline:
         self.logger = default_logger
         self.bigquery_client = bq_manager or BigQueryManager()
         
+        # Initialize faker for data generation
+        self.faker = Faker('en_PH')
+        
+        # Initialize generators
+        self.location_gen = LocationGenerator(self.faker)
+        self.department_gen = DepartmentGenerator(self.faker)
+        
         # Will be initialized after dependencies are created
         self.job_gen = None
         self.employee_gen = None
