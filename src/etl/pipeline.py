@@ -20,9 +20,9 @@ from ..core.generators import (
 class ETLPipeline:
     """Main ETL pipeline for data generation and loading"""
     
-    def __init__(self):
+    def __init__(self, bq_manager=None):
         self.logger = default_logger
-        self.bigquery_client = BigQueryManager()
+        self.bigquery_client = bq_manager or BigQueryManager()
         
         # Will be initialized after dependencies are created
         self.job_gen = None
@@ -53,12 +53,12 @@ class ETLPipeline:
         self.logger.info("Setting up database schema...")
         
         # Ensure dataset exists
-        self.bq_manager.ensure_dataset()
+        self.bigquery_client.ensure_dataset()
         
         # Create all tables
         for table_name, schema in ALL_SCHEMAS.items():
             bq_schema = get_bigquery_schema(schema)
-            self.bq_manager.create_table(table_name, bq_schema)
+            self.bigquery_client.create_table(table_name, bq_schema)
         
         self.logger.info("Database setup completed")
     
@@ -116,7 +116,7 @@ class ETLPipeline:
         
         for table_name, df in self.data_cache.items():
             if table_name.startswith("dim_"):
-                self.bq_manager.load_dataframe(df, table_name)
+                self.bigquery_client.load_dataframe(df, table_name)
                 self.logger.info(f"Loaded {len(df)} rows into {table_name}")
         
         self.logger.info("Dimension data loading completed")
@@ -389,7 +389,7 @@ class ETLPipeline:
                 for i in range(0, total_rows, batch_size):
                     batch_df = df.iloc[i:i+batch_size]
                     write_disposition = "WRITE_APPEND" if i > 0 else "WRITE_TRUNCATE"
-                    self.bq_manager.load_dataframe(batch_df, table_name, write_disposition)
+                    self.bigquery_client.load_dataframe(batch_df, table_name, write_disposition)
                 
                 self.logger.info(f"Loaded {total_rows} rows into {table_name}")
         
@@ -426,7 +426,7 @@ class ETLPipeline:
             today_sales_df = self._generate_daily_sales(config)
             
             if len(today_sales_df) > 0:
-                self.bq_manager.load_dataframe(today_sales_df, "fact_sales", "WRITE_APPEND")
+                self.bigquery_client.load_dataframe(today_sales_df, "fact_sales", "WRITE_APPEND")
                 self.logger.info(f"Added {len(today_sales_df)} new sales records")
             
             self.logger.info("Incremental update completed")
@@ -440,10 +440,10 @@ class ETLPipeline:
         daily_amount = config.get("daily_sales_amount", 2000000)
         
         # Get reference data from BigQuery
-        products = self.bq_manager.execute_query("SELECT * FROM dim_products WHERE status = 'Active'")
-        retailers = self.bq_manager.execute_query("SELECT * FROM dim_retailers WHERE status = 'Active'")
-        employees = self.bq_manager.execute_query("SELECT * FROM dim_employees WHERE termination_date IS NULL")
-        campaigns = self.bq_manager.execute_query("SELECT * FROM dim_campaigns WHERE status = 'Active'")
+        products = self.bigquery_client.execute_query("SELECT * FROM dim_products WHERE status = 'Active'")
+        retailers = self.bigquery_client.execute_query("SELECT * FROM dim_retailers WHERE status = 'Active'")
+        employees = self.bigquery_client.execute_query("SELECT * FROM dim_employees WHERE termination_date IS NULL")
+        campaigns = self.bigquery_client.execute_query("SELECT * FROM dim_campaigns WHERE status = 'Active'")
         
         sales = []
         sale_id = 1
