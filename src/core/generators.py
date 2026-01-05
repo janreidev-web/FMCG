@@ -7,7 +7,171 @@ import pandas as pd
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Any, Tuple
 from faker import Faker
-from ..utils.logger import default_logger
+try:
+    from ..utils.logger import default_logger
+except ImportError:
+    # Fallback if logger module not available
+    default_logger = None
+try:
+    from ..utils.id_generation import id_generator
+except ImportError:
+    # Fallback for direct import
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'utils'))
+    from id_generation import id_generator
+
+# =====================================================
+# PHILIPPINES REGIONAL GEOGRAPHY (OFFICIAL)
+# Region → Province → Key Cities / Municipalities
+# =====================================================
+
+PH_GEOGRAPHY = {
+    "Region I - Ilocos": {
+        "Ilocos Norte": ["Laoag"],
+        "Ilocos Sur": ["Vigan"],
+        "La Union": ["San Fernando"],
+        "Pangasinan": ["Dagupan", "San Carlos", "Urdaneta"]
+    },
+
+    "Region II - Cagayan Valley": {
+        "Batanes": ["Basco"],
+        "Cagayan": ["Tuguegarao"],
+        "Isabela": ["Ilagan"],
+        "Nueva Vizcaya": ["Bayombong"],
+        "Quirino": ["Cabarroguis"]
+    },
+
+    "Region III - Central Luzon": {
+        "Aurora": ["Baler"],
+        "Bataan": ["Balanga"],
+        "Bulacan": ["Malolos"],
+        "Nueva Ecija": ["Palayan", "Cabanatuan"],
+        "Pampanga": ["San Fernando"],
+        "Tarlac": ["Tarlac City"],
+        "Zambales": ["Olongapo"]
+    },
+
+    "Region IV-A - CALABARZON": {
+        "Cavite": ["Tagaytay", "Dasmariñas"],
+        "Laguna": ["Santa Rosa", "Biñan", "San Pedro"],
+        "Batangas": ["Batangas City", "Lipa"],
+        "Rizal": ["Antipolo"],
+        "Quezon": ["Lucena"]
+    },
+
+    "Region IV-B - MIMAROPA": {
+        "Occidental Mindoro": ["Mamburao"],
+        "Oriental Mindoro": ["Calapan"],
+        "Marinduque": ["Boac"],
+        "Romblon": ["Romblon"],
+        "Palawan": ["Puerto Princesa"]
+    },
+
+    "Region V - Bicol": {
+        "Albay": ["Legazpi"],
+        "Camarines Norte": ["Daet"],
+        "Camarines Sur": ["Naga"],
+        "Catanduanes": ["Virac"],
+        "Masbate": ["Masbate City"],
+        "Sorsogon": ["Sorsogon City"]
+    },
+
+    "Region VI - Western Visayas": {
+        "Aklan": ["Kalibo"],
+        "Antique": ["San Jose de Buenavista"],
+        "Capiz": ["Roxas City"],
+        "Iloilo": ["Iloilo City"],
+        "Negros Occidental": ["Bacolod"]
+    },
+
+    "Region VII - Central Visayas": {
+        "Bohol": ["Tagbilaran"],
+        "Cebu": ["Cebu City", "Lapu-Lapu", "Mandaue"],
+        "Negros Oriental": ["Dumaguete"],
+        "Siquijor": ["Siquijor"]
+    },
+
+    "Region VIII - Eastern Visayas": {
+        "Biliran": ["Naval"],
+        "Eastern Samar": ["Borongan"],
+        "Leyte": ["Tacloban"],
+        "Northern Samar": ["Catarman"],
+        "Samar": ["Catbalogan"],
+        "Southern Leyte": ["Maasin"]
+    },
+
+    "Region IX - Zamboanga Peninsula": {
+        "Zamboanga del Norte": ["Dipolog"],
+        "Zamboanga del Sur": ["Pagadian"],
+        "Zamboanga Sibugay": ["Ipil"]
+    },
+
+    "Region X - Northern Mindanao": {
+        "Bukidnon": ["Malaybalay"],
+        "Camiguin": ["Mambajao"],
+        "Lanao del Norte": ["Iligan"],
+        "Misamis Occidental": ["Oroquieta"],
+        "Misamis Oriental": ["Cagayan de Oro"]
+    },
+
+    "Region XI - Davao Region": {
+        "Davao de Oro": ["Nabunturan"],
+        "Davao del Norte": ["Tagum"],
+        "Davao del Sur": ["Digos"],
+        "Davao Occidental": ["Malita"],
+        "Davao Oriental": ["Mati"]
+    },
+
+    "Region XII - SOCCSKSARGEN": {
+        "Cotabato": ["Kidapawan"],
+        "Sarangani": ["Alabel"],
+        "South Cotabato": ["Koronadal", "General Santos"],
+        "Sultan Kudarat": ["Isulan"]
+    },
+
+    "Region XIII - Caraga": {
+        "Agusan del Norte": ["Butuan"],
+        "Agusan del Sur": ["Bayugan"],
+        "Surigao del Norte": ["Surigao City"],
+        "Surigao del Sur": ["Tandag"],
+        "Dinagat Islands": ["San Jose"]
+    },
+
+    "Region XIV - BARMM": {
+        "Basilan": ["Isabela City"],
+        "Lanao del Sur": ["Marawi"],
+        "Maguindanao": ["Cotabato City"],
+        "Sulu": ["Jolo"],
+        "Tawi-Tawi": ["Bongao"]
+    },
+
+    "Region XV - NCR": {
+        "Metro Manila": [
+            "Manila", "Quezon City", "Makati", "Pasig",
+            "Taguig", "Mandaluyong", "Muntinlupa",
+            "Parañaque", "Marikina", "Caloocan",
+            "Las Piñas", "Valenzuela", "Malabon",
+            "Navotas", "San Juan", "Pasay", "Pateros"
+        ]
+    },
+
+    "Region XVI - CAR": {
+        "Abra": ["Bangued"],
+        "Apayao": ["Kabugao"],
+        "Benguet": ["Baguio City"],
+        "Ifugao": ["Lagawe"],
+        "Kalinga": ["Tabuk"],
+        "Mountain Province": ["Bontoc"]
+    }
+}
+
+def pick_ph_location():
+    """Pick a random Philippine location (region, province, city)"""
+    region = random.choice(list(PH_GEOGRAPHY.keys()))
+    province = random.choice(list(PH_GEOGRAPHY[region].keys()))
+    city = random.choice(PH_GEOGRAPHY[region][province])
+    return region, province, city
 
 
 class DataGenerator:
@@ -23,66 +187,21 @@ class DataGenerator:
 
 
 class LocationGenerator(DataGenerator):
-    """Generate Philippines location data"""
-    
-    PHILIPPINES_REGIONS = {
-        "NCR": ["Manila", "Quezon City", "Makati", "Pasig", "Taguig"],
-        "Region I": ["Laoag", "Vigan", "San Fernando", "Dagupan"],
-        "Region II": ["Tuguegarao", "Ilagan", "Bayombong"],
-        "Region III": ["Balanga", "Malolos", "Cabanatuan", "San Fernando"],
-        "Region IV-A": ["Tagaytay", "Santa Rosa", "Batangas City", "Antipolo"],
-        "Region IV-B": ["Mamburao", "Calapan", "Puerto Princesa"],
-        "Region V": ["Legazpi", "Naga", "Sorsogon City"],
-        "CAR": ["Baguio City", "Bontoc", "Tabuk"],
-        "Region VI": ["Kalibo", "Iloilo City", "Bacolod"],
-        "Region VII": ["Tagbilaran", "Cebu City", "Dumaguete"],
-        "Region VIII": ["Tacloban", "Catbalogan", "Borongan"],
-        "Region IX": ["Dipolog", "Pagadian"],
-        "Region X": ["Malaybalay", "Cagayan de Oro"],
-        "Region XI": ["Tagum", "Digos", "Mati"],
-        "Region XII": ["Kidapawan", "Koronadal", "General Santos"],
-        "Region XIII": ["Butuan", "Surigao City", "Tandag"],
-        "BARMM": ["Isabela City", "Marawi", "Cotabato City"]
-    }
+    """Generate Philippines location data using official geography"""
     
     def generate_locations(self, count: int) -> pd.DataFrame:
-        """Generate location data"""
+        """Generate location data using official Philippines geography"""
         locations = []
         
         for i in range(count):
-            region = random.choice(list(self.PHILIPPINES_REGIONS.keys()))
-            city = random.choice(self.PHILIPPINES_REGIONS[region])
-            
-            # Map regions to provinces
-            province_mapping = {
-                "NCR": "Metro Manila",
-                "Region I": random.choice(["Ilocos Norte", "Ilocos Sur", "La Union", "Pangasinan"]),
-                "Region II": random.choice(["Cagayan", "Isabela", "Nueva Vizcaya", "Quirino"]),
-                "Region III": random.choice(["Aurora", "Bataan", "Bulacan", "Nueva Ecija", "Pampanga", "Tarlac", "Zambales"]),
-                "Region IV-A": random.choice(["Cavite", "Laguna", "Batangas", "Rizal", "Quezon"]),
-                "Region IV-B": random.choice(["Occidental Mindoro", "Oriental Mindoro", "Marinduque", "Romblon", "Palawan"]),
-                "Region V": random.choice(["Albay", "Camarines Norte", "Camarines Sur", "Catanduanes", "Masbate", "Sorsogon"]),
-                "CAR": random.choice(["Abra", "Apayao", "Benguet", "Ifugao", "Kalinga", "Mountain Province"]),
-                "Region VI": random.choice(["Aklan", "Antique", "Capiz", "Iloilo", "Negros Occidental"]),
-                "Region VII": random.choice(["Bohol", "Cebu", "Negros Oriental", "Siquijor"]),
-                "Region VIII": random.choice(["Biliran", "Eastern Samar", "Leyte", "Northern Samar", "Samar", "Southern Leyte"]),
-                "Region IX": random.choice(["Zamboanga del Norte", "Zamboanga del Sur", "Zamboanga Sibugay"]),
-                "Region X": random.choice(["Bukidnon", "Camiguin", "Lanao del Norte", "Misamis Occidental", "Misamis Oriental"]),
-                "Region XI": random.choice(["Davao de Oro", "Davao del Norte", "Davao del Sur", "Davao Occidental", "Davao Oriental"]),
-                "Region XII": random.choice(["Cotabato", "Sarangani", "South Cotabato", "Sultan Kudarat"]),
-                "Region XIII": random.choice(["Agusan del Norte", "Agusan del Sur", "Surigao del Norte", "Surigao del Sur", "Dinagat Islands"]),
-                "BARMM": random.choice(["Basilan", "Lanao del Sur", "Maguindanao", "Sulu", "Tawi-Tawi"])
-            }
-            
-            province = province_mapping[region]
+            # Use official Philippines geography
+            region, province, city = pick_ph_location()
             
             location = {
-                "location_id": i + 1,
-                "street_address": self.faker.street_address(),
-                "city": city,
-                "province": province,
+                "location_id": id_generator.generate_id('dim_locations'),
                 "region": region,
-                "postal_code": self.faker.postcode(),
+                "province": province,
+                "city": city,
                 "latitude": float(self.faker.latitude()),
                 "longitude": float(self.faker.longitude()),
                 "created_at": datetime.now(),
@@ -115,10 +234,10 @@ class DepartmentGenerator(DataGenerator):
         
         for i, dept in enumerate(self.DEPARTMENTS):
             department = {
-                "department_id": i + 1,
+                "department_id": id_generator.generate_id('dim_departments'),
                 "department_name": dept["name"],
                 "parent_department_id": None,  # Top level departments
-                "manager_id": None,  # Will be set after employee generation
+                "manager_id": None,
                 "budget": dept["budget"],
                 "description": dept["description"],
                 "created_at": datetime.now(),
@@ -164,7 +283,7 @@ class JobGenerator(DataGenerator):
         
         for i, job in enumerate(self.JOBS):
             job_data = {
-                "job_id": i + 1,
+                "job_id": id_generator.generate_id('dim_jobs'),
                 "job_title": job["title"],
                 "job_level": job["level"],
                 "min_salary": job["min_salary"],
@@ -196,7 +315,15 @@ class EmployeeGenerator(DataGenerator):
         for i in range(count):
             # Random job assignment
             job = self.jobs_df.sample(1).iloc[0]
-            department = self.departments_df[self.departments_df["department_id"] == job["department_id"]].iloc[0]
+            
+            # Find matching department with error handling
+            matching_depts = self.departments_df[self.departments_df["department_id"] == job["department_id"]]
+            if len(matching_depts) == 0:
+                # Fallback: use first department
+                department = self.departments_df.iloc[0]
+            else:
+                department = matching_depts.iloc[0]
+            
             location = self.locations_df.sample(1).iloc[0]
             
             # Generate realistic salary within job range
@@ -210,12 +337,24 @@ class EmployeeGenerator(DataGenerator):
             if random.random() < 0.1:
                 termination_date = self.faker.date_between(start_date=hire_date, end_date="today")
             
+            # Generate gender first, then name to match
+            gender = random.choice(["Male", "Female"])
+            
+            # Generate names based on gender
+            if gender == "Male":
+                first_name = self.faker.first_name_male()
+                last_name = self.faker.last_name_male()
+            else:
+                first_name = self.faker.first_name_female()
+                last_name = self.faker.last_name_female()
+            
             employee = {
-                "employee_id": i + 1,
-                "first_name": self.faker.first_name(),
-                "last_name": self.faker.last_name(),
+                "employee_id": id_generator.generate_id('dim_employees'),
+                "first_name": first_name,
+                "last_name": last_name,
+                "gender": gender,
                 "email": self.faker.email(),
-                "phone": self.faker.msisdn(),
+                "phone": self.faker.basic_phone_number() if hasattr(self.faker, 'basic_phone_number') else f"+63-{random.randint(900000000, 999999999)}",
                 "department_id": department["department_id"],
                 "job_id": job["job_id"],
                 "hire_date": hire_date,
@@ -258,7 +397,7 @@ class ProductGenerator(DataGenerator):
         categories = []
         for i, cat in enumerate(self.FMCG_CATEGORIES):
             categories.append({
-                "category_id": i + 1,
+                "category_id": id_generator.generate_id('dim_categories'),
                 "category_name": cat["name"],
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
@@ -271,20 +410,19 @@ class ProductGenerator(DataGenerator):
         for cat in self.FMCG_CATEGORIES:
             for subcat in cat["subcategories"]:
                 subcategories.append({
-                    "subcategory_id": subcat_id,
+                    "subcategory_id": id_generator.generate_id('dim_subcategories'),
                     "subcategory_name": subcat,
                     "category_id": list(categories_df[categories_df["category_name"] == cat["name"]]["category_id"])[0],
                     "created_at": datetime.now(),
                     "updated_at": datetime.now()
                 })
-                subcat_id += 1
         subcategories_df = pd.DataFrame(subcategories)
         
         # Generate brands
         brands = []
         for i, brand in enumerate(self.BRANDS):
             brands.append({
-                "brand_id": i + 1,
+                "brand_id": id_generator.generate_id('dim_brands'),
                 "brand_name": brand,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
@@ -303,7 +441,7 @@ class ProductGenerator(DataGenerator):
             cost = base_price * random.uniform(0.3, 0.7)
             
             product = {
-                "product_id": i + 1,
+                "product_id": id_generator.generate_id('dim_products'),
                 "product_name": f"{brand['brand_name']} {subcategory['subcategory_name']} {i+1}",
                 "sku": f"SKU-{i+1:06d}",
                 "category_id": category["category_id"],
@@ -339,12 +477,12 @@ class RetailerGenerator(DataGenerator):
             location = locations_df.sample(1).iloc[0]
             
             retailer = {
-                "retailer_id": i + 1,
+                "retailer_id": id_generator.generate_id('dim_retailers'),
                 "retailer_name": self.faker.company(),
                 "retailer_type": random.choice(self.RETAILER_TYPES),
                 "location_id": location["location_id"],
                 "contact_person": self.faker.name(),
-                "phone": self.faker.msisdn(),
+                "phone": self.faker.basic_phone_number() if hasattr(self.faker, 'basic_phone_number') else f"+63-{random.randint(900000000, 999999999)}",
                 "email": self.faker.email(),
                 "credit_limit": random.uniform(10000, 100000),
                 "payment_terms": random.choice(["Net 30", "Net 60", "COD", "Net 90"]),
@@ -377,7 +515,7 @@ class CampaignGenerator(DataGenerator):
             end_date = start_date + timedelta(days=duration)
             
             campaign = {
-                "campaign_id": i + 1,
+                "campaign_id": id_generator.generate_id('dim_campaigns'),
                 "campaign_name": f"Campaign {i+1}: {random.choice(self.CAMPAIGN_TYPES)}",
                 "campaign_type": random.choice(self.CAMPAIGN_TYPES),
                 "start_date": start_date,

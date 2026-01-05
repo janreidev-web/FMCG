@@ -9,7 +9,7 @@ from pathlib import Path
 
 def check_imports():
     """Check all critical imports"""
-    print("🔍 Checking imports...")
+    print("Checking imports...")
     
     try:
         # Add src to path
@@ -34,7 +34,7 @@ def check_imports():
 
 def check_configuration():
     """Check configuration"""
-    print("🔍 Checking configuration...")
+    print("Checking configuration...")
     
     try:
         from config.settings import settings
@@ -53,7 +53,7 @@ def check_configuration():
 
 def check_schemas():
     """Check data schemas"""
-    print("🔍 Checking schemas...")
+    print("Checking schemas...")
     
     try:
         from src.data.schemas import ALL_SCHEMAS
@@ -77,7 +77,7 @@ def check_schemas():
 
 def check_generators():
     """Check data generators"""
-    print("🔍 Checking generators...")
+    print("Checking generators...")
     
     try:
         from faker import Faker
@@ -104,7 +104,7 @@ def check_generators():
 
 def check_dependencies():
     """Check required dependencies"""
-    print("🔍 Checking dependencies...")
+    print("Checking dependencies...")
     
     required_packages = [
         'pandas', 'faker', 'google.cloud.bigquery', 
@@ -119,10 +119,10 @@ def check_dependencies():
             missing.append(package)
     
     if missing:
-        print(f"❌ Missing packages: {', '.join(missing)}")
+        print(f"Missing packages: {', '.join(missing)}")
         return False
     
-    print("✅ All dependencies available")
+    print("All dependencies available")
     return True
 
 def main():
@@ -140,20 +140,22 @@ def main():
     
     results = []
     for check in checks:
-        results.append(check())
-        print()
+        results.append((check(), check.__name__))
     
-    passed = sum(results)
+    print("\n" + "="*50)
+    print("TEST SUMMARY")
+    print("="*50)
+    
+    passed = sum(1 for passed, _ in results if passed)
     total = len(results)
     
-    print("=" * 50)
     print(f"Validation Results: {passed}/{total} checks passed")
     
     if passed == total:
-        print("🎉 Quick validation PASSED!")
+        print("Quick validation PASSED!")
         return 0
     else:
-        print("⚠️  Quick validation FAILED!")
+        print("Quick validation FAILED!")
         return 1
 
 if __name__ == "__main__":

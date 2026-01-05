@@ -45,10 +45,10 @@ def run_command(command, description):
         return result.returncode == 0
         
     except subprocess.TimeoutExpired:
-        print(f"⏰ TIMEOUT (300s)")
+        print(f"TIMEOUT (300s)")
         return False
     except Exception as e:
-        print(f"💥 ERROR: {e}")
+        print(f"ERROR: {e}")
         return False
 
 def main():
@@ -147,10 +147,10 @@ def main():
     print(f"\nResults: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 ALL TESTS PASSED! Ready for deployment.")
+        print("ALL TESTS PASSED! Ready for deployment.")
         return 0
     else:
-        print(f"⚠️  {total - passed} tests failed. Fix issues before deployment.")
+        print(f"{total - passed} tests failed. Fix issues before deployment.")
         return 1
 
 if __name__ == "__main__":
