@@ -608,6 +608,19 @@ def main():
                 project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
                 dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
                 fact_sales_table = f"{project_id}.{dataset}.fact_sales"
+                
+                # Check if there's already data for yesterday
+                yesterday_check_query = f"SELECT COUNT(*) as count FROM `{fact_sales_table}` WHERE sale_date = '{yesterday}'"
+                logger.info(f"Checking if data exists for {yesterday} with query: {yesterday_check_query}")
+                yesterday_result = client.query(yesterday_check_query).to_dataframe()
+                yesterday_count = yesterday_result['count'].iloc[0]
+                logger.info(f"Found {yesterday_count} sales records for {yesterday}")
+                
+                if yesterday_count > 0:
+                    logger.info(f"✅ Daily run: Sales data already exists for {yesterday}. No new data needed.")
+                    return
+                
+                # Get the latest sales date to determine start date
                 latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{fact_sales_table}`"
                 logger.info(f"Checking latest sales date with query: {latest_sales_query}")
                 latest_result = client.query(latest_sales_query).to_dataframe()
