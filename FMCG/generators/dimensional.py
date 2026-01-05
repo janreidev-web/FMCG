@@ -125,7 +125,7 @@ def generate_dim_locations(num_locations=500, start_id=1):
             postal_code = fake.postcode()
         
         locations.append({
-            "location_id": generate_readable_id("LOC", "location", 4),
+            "location_id": generate_readable_id("LOC", "location", 6),
             "city": city,
             "province": province,
             "region": region,
@@ -137,16 +137,16 @@ def generate_dim_locations(num_locations=500, start_id=1):
 def generate_dim_departments(start_id=1):
     """Generate departments dimension table"""
     departments = [
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Sales", "department_code": "SLS"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Marketing", "department_code": "MKT"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Operations", "department_code": "OPS"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Finance", "department_code": "FIN"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Human Resources", "department_code": "HR"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Supply Chain", "department_code": "SCH"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Quality Assurance", "department_code": "QA"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "IT", "department_code": "IT"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Customer Service", "department_code": "CS"},
-        {"department_id": generate_readable_id("DEPT", "department", 3), "department_name": "Administration", "department_code": "ADM"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Sales", "department_code": "SLS"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Marketing", "department_code": "MKT"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Operations", "department_code": "OPS"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Finance", "department_code": "FIN"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Human Resources", "department_code": "HR"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Supply Chain", "department_code": "SCH"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Quality Assurance", "department_code": "QA"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "IT", "department_code": "IT"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Customer Service", "department_code": "CS"},
+        {"department_id": generate_readable_id("DEPT", "department", 6), "department_name": "Administration", "department_code": "ADM"},
     ]
     
     return departments
@@ -257,7 +257,7 @@ def generate_dim_jobs(departments, start_id=1):
                 min_sal, max_sal = salary_ranges[level]
                 
                 jobs.append({
-                    "job_id": generate_readable_id("JOB", "job", 5),
+                    "job_id": generate_readable_id("JOB", "job", 6),
                     "job_title": position["title"],
                     "job_level": level,
                     "department_id": dept_id,
@@ -272,16 +272,16 @@ def generate_dim_jobs(departments, start_id=1):
 def generate_dim_banks(start_id=1):
     """Generate banks dimension table"""
     banks = [
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "BDO", "bank_code": "BDO", "branch_code": "001"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "BPI", "bank_code": "BPI", "branch_code": "002"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Metrobank", "bank_code": "MB", "branch_code": "003"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Landbank", "bank_code": "LBP", "branch_code": "004"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "PNB", "bank_code": "PNB", "branch_code": "005"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "UnionBank", "bank_code": "UB", "branch_code": "006"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": "007"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": "008"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": "009"},
-        {"bank_id": generate_readable_id("BANK", "bank", 2), "bank_name": "PSBank", "bank_code": "PSB", "branch_code": "010"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "BDO", "bank_code": "BDO", "branch_code": "001"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "BPI", "bank_code": "BPI", "branch_code": "002"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "Metrobank", "bank_code": "MB", "branch_code": "003"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "Landbank", "bank_code": "LBP", "branch_code": "004"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "PNB", "bank_code": "PNB", "branch_code": "005"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "UnionBank", "bank_code": "UB", "branch_code": "006"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "China Bank", "bank_code": "CHIB", "branch_code": "007"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "Security Bank", "bank_code": "SECB", "branch_code": "008"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "RCBC", "bank_code": "RCBC", "branch_code": "009"},
+        {"bank_id": generate_readable_id("BANK", "bank", 6), "bank_name": "PSBank", "bank_code": "PSB", "branch_code": "010"},
     ]
     
     return banks
@@ -289,14 +289,14 @@ def generate_dim_banks(start_id=1):
 def generate_dim_insurance(start_id=1):
     """Generate insurance dimension table"""
     insurance = [
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
-        {"insurance_id": generate_readable_id("INS", "insurance", 2), "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "PhilHealth", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "Maxicare", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "MediCard", "provider_type": "Health", "coverage_level": "Standard"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "Intellicare", "provider_type": "Health", "coverage_level": "Basic"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "Sun Life", "provider_type": "Life", "coverage_level": "Premium"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "Manulife", "provider_type": "Life", "coverage_level": "Standard"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "AXA", "provider_type": "Health", "coverage_level": "Premium"},
+        {"insurance_id": generate_readable_id("INS", "insurance", 6), "provider_name": "Pacific Cross", "provider_type": "Health", "coverage_level": "Standard"},
     ]
     
     return insurance
@@ -403,15 +403,8 @@ def generate_dim_employees_normalized(num_employees, locations, jobs, banks, ins
             
             # Ensure job is assigned (fallback if no jobs available for department)
             if not job:
-                # Create a default job if no department jobs available
-                job = {
-                    "job_id": generate_readable_id("JOB", "job", 5),
-                    "job_title": "General Staff",
-                    "job_level": "Entry",
-                    "department_id": dept_lookup.get(dept_name, "DEPT001"),
-                    "work_setup": "On-site",
-                    "work_type": "Full-time"
-                }
+                # Use a random existing job as fallback
+                job = random.choice(jobs) if jobs else None
             
             # Generate government IDs
             tin_number = f"{random.randint(100000000, 999999999)}"
@@ -699,7 +692,7 @@ def generate_fact_employees(employees, jobs, start_id=1):
     return employee_facts
 
 def generate_fact_inventory(products, locations=None, start_id=1):
-    """Generate inventory fact table with normalized location references"""
+    """Generate enhanced inventory fact table with FMCG-specific metrics"""
     inventory = []
     
     # If no locations provided, generate some sample location IDs
@@ -715,25 +708,133 @@ def generate_fact_inventory(products, locations=None, start_id=1):
     for product in products:
         # Generate inventory records for each warehouse location
         for location_id in location_ids:
-            # Random inventory levels
-            cases_on_hand = random.randint(50, 5000)
+            # FMCG-specific inventory calculations
             
-            # Unit cost based on wholesale price with some variation
-            base_cost = product["wholesale_price"] * 0.7  # Assume 30% margin
-            unit_cost = round(base_cost * random.uniform(0.95, 1.05), 2)
+            # Base demand calculation (cases per month)
+            base_demand = random.randint(100, 2000)  # Monthly demand in cases
+            daily_demand = base_demand / 30
+            
+            # Seasonal factor (higher demand during certain months)
+            seasonal_factor = 1.0 + random.uniform(-0.3, 0.3)  # ±30% seasonal variation
+            
+            # Reorder point (when to place new order)
+            lead_time_days = random.randint(7, 21)  # Supplier lead time
+            reorder_point = int(daily_demand * lead_time_days)
+            
+            # Economic Order Quantity (EOQ) - optimized order size
+            holding_cost_rate = 0.25  # 25% annual holding cost
+            order_cost = random.randint(5000, 20000)  # Fixed order cost per order
+            unit_cost = product["wholesale_price"] * 0.7
+            
+            # EOQ formula: sqrt(2 * D * S / H)
+            # D = annual demand, S = order cost, H = holding cost per unit
+            annual_demand = base_demand * 12
+            eoq = int((2 * annual_demand * order_cost / (unit_cost * holding_cost_rate)) ** 0.5)
+            
+            # Safety stock (typically 15-30 days of inventory)
+            safety_stock_days = random.randint(15, 30)
+            safety_stock = int(daily_demand * safety_stock_days)
+            
+            # Reorder point (when to place new order) - must be less than safety stock
+            # Simple fix: set reorder point to 1/3 to 1/2 of safety stock
+            reorder_point = max(1, safety_stock // random.randint(2, 3))
+            
+            # Current inventory level (between reorder point and maximum)
+            max_inventory = safety_stock + eoq
+            current_inventory = random.randint(reorder_point + safety_stock, max_inventory + safety_stock)  # Always above reorder point
+            
+            # Unit cost with realistic FMCG margins
+            base_cost = product["wholesale_price"] * random.uniform(0.65, 0.75)  # 25-35% margin
+            unit_cost = round(base_cost, 2)
+            
+            # Retail price (includes distributor margin)
+            retail_price = product["retail_price"]
+            
+            # Shelf life (critical for FMCG)
+            shelf_life_days = random.choice([30, 60, 90, 120, 180, 365])  # Days until expiration
+            
+            # Batch/lot number for traceability
+            batch_number = f"LOT{random.randint(10000, 99999)}"
+            
+            # Manufacturing date (based on shelf life)
+            manufacture_date = date.today() - timedelta(days=random.randint(1, shelf_life_days))
+            
+            # Expiration date
+            expiration_date = manufacture_date + timedelta(days=shelf_life_days)
+            
+            # Days until expiration
+            days_to_expire = (expiration_date - date.today()).days
+            
+            # Inventory status based on expiration
+            if days_to_expire <= 0:
+                inventory_status = "Expired"
+            elif days_to_expire <= 30:
+                inventory_status = "Near Expiry"
+            elif current_inventory <= reorder_point:
+                inventory_status = "Low Stock"
+            elif current_inventory >= max_inventory * 0.8:
+                inventory_status = "Overstocked"
+            else:
+                inventory_status = "Normal"
+            
+            # Storage conditions (important for FMCG)
+            storage_conditions = random.choice(["Ambient", "Refrigerated", "Frozen", "Climate Controlled"])
+            
+            # Temperature requirements
+            if storage_conditions == "Refrigerated":
+                min_temp = random.randint(2, 8)
+                max_temp = min_temp + random.randint(2, 4)
+            elif storage_conditions == "Frozen":
+                min_temp = random.randint(-20, -10)
+                max_temp = min_temp + random.randint(5, 10)
+            else:  # Ambient
+                min_temp = random.randint(15, 30)
+                max_temp = min_temp + random.randint(5, 15)
             
             # Generate inventory date (recent snapshot)
-            inventory_date = fake.date_between_dates(date_start=date.today() - timedelta(days=30), date_end=date.today())
+            inventory_date = fake.date_between_dates(date_start=date.today() - timedelta(days=7), date_end=date.today())
             
             inventory_sequence += 1
             inventory.append({
                 "inventory_id": generate_unique_inventory_key(product["product_id"], location_id, inventory_date, inventory_sequence),
                 "inventory_date": inventory_date,
                 "product_id": product["product_id"],
-                "location_id": location_id,  # Now using string location_id
-                "cases_on_hand": cases_on_hand,
+                "location_id": location_id,
+                "cases_on_hand": current_inventory,
                 "unit_cost": unit_cost,
-                "currency": "PHP"
+                "retail_price": retail_price,
+                "currency": "PHP",
+                
+                # FMCG-specific metrics
+                "reorder_point": reorder_point,
+                "safety_stock": safety_stock,
+                "economic_order_quantity": eoq,
+                "max_inventory": max_inventory,
+                "base_monthly_demand": base_demand,
+                "seasonal_factor": round(seasonal_factor, 2),
+                
+                # Shelf life and expiration tracking
+                "shelf_life_days": shelf_life_days,
+                "batch_number": batch_number,
+                "manufacture_date": manufacture_date,
+                "expiration_date": expiration_date,
+                "days_to_expire": days_to_expire,
+                "inventory_status": inventory_status,
+                
+                # Storage requirements
+                "storage_conditions": storage_conditions,
+                "min_temperature": min_temp,
+                "max_temperature": max_temp,
+                
+                # Inventory turnover metrics
+                "inventory_turnover_days": round(365 / (base_demand / current_inventory) if current_inventory > 0 else 0),
+                "days_of_supply": round(current_inventory / daily_demand) if daily_demand > 0 else 0,
+                
+                # Value calculations
+                "total_inventory_value": round(current_inventory * unit_cost, 2),
+                "potential_retail_value": round(current_inventory * retail_price, 2),
+                "gross_margin_per_unit": round(retail_price - unit_cost, 2),
+                "gross_margin_percent": round(((retail_price - unit_cost) / retail_price) * 100, 2)
             })
     
     return inventory
@@ -772,7 +873,7 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
         
         for i in range(type_count):
             # Generate unique retailer id
-            retailer_id = generate_readable_id("R", "retailer", 5)
+            retailer_id = generate_readable_id("RET", "retailer", 6)
             
             # Select location
             location = random.choice(locations)
@@ -803,41 +904,41 @@ def generate_dim_retailers_normalized(num_retailers, locations, start_id=1):
 def generate_dim_categories(start_id=1):
     """Generate product categories dimension table"""
     categories = [
-        {"category_id": generate_readable_id("CAT", "category", 2), "category_name": "Beverages", "category_code": "BEV"},
-        {"category_id": generate_readable_id("CAT", "category", 2), "category_name": "Food", "category_code": "FOD"},
-        {"category_id": generate_readable_id("CAT", "category", 2), "category_name": "Personal Care", "category_code": "PER"},
-        {"category_id": generate_readable_id("CAT", "category", 2), "category_name": "Household", "category_code": "HH"},
-        {"category_id": generate_readable_id("CAT", "category", 2), "category_name": "Health", "category_code": "HLH"},
+        {"category_id": generate_readable_id("CAT", "category", 6), "category_name": "Beverages", "category_code": "BEV"},
+        {"category_id": generate_readable_id("CAT", "category", 6), "category_name": "Food", "category_code": "FOD"},
+        {"category_id": generate_readable_id("CAT", "category", 6), "category_name": "Personal Care", "category_code": "PER"},
+        {"category_id": generate_readable_id("CAT", "category", 6), "category_name": "Household", "category_code": "HH"},
+        {"category_id": generate_readable_id("CAT", "category", 6), "category_name": "Health", "category_code": "HLH"},
     ]
     return categories
 
 def generate_dim_brands(start_id=1):
     """Generate brands dimension table"""
     brands = [
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Nestlé", "brand_code": "NES"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Unilever", "brand_code": "UNI"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Procter & Gamble", "brand_code": "P&G"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Coca-Cola", "brand_code": "COK"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "PepsiCo", "brand_code": "PEP"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Mondelez", "brand_code": "MON"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Johnson & Johnson", "brand_code": "JNJ"},
-        {"brand_id": generate_readable_id("BR", "brand", 3), "brand_name": "Colgate-Palmolive", "brand_code": "COL"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Nestlé", "brand_code": "NES"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Unilever", "brand_code": "UNI"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Procter & Gamble", "brand_code": "P&G"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Coca-Cola", "brand_code": "COK"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "PepsiCo", "brand_code": "PEP"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Mondelez", "brand_code": "MON"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Johnson & Johnson", "brand_code": "JNJ"},
+        {"brand_id": generate_readable_id("BRD", "brand", 6), "brand_name": "Colgate-Palmolive", "brand_code": "COL"},
     ]
     return brands
 
 def generate_dim_subcategories(start_id=1):
     """Generate product subcategories dimension table"""
     subcategories = [
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Soft Drinks", "category_code": "BEV"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Juices", "category_code": "BEV"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Water", "category_code": "BEV"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Snacks", "category_code": "FOD"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Dairy", "category_code": "FOD"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Bakery", "category_code": "FOD"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Soap", "category_code": "PER"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Shampoo", "category_code": "PER"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Cleaning", "category_code": "HH"},
-        {"subcategory_id": generate_readable_id("SUB", "subcategory", 3), "subcategory_name": "Vitamins", "category_code": "HLH"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Soft Drinks", "category_code": "BEV"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Juices", "category_code": "BEV"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Water", "category_code": "BEV"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Snacks", "category_code": "FOD"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Dairy", "category_code": "FOD"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Bakery", "category_code": "FOD"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Soap", "category_code": "PER"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Shampoo", "category_code": "PER"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Cleaning", "category_code": "HH"},
+        {"subcategory_id": generate_readable_id("SUB", "subcategory", 6), "subcategory_name": "Vitamins", "category_code": "HLH"},
     ]
     return subcategories
 
@@ -919,7 +1020,7 @@ def generate_dim_products(num_products, categories, brands, subcategories, start
         status = "Delisted" if random.random() < delist_probability else "Active"
         
         products.append({
-            "product_id": generate_readable_id("P", "product", 4),
+            "product_id": generate_readable_id("PROD", "product", 6),
             "product_name": product["name"],
             "category_id": category_ref["category_id"],
             "brand_id": brand_ref["brand_id"],
@@ -1017,7 +1118,7 @@ def generate_dim_campaigns(start_id=1):
     
     for i, campaign in enumerate(campaign_data):
         campaigns.append({
-            "campaign_id": generate_readable_id("C", "campaign", 4),
+            "campaign_id": generate_readable_id("CAM", "campaign", 6),
             "campaign_name": campaign["name"],
             "campaign_type": campaign["type"],
             "start_date": date.fromisoformat(campaign["start"]),
@@ -1370,6 +1471,7 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
                 "sale_date": current_date,
                 "product_id": product["product_id"],
                 "retailer_id": retailer["retailer_id"],
+                "campaign_id": campaign["campaign_id"] if campaign else None,
                 "case_quantity": case_quantity,
                 "unit_price": unit_price,
                 "discount_percent": discount_percent,

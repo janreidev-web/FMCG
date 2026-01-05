@@ -157,12 +157,11 @@ FACT_EMPLOYEE_WAGES_SCHEMA = [
 
 # Existing schemas (unchanged)
 DIM_PRODUCTS_SCHEMA = [
-    {"name": "product_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "product_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "product_name", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "category", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "subcategory", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "brand", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "category_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "brand_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "subcategory_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "wholesale_price", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "retail_price", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "status", "type": "STRING", "mode": "REQUIRED"},
@@ -170,15 +169,13 @@ DIM_PRODUCTS_SCHEMA = [
 ]
 
 DIM_RETAILERS_SCHEMA = [
-    {"name": "retailer_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "retailer_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "retailer_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "retailer_type", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "location_key", "type": "INTEGER", "mode": "REQUIRED"},  # FK to dim_locations
+    {"name": "location_id", "type": "STRING", "mode": "REQUIRED"},
 ]
 
 DIM_CAMPAIGNS_SCHEMA = [
-    {"name": "campaign_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "campaign_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "campaign_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "campaign_type", "type": "STRING", "mode": "REQUIRED"},
@@ -189,16 +186,17 @@ DIM_CAMPAIGNS_SCHEMA = [
 ]
 
 FACT_SALES_SCHEMA = [
-    {"name": "sale_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "sale_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "sale_date", "type": "DATE", "mode": "REQUIRED"},
-    {"name": "product_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "employee_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "retailer_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "campaign_key", "type": "INTEGER", "mode": "NULLABLE"},
+    {"name": "product_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "retailer_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "campaign_id", "type": "STRING", "mode": "NULLABLE"},
     {"name": "case_quantity", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "unit_price", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "discount_percent", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "tax_rate", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "discount_amount", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "tax_amount", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "total_amount", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "commission_amount", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "currency", "type": "STRING", "mode": "REQUIRED"},
@@ -211,14 +209,13 @@ FACT_SALES_SCHEMA = [
 
 DELIVERY_STATUS_UPDATES_SCHEMA = [
     {"name": "update_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "sale_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "sale_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "previous_status", "type": "STRING", "mode": "REQUIRED"},
     {"name": "new_status", "type": "STRING", "mode": "REQUIRED"},
     {"name": "previous_actual_delivery_date", "type": "DATE", "mode": "NULLABLE"},
     {"name": "new_actual_delivery_date", "type": "DATE", "mode": "NULLABLE"},
-    {"name": "update_date", "type": "DATE", "mode": "REQUIRED"},
-    {"name": "days_since_sale", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "update_reason", "type": "STRING", "mode": "REQUIRED"}
+    {"name": "update_timestamp", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    {"name": "update_reason", "type": "STRING", "mode": "NULLABLE"},
 ]
 
 DELIVERY_UPDATES_STAGING_SCHEMA = DELIVERY_STATUS_UPDATES_SCHEMA  # Same schema for staging table
@@ -233,19 +230,50 @@ FACT_OPERATING_COSTS_SCHEMA = [
 ]
 
 FACT_INVENTORY_SCHEMA = [
-    {"name": "inventory_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "inventory_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "inventory_date", "type": "DATE", "mode": "REQUIRED"},
-    {"name": "product_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "location_key", "type": "INTEGER", "mode": "REQUIRED"},  # FK to dim_locations
+    {"name": "product_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "location_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cases_on_hand", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "unit_cost", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "retail_price", "type": "FLOAT", "mode": "REQUIRED"},
     {"name": "currency", "type": "STRING", "mode": "REQUIRED"},
+    
+    # FMCG-specific metrics
+    {"name": "reorder_point", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "safety_stock", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "economic_order_quantity", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "max_inventory", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "base_monthly_demand", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "seasonal_factor", "type": "FLOAT", "mode": "REQUIRED"},
+    
+    # Shelf life and expiration tracking
+    {"name": "shelf_life_days", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "batch_number", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "manufacture_date", "type": "DATE", "mode": "REQUIRED"},
+    {"name": "expiration_date", "type": "DATE", "mode": "REQUIRED"},
+    {"name": "days_to_expire", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "inventory_status", "type": "STRING", "mode": "REQUIRED"},
+    
+    # Storage requirements
+    {"name": "storage_conditions", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "min_temperature", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "max_temperature", "type": "INTEGER", "mode": "REQUIRED"},
+    
+    # Inventory turnover metrics
+    {"name": "inventory_turnover_days", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "days_of_supply", "type": "INTEGER", "mode": "REQUIRED"},
+    
+    # Value calculations
+    {"name": "total_inventory_value", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "potential_retail_value", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "gross_margin_per_unit", "type": "FLOAT", "mode": "REQUIRED"},
+    {"name": "gross_margin_percent", "type": "FLOAT", "mode": "REQUIRED"},
 ]
 
 FACT_MARKETING_COSTS_SCHEMA = [
     {"name": "marketing_cost_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "cost_date", "type": "DATE", "mode": "REQUIRED"},
-    {"name": "campaign_key", "type": "INTEGER", "mode": "NULLABLE"},
     {"name": "campaign_id", "type": "STRING", "mode": "NULLABLE"},
     {"name": "campaign_type", "type": "STRING", "mode": "NULLABLE"},
     {"name": "cost_category", "type": "STRING", "mode": "REQUIRED"},
@@ -268,7 +296,7 @@ STORAGE_ESTIMATES = {
     "fact_sales": "3.6M rows × ~300 bytes = ~1.08 GB",
     "fact_operating_costs": "2,400 rows × ~150 bytes = ~360 KB",
     "fact_marketing_costs": "3,000 rows × ~180 bytes = ~540 KB",
-    "fact_inventory": "750 rows × ~150 bytes = ~112.5 KB",
+    "fact_inventory": "750 rows × ~800 bytes = ~600 KB (enhanced with FMCG metrics)",
     "total": "~1.28 GB (reduced from ~1.29 GB, better normalization)",
 }
 
