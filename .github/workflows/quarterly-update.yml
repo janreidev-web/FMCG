@@ -35,7 +35,7 @@ jobs:
         echo "${{ secrets.GCP_SERVICE_ACCOUNT }}" | base64 -d > $HOME/gcloud-key.json
         echo "GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json" >> $GITHUB_ENV
         
-    - name: Setup environment
+    - name: Run setup script
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
@@ -43,21 +43,13 @@ jobs:
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
       run: |
-        echo "=== Setting up Environment ==="
+        echo "=== Running Setup Script ==="
         echo "Time: $(date)"
-        echo "Working Directory: $(pwd)"
         
-        # Create .env file for configuration
-        cat > .env << EOF
-        GCP_PROJECT_ID=${GCP_PROJECT_ID}
-        GCP_DATASET=${BQ_DATASET}
-        INITIAL_SALES_AMOUNT=${INITIAL_SALES_AMOUNT}
-        DAILY_SALES_AMOUNT=${DAILY_SALES_AMOUNT}
-        LOG_LEVEL=INFO
-        BATCH_SIZE=1000
-        EOF
+        # Run setup to verify configuration and create dataset
+        python scripts/setup.py
         
-        echo "=== Environment Setup Completed ==="
+        echo "=== Setup Completed ==="
         echo "Time: $(date)"
         
     - name: Run Quarterly Campaign Update
@@ -84,4 +76,3 @@ jobs:
       if: always()
       run: |
         rm -f $HOME/gcloud-key.json
-        rm -f .env

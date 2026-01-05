@@ -63,11 +63,15 @@ def setup_bigquery() -> None:
     logger = setup_logger("setup", "INFO")
     
     try:
+        # Get configuration from environment variables
+        gcp_project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-generator")
+        bq_dataset = os.environ.get("GCP_DATASET", "fmcg_warehouse")
+        
         # Initialize BigQuery manager
         bq_manager = BigQueryManager(
-            project_id=settings.gcp_project_id,
-            dataset=settings.gcp_dataset,
-            credentials_path=settings.gcp_credentials_path
+            project_id=gcp_project_id,
+            dataset=bq_dataset,
+            credentials_path=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         )
         
         # Ensure dataset exists
@@ -75,8 +79,8 @@ def setup_bigquery() -> None:
         logger.info(f"Dataset '{dataset.dataset_id}' is ready")
         
         print("BigQuery setup completed successfully!")
-        print(f"Project: {settings.gcp_project_id}")
-        print(f"Dataset: {settings.gcp_dataset}")
+        print(f"Project: {gcp_project_id}")
+        print(f"Dataset: {bq_dataset}")
         
     except Exception as e:
         logger.error(f"BigQuery setup failed: {e}")
@@ -90,28 +94,23 @@ def verify_configuration() -> None:
     
     print("Verifying configuration...")
     
-    # Check environment variables
-    required_vars = [
-        "GCP_PROJECT_ID",
-        "GCP_DATASET"
-    ]
+    # Check environment variables - use defaults if not set
+    gcp_project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-generator")
+    bq_dataset = os.environ.get("GCP_DATASET", "fmcg_warehouse")
     
-    missing_vars = []
-    for var in required_vars:
-        if not os.environ.get(var):
-            missing_vars.append(var)
+    print(f"Using GCP_PROJECT_ID: {gcp_project_id}")
+    print(f"Using BQ_DATASET: {bq_dataset}")
     
-    if missing_vars:
-        print(f"Missing required environment variables: {', '.join(missing_vars)}")
-        print("Please set these variables in your environment or .env file")
-        return False
+    # Set environment variables for the rest of the script
+    os.environ["GCP_PROJECT_ID"] = gcp_project_id
+    os.environ["BQ_DATASET"] = bq_dataset
     
     # Test BigQuery connection
     try:
         bq_manager = BigQueryManager(
-            project_id=settings.gcp_project_id,
-            dataset=settings.gcp_dataset,
-            credentials_path=settings.gcp_credentials_path
+            project_id=gcp_project_id,
+            dataset=bq_dataset,
+            credentials_path=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
         )
         
         # Test connection with a simple query
