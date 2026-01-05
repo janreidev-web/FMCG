@@ -1,0 +1,45 @@
+name: Daily Sales Run
+on:
+  schedule:
+    # Run daily at 4 AM UTC (12 PM PHT)
+    #- cron: '0 16 * * *'
+    # Testing schedule: Runs every 2 minute (TEMPORARILY ENABLED FOR TESTING)
+    - cron: '*/2 * * * *'
+  workflow_dispatch:  # Allow manual trigger for testing
+
+jobs:
+  daily-sales:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        cd FMCG
+        pip install -r requirements.txt
+        
+    - name: Run Daily Sales Generation
+      run: |
+        cd FMCG
+        # Set environment variables for daily run
+        export SCHEDULED_RUN=true
+        export FORCE_REFRESH=false
+        
+        echo "Starting Daily Sales Run..."
+        echo "This run will only append new sales data"
+        echo "Run time: $(date)"
+        
+        python main.py
+        
+        echo "Daily sales run completed!"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        PROJECT_ID: ${{ secrets.PROJECT_ID }}

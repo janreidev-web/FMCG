@@ -1,0 +1,50 @@
+name: Manual Full Refresh
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      force_refresh:
+        description: 'Force refresh all tables (regenerate everything)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
+
+jobs:
+  manual-run:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        cd FMCG
+        pip install -r requirements.txt
+        
+    - name: Run Manual Full Refresh
+      run: |
+        cd FMCG
+        # Set environment variables for manual run
+        export SCHEDULED_RUN=false
+        export FORCE_REFRESH=${{ github.event.inputs.force_refresh || 'false' }}
+        
+        echo "Starting Manual Full Refresh..."
+        echo "This run will generate all data from scratch"
+        echo "Force Refresh: $FORCE_REFRESH"
+        echo "Run time: $(date)"
+        
+        python main.py
+        
+        echo "Manual run completed!"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        PROJECT_ID: ${{ secrets.PROJECT_ID }}

@@ -1,0 +1,66 @@
+name: Quarterly Campaign Update
+on:
+  schedule:
+    # Run on the first day of each quarter at 4 AM UTC (12 PM PHT)
+    # Jan 1, Apr 1, Jul 1, Oct 1
+    - cron: '0 4 1 1,4,7,10 *'
+  workflow_dispatch:  # Allow manual trigger for testing
+
+jobs:
+  quarterly-update:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        cd FMCG
+        pip install -r requirements.txt
+        
+    - name: Check if today is start of quarter
+      run: |
+        # Check if today is the start of a quarter
+        MONTH=$(date +%m)
+        DAY=$(date +%d)
+        
+        if [ "$DAY" -ne 1 ]; then
+          echo "Today is not the first day of the month (day $DAY)"
+          echo "Skipping quarterly update"
+          exit 0
+        fi
+        
+        if [[ "$MONTH" =~ ^(1|4|7|10)$ ]]; then
+          echo "Today is the start of Q$(( (MONTH + 2) / 3 ))! Running quarterly update..."
+        else
+          echo "Month $MONTH is not the start of a quarter"
+          echo "Skipping quarterly update"
+          exit 0
+        fi
+        
+    - name: Run Quarterly Data Generation
+      run: |
+        cd FMCG
+        # Set environment variables for quarterly run
+        export SCHEDULED_RUN=true
+        export FORCE_REFRESH=false
+        
+        echo "Starting Quarterly Campaign Update..."
+        echo "This run will update: Campaign costs + All monthly items"
+        echo "Monthly items: New employees, inventory, operating costs"
+        echo "Sales data will also be appended"
+        echo "Run time: $(date)"
+        
+        python main.py
+        
+        echo "Quarterly update completed!"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        PROJECT_ID: ${{ secrets.PROJECT_ID }}

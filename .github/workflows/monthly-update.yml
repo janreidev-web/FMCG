@@ -1,0 +1,58 @@
+name: Monthly Data Update
+on:
+  schedule:
+    # Run on the last day of every month at 4 AM UTC (12 PM PHT)
+    - cron: '0 4 28-31 * *'
+  workflow_dispatch:  # Allow manual trigger for testing
+
+jobs:
+  monthly-update:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install dependencies
+      run: |
+        cd FMCG
+        pip install -r requirements.txt
+        
+    - name: Check if today is last day of month
+      run: |
+        # Check if today is actually the last day of the month
+        TODAY=$(date +%d)
+        LAST_DAY=$(date -d "$(date +%Y-%m-01) +1 month -1 day" +%d)
+        
+        if [ "$TODAY" -ne "$LAST_DAY" ]; then
+          echo "Today is not the last day of the month (day $TODAY vs last day $LAST_DAY)"
+          echo "Skipping monthly update"
+          exit 0
+        fi
+        
+        echo "Today is the last day of the month! Running monthly update..."
+        
+    - name: Run Monthly Data Generation
+      run: |
+        cd FMCG
+        # Set environment variables for monthly run
+        export SCHEDULED_RUN=true
+        export FORCE_REFRESH=false
+        
+        echo "Starting Monthly Data Update..."
+        echo "This run will update: New employees, inventory, operating costs"
+        echo "Sales data will also be appended"
+        echo "Run time: $(date)"
+        
+        python main.py
+        
+        echo "Monthly update completed!"
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+        PROJECT_ID: ${{ secrets.PROJECT_ID }}

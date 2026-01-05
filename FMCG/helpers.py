@@ -254,11 +254,11 @@ def update_delivery_status(client, fact_sales_table):
         # This provides a summary of current delivery statuses
         check_query = f"""
             SELECT 
-                `sale_key`,
+                `sale_id`,
                 `sale_date`,
                 `delivery_status`,
                 `total_amount`,
-                `retailer_key`,
+                `retailer_id`,
                 CASE 
                     WHEN `delivery_status` IN ('In Transit', 'Processing', 'Pending')
                     THEN 'Active Order'
@@ -279,9 +279,9 @@ def update_delivery_status(client, fact_sales_table):
         
         # Count orders by status
         status_summary = result_df.groupby(['delivery_status', 'order_status']).agg({
-            'sale_key': 'count',
+            'sale_id': 'count',
             'total_amount': 'sum'
-        }).rename(columns={'sale_key': 'count'})
+        }).rename(columns={'sale_id': 'count'})
         
         logger.info(f"Found {len(result_df):,} recent orders:")
         
@@ -304,15 +304,15 @@ def update_delivery_status(client, fact_sales_table):
             for _, order in active_orders.head(sample_size).iterrows():
                 order_date = pd.to_datetime(order['sale_date']).date()
                 days_active = (today - order_date).days
-                logger.info(f"   Order #{order['sale_key']}: PHP {order['total_amount']:,.2f} ({days_active} days ago)")
+                logger.info(f"   Order #{order['sale_id']}: PHP {order['total_amount']:,.2f} ({days_active} days ago)")
         else:
             logger.info("No active orders found. All recent orders are delivered.")
         
         # Overall delivery status summary
         overall_summary = result_df.groupby('delivery_status').agg({
-            'sale_key': 'count',
+            'sale_id': 'count',
             'total_amount': 'sum'
-        }).rename(columns={'sale_key': 'count'})
+        }).rename(columns={'sale_id': 'count'})
         
         logger.info(f"\nOverall Delivery Status Summary:")
         for status, group in overall_summary.iterrows():
