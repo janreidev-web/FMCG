@@ -78,16 +78,24 @@ def ensure_bigquery_dtypes(df, table_id):
         if table_name in schema_map:
             schema = schema_map[table_name]
             
-            # Convert integer columns to proper dtype
+            # Convert ID columns to proper dtype (string) and other integer columns to int64
             for field in schema:
-                if field['type'] == 'INTEGER' and field['name'] in df.columns:
+                if field['name'] in df.columns:
                     col_name = field['name']
-                    logger.info(f"Converting column '{col_name}' to INTEGER for BigQuery compatibility")
-                    # Convert to regular integer type for BigQuery compatibility
-                    # First handle any missing values by filling with 0 or appropriate default
-                    df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
-                    # Fill NaN values with 0 for integer columns
-                    df[col_name] = df[col_name].fillna(0).astype('int64')
+                    field_type = field['type']
+                    
+                    if field_type == 'STRING':
+                        # Convert ID columns and other string columns to string
+                        logger.info(f"Converting column '{col_name}' to STRING for BigQuery compatibility")
+                        df[col_name] = df[col_name].astype(str)
+                    elif field_type == 'INTEGER':
+                        # Convert metric columns to integer
+                        logger.info(f"Converting column '{col_name}' to INTEGER for BigQuery compatibility")
+                        # Convert to regular integer type for BigQuery compatibility
+                        # First handle any missing values by filling with 0 or appropriate default
+                        df[col_name] = pd.to_numeric(df[col_name], errors='coerce')
+                        # Fill NaN values with 0 for integer columns
+                        df[col_name] = df[col_name].fillna(0).astype('int64')
                     
         logger.info(f"Data type conversion completed for {table_name}")
         

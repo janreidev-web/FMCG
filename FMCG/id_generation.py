@@ -8,15 +8,15 @@ ID_GENERATOR_STATE = {
     'sequence_counters': {}
 }
 
-def generate_unique_id(entity_type: str) -> int:
+def generate_unique_id(entity_type: str) -> str:
     """
-    Generate unique sequential integer ID
+    Generate unique sequential integer ID as string
     
     Args:
         entity_type: Type of entity (e.g., 'employee', 'product', 'retailer')
     
     Returns:
-        Sequential integer ID (explicitly converted to int for BigQuery compatibility)
+        Sequential integer ID as string (for BigQuery compatibility)
     """
     # Get or initialize sequence counter for this entity type
     if entity_type not in ID_GENERATOR_STATE['sequence_counters']:
@@ -24,8 +24,8 @@ def generate_unique_id(entity_type: str) -> int:
     
     # Increment sequence counter
     ID_GENERATOR_STATE['sequence_counters'][entity_type] += 1
-    # Explicitly return int to ensure BigQuery compatibility
-    return int(ID_GENERATOR_STATE['sequence_counters'][entity_type])
+    # Return as string for BigQuery compatibility
+    return str(ID_GENERATOR_STATE['sequence_counters'][entity_type])
 
 def generate_readable_id(prefix: str, entity_type: str, padding: int = 6) -> str:
     """
@@ -42,14 +42,14 @@ def generate_readable_id(prefix: str, entity_type: str, padding: int = 6) -> str
     unique_num = generate_unique_id(entity_type)
     return f"{prefix}{unique_num:0{padding}d}"
 
-def generate_unique_sale_key() -> int:
+def generate_unique_sale_key() -> str:
     """
-    Generate simple sequential sale key
+    Generate simple sequential sale key as string
     
     Returns:
-        Sequential sale key as integer (explicitly converted for BigQuery compatibility)
+        Sequential sale key as string (for BigQuery compatibility)
     """
-    return int(generate_unique_id("sale"))
+    return generate_unique_id("sale")
 
 def generate_unique_wage_key(employee_id: str, effective_date, sequence: int) -> str:
     """
@@ -83,14 +83,14 @@ def generate_unique_cost_key(cost_date, category: str, sequence: int) -> str:
     category_abbr = category[:3].upper() if len(category) > 3 else category.upper()
     return f"COST_{date_str}_{category_abbr}_{sequence:03d}"
 
-def generate_unique_marketing_cost_key() -> int:
+def generate_unique_marketing_cost_key() -> str:
     """
-    Generate simple sequential marketing cost key
+    Generate simple sequential marketing cost key as string
     
     Returns:
-        Sequential marketing cost key as integer (explicitly converted for BigQuery compatibility)
+        Sequential marketing cost key as string (for BigQuery compatibility)
     """
-    return int(generate_unique_id("marketing_cost"))
+    return generate_unique_id("marketing_cost")
 
 def generate_unique_inventory_key(product_key, location_key, inventory_date, sequence_num) -> str:
     """

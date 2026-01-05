@@ -1533,7 +1533,7 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
             for category in cost_categories:
                 cost_sequence += 1
                 costs.append({
-                    "marketing_cost_id": generate_unique_marketing_cost_key(None, current_date, category, cost_sequence),
+                    "marketing_cost_id": generate_unique_marketing_cost_key(),
                     "cost_date": current_date,
                     "campaign_id": None,
                     "campaign_type": "General",

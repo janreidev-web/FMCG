@@ -104,7 +104,7 @@ DIM_INSURANCE_SCHEMA = [
 
 # Employee fact table - time-varying employee metrics (simplified)
 FACT_EMPLOYEES_SCHEMA = [
-    {"name": "employee_fact_id", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "employee_fact_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "employee_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "effective_date", "type": "DATE", "mode": "REQUIRED"},
     
@@ -207,7 +207,7 @@ FACT_SALES_SCHEMA = [
 ]
 
 DELIVERY_STATUS_UPDATES_SCHEMA = [
-    {"name": "update_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "update_key", "type": "STRING", "mode": "REQUIRED"},
     {"name": "sale_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "previous_status", "type": "STRING", "mode": "REQUIRED"},
     {"name": "new_status", "type": "STRING", "mode": "REQUIRED"},
@@ -271,7 +271,7 @@ FACT_INVENTORY_SCHEMA = [
 ]
 
 FACT_MARKETING_COSTS_SCHEMA = [
-    {"name": "marketing_cost_id", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "marketing_cost_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cost_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "campaign_id", "type": "STRING", "mode": "NULLABLE"},
     {"name": "campaign_type", "type": "STRING", "mode": "NULLABLE"},

@@ -72,3 +72,11 @@ ERROR: Your default credentials were not found. To set up Application Default Cr
 2026-01-06 00:00:48,335 - INFO - Ensuring BigQuery data type compatibility for delivery_status_updates...
 2026-01-06 00:00:48,336 - INFO - Converting column 'update_key' to INTEGER for BigQuery compatibility
 2026-01-06 00:00:48,337 - INFO - Data type conversion completed for delivery_status_updates
+2026-01-06 00:15:04,529 - INFO - Ensuring BigQuery data type compatibility for fact_employees...
+2026-01-06 00:15:04,529 - INFO - Converting column 'employee_fact_id' to STRING for BigQuery compatibility
+2026-01-06 00:15:04,532 - INFO - Converting column 'employee_id' to STRING for BigQuery compatibility
+2026-01-06 00:15:04,533 - INFO - Converting column 'performance_rating' to INTEGER for BigQuery compatibility
+2026-01-06 00:15:04,535 - INFO - Data type conversion completed for fact_employees
+2026-01-06 00:15:04,536 - INFO - Ensuring BigQuery data type compatibility for fact_marketing_costs...
+2026-01-06 00:15:04,537 - INFO - Converting column 'marketing_cost_id' to STRING for BigQuery compatibility
+2026-01-06 00:15:04,538 - INFO - Data type conversion completed for fact_marketing_costs
