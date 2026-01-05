@@ -161,8 +161,8 @@ class ETLPipeline:
         employees = self.data_cache["dim_employees"]
         campaigns = self.data_cache["dim_campaigns"]
         
-        # Calculate target transactions for 11 years (~500K total)
-        target_transactions = 500000
+        # Calculate target transactions for 11 years (reduced for free tier)
+        target_transactions = 100000  # Reduced from 500K to 100K
         
         # Set exact date range: January 1, 2015 to day before yesterday
         start_date = datetime(2015, 1, 1)
@@ -173,7 +173,7 @@ class ETLPipeline:
         base_daily_transactions = target_transactions // total_days
         
         # Add some variation (±20%)
-        min_daily_tx = max(50, int(base_daily_transactions * 0.8))
+        min_daily_tx = max(10, int(base_daily_transactions * 0.8))
         max_daily_tx = int(base_daily_transactions * 1.2)
         
         self.logger.info(f"Target: {target_transactions:,} transactions")
@@ -242,9 +242,7 @@ class ETLPipeline:
                     "commission_amount": commission_amount,
                     "order_date": current_date.date(),
                     "delivery_date": current_date.date() + timedelta(days=random.randint(1, 7)),
-                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
-                    "created_at": current_date,
-                    "updated_at": current_date
+                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"])
                 }
                 sales.append(sale)
                 sale_id += 1
@@ -280,13 +278,17 @@ class ETLPipeline:
         inventory = []
         inventory_id = 1
         
-        # Generate monthly inventory snapshots for the last 2 years
-        start_date = datetime.now() - timedelta(days=730)  # 2 years ago
+        # Generate monthly inventory snapshots for the last 1 year (reduced from 2)
+        start_date = datetime.now() - timedelta(days=365)  # 1 year ago
         
         current_date = start_date
         while current_date <= datetime.now():
-            for _, product in products.iterrows():
-                for _, location in locations.iterrows():
+            # Sample only 20% of products and locations to reduce data volume
+            sample_products = products.sample(frac=0.2, random_state=42)
+            sample_locations = locations.sample(frac=0.2, random_state=42)
+            
+            for _, product in sample_products.iterrows():
+                for _, location in sample_locations.iterrows():
                     # Random inventory levels
                     opening_stock = random.randint(100, 1000)
                     stock_received = random.randint(0, 200)
@@ -305,8 +307,7 @@ class ETLPipeline:
                         "stock_sold": stock_sold,
                         "stock_lost": stock_lost if stock_lost > 0 else None,
                         "unit_cost": product["cost"],
-                        "total_value": closing_stock * product["cost"],
-                        "created_at": current_date
+                        "total_value": closing_stock * product["cost"]
                     }
                     inventory.append(inventory_record)
                     inventory_id += 1
@@ -329,12 +330,15 @@ class ETLPipeline:
         costs = []
         cost_id = 1
         
-        # Generate monthly costs for the last 2 years
-        start_date = datetime.now() - timedelta(days=730)
+        # Generate monthly costs for the last 1 year (reduced from 2)
+        start_date = datetime.now() - timedelta(days=365)
         
         current_date = start_date
         while current_date <= datetime.now():
-            for _, department in departments.iterrows():
+            # Sample only 50% of departments to reduce data volume
+            sample_departments = departments.sample(frac=0.5, random_state=42)
+            
+            for _, department in sample_departments.iterrows():
                 cost_category = random.choice(cost_categories)
                 cost_type = random.choice(cost_types)
                 
@@ -355,8 +359,7 @@ class ETLPipeline:
                     "cost_type": cost_type,
                     "department_id": department["department_id"],
                     "amount": amount,
-                    "description": f"{cost_category} - {cost_type} expense",
-                    "created_at": current_date
+                    "description": f"{cost_category} - {cost_type} expense"
                 }
                 costs.append(cost_record)
                 cost_id += 1
@@ -377,8 +380,10 @@ class ETLPipeline:
         marketing_costs = []
         marketing_cost_id = 1
         
-        # Generate costs for each campaign
-        for _, campaign in campaigns.iterrows():
+        # Generate costs for each campaign (sample 50% to reduce volume)
+        sample_campaigns = campaigns.sample(frac=0.5, random_state=42)
+        
+        for _, campaign in sample_campaigns.iterrows():
             # Generate costs throughout campaign duration
             current_date = campaign["start_date"]
             while current_date <= campaign["end_date"]:
@@ -397,8 +402,7 @@ class ETLPipeline:
                     "campaign_id": campaign["campaign_id"],
                     "cost_category": cost_category,
                     "amount": amount,
-                    "description": f"{cost_category} expense for {campaign['campaign_name']}",
-                    "created_at": datetime.now()
+                    "description": f"{cost_category} expense for {campaign['campaign_name']}"
                 }
                 marketing_costs.append(cost_record)
                 marketing_cost_id += 1
@@ -543,9 +547,7 @@ class ETLPipeline:
                 "commission_amount": commission_amount,
                 "order_date": current_date,
                 "delivery_date": current_date + timedelta(days=random.randint(1, 7)),
-                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
-                "created_at": datetime.combine(current_date, datetime.min.time()),
-                "updated_at": datetime.combine(current_date, datetime.min.time())
+                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"])
             }
             sales.append(sale)
             sale_id += 1

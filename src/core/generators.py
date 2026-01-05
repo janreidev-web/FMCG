@@ -204,9 +204,7 @@ class LocationGenerator(DataGenerator):
                 "city": city,
                 "latitude": float(self.faker.latitude()),
                 "longitude": float(self.faker.longitude()),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             locations.append(location)
         
         return pd.DataFrame(locations)
@@ -240,9 +238,7 @@ class DepartmentGenerator(DataGenerator):
                 "manager_id": None,
                 "budget": dept["budget"],
                 "description": dept["description"],
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             departments.append(department)
         
         return pd.DataFrame(departments)
@@ -291,9 +287,7 @@ class JobGenerator(DataGenerator):
                 "department_id": self.dept_name_to_id[job["dept"]],
                 "work_type": job["work_type"],
                 "description": f"{job['level']} level {job['title']} position",
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             jobs.append(job_data)
         
         return pd.DataFrame(jobs)
@@ -363,9 +357,7 @@ class EmployeeGenerator(DataGenerator):
                 "location_id": location["location_id"],
                 "bank_id": None,  # Will be set after bank generation
                 "insurance_id": None,  # Will be set after insurance generation
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             employees.append(employee)
         
         return pd.DataFrame(employees)
@@ -399,9 +391,7 @@ class ProductGenerator(DataGenerator):
             categories.append({
                 "category_id": id_generator.generate_id('dim_categories'),
                 "category_name": cat["name"],
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            })
+                            })
         categories_df = pd.DataFrame(categories)
         
         # Generate subcategories
@@ -413,9 +403,7 @@ class ProductGenerator(DataGenerator):
                     "subcategory_id": id_generator.generate_id('dim_subcategories'),
                     "subcategory_name": subcat,
                     "category_id": list(categories_df[categories_df["category_name"] == cat["name"]]["category_id"])[0],
-                    "created_at": datetime.now(),
-                    "updated_at": datetime.now()
-                })
+                                                        })
         subcategories_df = pd.DataFrame(subcategories)
         
         # Generate brands
@@ -424,9 +412,7 @@ class ProductGenerator(DataGenerator):
             brands.append({
                 "brand_id": id_generator.generate_id('dim_brands'),
                 "brand_name": brand,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            })
+                            })
         brands_df = pd.DataFrame(brands)
         
         # Generate products
@@ -454,9 +440,7 @@ class ProductGenerator(DataGenerator):
                 "status": random.choice(["Active", "Discontinued", "Pending"]),
                 "launch_date": self.faker.date_between(start_date="-5y", end_date="today"),
                 "discontinued_date": None,
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             products.append(product)
         
         products_df = pd.DataFrame(products)
@@ -488,9 +472,7 @@ class RetailerGenerator(DataGenerator):
                 "payment_terms": random.choice(["Net 30", "Net 60", "COD", "Net 90"]),
                 "status": random.choice(["Active", "Inactive", "Suspended"]),
                 "registration_date": self.faker.date_between(start_date="-5y", end_date="today"),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             retailers.append(retailer)
         
         return pd.DataFrame(retailers)
@@ -523,9 +505,7 @@ class CampaignGenerator(DataGenerator):
                 "budget": random.uniform(50000, 500000),
                 "target_audience": random.choice(["All Customers", "Young Adults", "Families", "Business Owners"]),
                 "status": random.choice(["Active", "Completed", "Planned", "Cancelled"]),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
+                            }
             campaigns.append(campaign)
         
         return pd.DataFrame(campaigns)
