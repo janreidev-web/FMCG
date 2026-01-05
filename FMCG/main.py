@@ -599,6 +599,37 @@ def main():
         logger.info(f"Scheduled Run: {is_scheduled}")
         logger.info(f"Force Refresh: {force_refresh}")
         
+        # Reset sale ID counter and get next ID from database
+        if is_scheduled:
+            try:
+                project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
+                dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
+                fact_sales_table = f"{project_id}.{dataset}.fact_sales"
+                
+                # Get the max sale_id to continue sequence
+                max_sale_id_query = f"""
+                    SELECT MAX(CAST(SUBSTR(sale_id, 4) AS INT64)) as max_num 
+                    FROM `{fact_sales_table}` 
+                    WHERE sale_id LIKE 'SAL%'
+                """
+                logger.info(f"Getting max sale_id with query: {max_sale_id_query}")
+                max_result = client.query(max_sale_id_query).to_dataframe()
+                max_num = max_result['max_num'].iloc[0]
+                
+                if max_num and pd.notna(max_num):
+                    # Reset counter to start from next number
+                    import id_generation
+                    id_generation.reset_id_counters("sale")
+                    # Set the counter to the max number
+                    id_generation.ID_GENERATOR_STATE['sequence_counters']['sale'] = max_num
+                    logger.info(f"Reset sale ID counter to continue from: {max_num}")
+                else:
+                    logger.info("No existing sale_ids found, starting from 1")
+                    
+            except Exception as e:
+                logger.warning(f"Could not get max sale_id: {e}")
+                logger.info("Starting sale ID generation from 1")
+        
         # Use different sales targets for scheduled vs manual runs
         if is_scheduled:
             # Daily run: check latest sales date and generate only for missing dates
