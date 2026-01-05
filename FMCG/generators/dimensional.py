@@ -1285,13 +1285,24 @@ def generate_daily_sales_with_delivery_updates(employees, products, retailers, c
         payment_status = "Paid"
         
         # Simulate delivery status based on current date and expected delivery
-        delivery_statuses = ["Processing", "In Transit", "Delivered"]
-        delivery_weights = [0.3, 0.4, 0.3]  # 30% processing, 40% in transit, 30% delivered
-        
-        delivery_status = random.choices(delivery_statuses, weights=delivery_weights)[0]
+        today = datetime.now().date()
+        days_since_sale = (today - start_date).days
         
         expected_delivery = start_date + timedelta(days=random.randint(1, 5))
-        actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+        
+        # Determine delivery status based on actual dates
+        if days_since_sale > 14:  # Orders older than 14 days should be delivered
+            delivery_status = "Delivered"
+            actual_delivery = expected_delivery
+        elif days_since_sale > 7:  # Orders 7-14 days old might be in transit or delivered
+            delivery_status = random.choice(["Delivered", "In Transit"])
+            actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+        elif days_since_sale >= 0:  # Recent orders (0-7 days) can be pending, in transit, or delivered
+            delivery_status = random.choice(["Pending", "In Transit", "Delivered"])
+            actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+        else:  # Future dates (shouldn't happen, but just in case)
+            delivery_status = "Pending"
+            actual_delivery = None
         
         sale_sequence += 1
         # Use current timestamp in milliseconds for additional uniqueness
@@ -1455,13 +1466,29 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
             commission_rate = 0.05 if campaign else 0.03
             commission_amount = total_amount * commission_rate
             
-            # Payment and delivery
+            # Payment and delivery - simulate realistic delivery progression
             payment_method = random.choice(["Cash", "Credit Card", "Bank Transfer", "Mobile Payment"])
             payment_status = "Paid"
-            delivery_status = random.choice(["Pending", "In Transit", "Delivered"])
+            
+            # Simulate delivery status based on current date and expected delivery
+            today = datetime.now().date()
+            days_since_sale = (today - current_date).days
             
             expected_delivery = current_date + timedelta(days=random.randint(1, 5))
-            actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+            
+            # Determine delivery status based on actual dates
+            if days_since_sale > 14:  # Orders older than 14 days should be delivered
+                delivery_status = "Delivered"
+                actual_delivery = expected_delivery
+            elif days_since_sale > 7:  # Orders 7-14 days old might be in transit or delivered
+                delivery_status = random.choice(["Delivered", "In Transit"])
+                actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+            elif days_since_sale >= 0:  # Recent orders (0-7 days) can be pending, in transit, or delivered
+                delivery_status = random.choice(["Pending", "In Transit", "Delivered"])
+                actual_delivery = expected_delivery if delivery_status == "Delivered" else None
+            else:  # Future dates (shouldn't happen, but just in case)
+                delivery_status = "Pending"
+                actual_delivery = None
             
             sale_sequence += 1
             # Use current timestamp in milliseconds for additional uniqueness

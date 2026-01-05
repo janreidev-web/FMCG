@@ -1,6 +1,6 @@
 """
 Simple Sequential ID Generation Module for FMCG Analytics
-Provides simple sequential ID generation functions
+Provides simple sequential ID generation functions with 6-digit padding standard
 """
 
 # Global ID generation state to ensure uniqueness across all runs
@@ -26,7 +26,7 @@ def generate_unique_id(entity_type: str) -> int:
     ID_GENERATOR_STATE['sequence_counters'][entity_type] += 1
     return ID_GENERATOR_STATE['sequence_counters'][entity_type]
 
-def generate_readable_id(prefix: str, entity_type: str, padding: int = 4) -> str:
+def generate_readable_id(prefix: str, entity_type: str, padding: int = 6) -> str:
     """
     Generate readable sequential IDs with prefix
     

@@ -172,6 +172,12 @@ def main():
                 logger.info("Creating locations...")
                 if force_refresh:
                     logger.info("FORCE_REFRESH: Regenerating locations table")
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_LOCATIONS)
+                        logger.info("✓ Deleted existing locations table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Locations table doesn't exist or couldn't delete: {e}")
                 locations = generate_dim_locations(num_locations=500)
                 append_df_bq(client, pd.DataFrame(locations), DIM_LOCATIONS)
             else:
@@ -182,6 +188,13 @@ def main():
             
             if not table_has_data(client, DIM_DEPARTMENTS) or force_refresh:
                 logger.info("Generating departments dimension...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_DEPARTMENTS)
+                        logger.info("✓ Deleted existing departments table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Departments table doesn't exist or couldn't delete: {e}")
                 departments = generate_dim_departments()
                 append_df_bq(client, pd.DataFrame(departments), DIM_DEPARTMENTS)
             else:
@@ -193,6 +206,12 @@ def main():
                 logger.info("Generating jobs dimension...")
                 if force_refresh:
                     logger.info("FORCE_REFRESH: Regenerating jobs table")
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_JOBS)
+                        logger.info("✓ Deleted existing jobs table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Jobs table doesn't exist or couldn't delete: {e}")
                 jobs = generate_dim_jobs(departments)
                 append_df_bq(client, pd.DataFrame(jobs), DIM_JOBS)
             else:
@@ -204,6 +223,12 @@ def main():
                 logger.info("Generating banks dimension...")
                 if force_refresh:
                     logger.info("FORCE_REFRESH: Regenerating banks table")
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_BANKS)
+                        logger.info("✓ Deleted existing banks table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Banks table doesn't exist or couldn't delete: {e}")
                 banks = generate_dim_banks()
                 append_df_bq(client, pd.DataFrame(banks), DIM_BANKS)
             else:
@@ -215,6 +240,12 @@ def main():
                 logger.info("Generating insurance dimension...")
                 if force_refresh:
                     logger.info("FORCE_REFRESH: Regenerating insurance table")
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_INSURANCE)
+                        logger.info("✓ Deleted existing insurance table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Insurance table doesn't exist or couldn't delete: {e}")
                 insurance = generate_dim_insurance()
                 append_df_bq(client, pd.DataFrame(insurance), DIM_INSURANCE)
             else:
@@ -225,6 +256,13 @@ def main():
             # Generate normalized reference dimensions first
             if not table_has_data(client, DIM_CATEGORIES) or force_refresh:
                 logger.info("Generating categories dimension...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_CATEGORIES)
+                        logger.info("✓ Deleted existing categories table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Categories table doesn't exist or couldn't delete: {e}")
                 categories = generate_dim_categories()
                 append_df_bq(client, pd.DataFrame(categories), DIM_CATEGORIES)
             else:
@@ -234,6 +272,13 @@ def main():
             
             if not table_has_data(client, DIM_BRANDS) or force_refresh:
                 logger.info("Generating brands dimension...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_BRANDS)
+                        logger.info("✓ Deleted existing brands table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Brands table doesn't exist or couldn't delete: {e}")
                 brands = generate_dim_brands()
                 append_df_bq(client, pd.DataFrame(brands), DIM_BRANDS)
             else:
@@ -243,6 +288,13 @@ def main():
             
             if not table_has_data(client, DIM_SUBCATEGORIES) or force_refresh:
                 logger.info("Generating subcategories dimension...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_SUBCATEGORIES)
+                        logger.info("✓ Deleted existing subcategories table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Subcategories table doesn't exist or couldn't delete: {e}")
                 subcategories = generate_dim_subcategories()
                 append_df_bq(client, pd.DataFrame(subcategories), DIM_SUBCATEGORIES)
             else:
@@ -253,6 +305,13 @@ def main():
             # Generate dependent dimensions
             if not table_has_data(client, DIM_PRODUCTS) or force_refresh:
                 logger.info("Generating products dimension with foreign keys...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_PRODUCTS)
+                        logger.info("✓ Deleted existing products table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Products table doesn't exist or couldn't delete: {e}")
                 products = generate_dim_products(
                     categories=categories,
                     brands=brands,
@@ -265,6 +324,13 @@ def main():
             
             if not table_has_data(client, DIM_EMPLOYEES) or force_refresh:
                 logger.info("Generating normalized employees dimension...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_EMPLOYEES)
+                        logger.info("✓ Deleted existing employees table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Employees table doesn't exist or couldn't delete: {e}")
                 employees = generate_dim_employees_normalized(
                     locations=locations,
                     departments=departments,
@@ -335,6 +401,13 @@ def main():
             
             if not table_has_data(client, DIM_RETAILERS) or force_refresh:
                 logger.info("Creating retailers...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_RETAILERS)
+                        logger.info("✓ Deleted existing retailers table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Retailers table doesn't exist or couldn't delete: {e}")
                 retailers = generate_dim_retailers_normalized(
                     num_retailers=INITIAL_RETAILERS, 
                     locations=locations
@@ -350,6 +423,13 @@ def main():
             
             if not table_has_data(client, DIM_CAMPAIGNS) or force_refresh:
                 logger.info("Creating campaigns...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_CAMPAIGNS)
+                        logger.info("✓ Deleted existing campaigns table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Campaigns table doesn't exist or couldn't delete: {e}")
                 campaigns = generate_dim_campaigns()
                 append_df_bq(client, pd.DataFrame(campaigns), DIM_CAMPAIGNS)
             else:
@@ -360,6 +440,13 @@ def main():
             
             if not table_has_data(client, DIM_DATES) or force_refresh:
                 logger.info("Creating dates...")
+                if force_refresh:
+                    # Delete existing table for clean refresh
+                    try:
+                        client.delete_table(DIM_DATES)
+                        logger.info("✓ Deleted existing dates table for clean refresh")
+                    except Exception as e:
+                        logger.info(f"Dates table doesn't exist or couldn't delete: {e}")
                 dates = generate_dim_dates()
                 # Convert date_id to string to match schema and avoid PyArrow issues
                 dates_df = pd.DataFrame(dates)
