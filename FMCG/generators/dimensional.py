@@ -497,17 +497,22 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
         
         # Determine employment period
         hire_date = employee["hire_date"]
+        # Convert to date if it's a timestamp
+        hire_date_dt = hire_date.date() if hasattr(hire_date, 'date') else hire_date
+        
         if employee["employment_status"] == "Terminated" and employee["termination_date"]:
-            end_employment = employee["termination_date"]
+            termination_date = employee["termination_date"]
+            # Convert to date if it's a timestamp
+            end_employment = termination_date.date() if hasattr(termination_date, 'date') else termination_date
         else:
             end_employment = end_date
         
         # For historical data, start from 2015 or hire date, whichever is later
         # But ensure we have data from 2015 for all employees who were employed at any point since 2015
-        historical_start = max(start_date, hire_date)
+        historical_start = max(start_date, hire_date_dt)
         
         # Skip if employee wasn't employed during the historical period
-        if end_employment < start_date or hire_date > end_date:
+        if end_employment < start_date or hire_date_dt > end_date:
             continue
         
         # Get department name
@@ -558,7 +563,7 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
             record_end_date = min(year_end, end_employment, end_date)
             
             # Calculate years of service at the start of this record
-            years_of_service = (current_year_start - hire_date).days // 365
+            years_of_service = (current_year_start - hire_date_dt).days // 365
             if years_of_service < 0:
                 years_of_service = 0  # For employees hired after 2015, back-calculate service
             
@@ -1389,8 +1394,8 @@ def generate_fact_sales(employees, products, retailers, campaigns, target_amount
         # For historical data, be more flexible - if no employees available, use all active employees
         available_employees = [
             e for e in employees 
-            if e.get('hire_date') and e.get('hire_date') <= current_date 
-            and (e.get('employment_status') != 'Terminated' or (e.get('termination_date') and e.get('termination_date') >= current_date))
+            if e.get('hire_date') and (e.get('hire_date').date() if hasattr(e.get('hire_date'), 'date') else e.get('hire_date')) <= current_date 
+            and (e.get('employment_status') != 'Terminated' or (e.get('termination_date') and (e.get('termination_date').date() if hasattr(e.get('termination_date'), 'date') else e.get('termination_date')) >= current_date))
         ]
         
         # If no employees available for historical dates, use all active employees
