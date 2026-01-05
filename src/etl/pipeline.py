@@ -2,6 +2,7 @@
 ETL pipeline for FMCG Data Analytics Platform
 """
 
+import random
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
