@@ -65,6 +65,29 @@ jobs:
         echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
         echo "Disk space: $(df -h / | tail-1 | awk '{print $4}')"
         
+    - name: Run setup script
+      env:
+        GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
+        BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
+        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
+        DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
+        GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      run: |
+        echo "=== Running Setup Script ==="
+        echo "Time: $(date)"
+        
+        # Set environment variables for setup script
+        export GCP_PROJECT_ID="${GCP_PROJECT_ID}"
+        export BQ_DATASET="${BQ_DATASET}"
+        export INITIAL_SALES_AMOUNT="${INITIAL_SALES_AMOUNT}"
+        export DAILY_SALES_AMOUNT="${DAILY_SALES_AMOUNT}"
+        
+        # Run setup to verify configuration and create dataset
+        python scripts/setup.py
+        
+        echo "=== Setup Completed ==="
+        echo "Time: $(date)"
+        
     - name: Setup environment
       env:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
@@ -88,17 +111,6 @@ jobs:
         EOF
         
         echo "=== Environment Setup Completed ==="
-        echo "Time: $(date)"
-        
-    - name: Run setup script
-      run: |
-        echo "=== Running Setup Script ==="
-        echo "Time: $(date)"
-        
-        # Run setup to verify configuration and create dataset
-        python scripts/setup.py
-        
-        echo "=== Setup Completed ==="
         echo "Time: $(date)"
         
     - name: Run data generator with enhanced monitoring
