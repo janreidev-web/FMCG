@@ -142,7 +142,7 @@ FACT_EMPLOYEES_SCHEMA = [
 
 # Employee wage history table - dated compensation records
 FACT_EMPLOYEE_WAGES_SCHEMA = [
-    {"name": "wage_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "wage_key", "type": "STRING", "mode": "REQUIRED"},
     {"name": "employee_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "effective_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "job_title", "type": "STRING", "mode": "REQUIRED"},
@@ -221,7 +221,7 @@ DELIVERY_STATUS_UPDATES_SCHEMA = [
 DELIVERY_UPDATES_STAGING_SCHEMA = DELIVERY_STATUS_UPDATES_SCHEMA  # Same schema for staging table
 
 FACT_OPERATING_COSTS_SCHEMA = [
-    {"name": "cost_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "cost_key", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cost_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "category", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cost_type", "type": "STRING", "mode": "REQUIRED"},

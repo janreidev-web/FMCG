@@ -50,6 +50,47 @@ def generate_unique_sale_key() -> int:
     """
     return generate_unique_id("sale")
 
+def generate_unique_wage_key(employee_id: str, effective_date, sequence: int) -> str:
+    """
+    Generate unique wage key for employee wage records
+    
+    Args:
+        employee_id: Employee ID
+        effective_date: Effective date of the wage record
+        sequence: Sequence number for this employee's wage history
+    
+    Returns:
+        Unique wage key string
+    """
+    # Create a composite key that's unique per employee and date
+    date_str = effective_date.strftime("%Y%m%d") if hasattr(effective_date, 'strftime') else str(effective_date)
+    return f"WAGE_{employee_id}_{date_str}_{sequence:03d}"
+
+def generate_unique_cost_key(cost_date, category: str, sequence: int) -> str:
+    """
+    Generate unique cost key for operating cost records
+    
+    Args:
+        cost_date: Date of the cost record
+        category: Cost category
+        sequence: Sequence number for this date/category
+    
+    Returns:
+        Unique cost key string
+    """
+    date_str = cost_date.strftime("%Y%m%d") if hasattr(cost_date, 'strftime') else str(cost_date)
+    category_abbr = category[:3].upper() if len(category) > 3 else category.upper()
+    return f"COST_{date_str}_{category_abbr}_{sequence:03d}"
+
+def generate_unique_marketing_cost_key() -> int:
+    """
+    Generate simple sequential marketing cost key
+    
+    Returns:
+        Sequential marketing cost key as integer
+    """
+    return generate_unique_id("marketing_cost")
+
 def reset_id_counters(entity_type: str = None) -> None:
     """
     Reset ID generation counters. Use with caution!

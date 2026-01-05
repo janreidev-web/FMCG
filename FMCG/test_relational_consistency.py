@@ -93,8 +93,8 @@ class RelationalConsistencyTester:
         sales = generate_fact_sales(employees[:3], products[:3], retailers[:3], campaigns[:3], target_amount=1000000, start_date=date.today(), end_date=date.today())
         marketing_costs = generate_fact_marketing_costs(campaigns[:3], target_amount=500000)
         
-        # Expected patterns
-        expected_patterns = {
+        # Expected ID patterns
+        id_patterns = {
             'location_id': r'^LOC\d{6}$',
             'department_id': r'^DEPT\d{6}$',
             'job_id': r'^JOB\d{6}$',
@@ -109,7 +109,9 @@ class RelationalConsistencyTester:
             'employee_id': r'^EMP\d{6}$',
             'sale_id': r'^SAL\d{6}$',
             'inventory_id': r'^INV\d{15}$',
-            'marketing_cost_key': r'^\d+$'  # Integer
+            'marketing_cost_key': r'^\d+$',  # Integer
+            'wage_key': r'^WAGE_[A-Z0-9]+_\d{8}_\d{3}$',  # WAGE_EMP000001_20260105_001
+            'cost_key': r'^COST_\d{8}_[A-Z]{3}_\d{3}$'  # COST_20260105_REN_001
         }
         
         import re
@@ -137,7 +139,7 @@ class RelationalConsistencyTester:
             if not data_list:
                 continue
                 
-            pattern = expected_patterns.get(id_field)
+            pattern = id_patterns.get(id_field)
             if not pattern:
                 self.log_warning(f"No pattern defined for {id_field}")
                 continue

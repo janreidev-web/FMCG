@@ -14,13 +14,13 @@ try:
     from ..helpers import random_date_range
     from ..geography import PH_GEOGRAPHY, pick_ph_location
     from ..config import DAILY_SALES_AMOUNT
-    from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key
+    from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key
 except ImportError:
     # Fallback to absolute imports when running as script
     from helpers import random_date_range
     from geography import PH_GEOGRAPHY, pick_ph_location
     from config import DAILY_SALES_AMOUNT
-    from id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key
+    from id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key
 
 fake = Faker()
 
@@ -583,8 +583,8 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
             
             wage_sequence += 1
             wages.append({
-                "wage_id": generate_unique_wage_key(employee["employee_id"], effective_date, wage_sequence),
-                "employee_id": employee["employee_id"],
+                "wage_key": generate_unique_wage_key(employee["employee_id"], effective_date, wage_sequence),
+                "employee_key": start_id + wage_sequence - 1,  # Temporary - need to map employee_id to employee_key
                 "effective_date": effective_date,
                 "job_title": job["job_title"],
                 "job_level": job["job_level"],
