@@ -40,18 +40,21 @@ jobs:
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_analytics' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
         DAILY_SALES_AMOUNT: ${{ secrets.DAILY_SALES_AMOUNT || '2000000' }}
+        SCHEDULED_RUN: true
+        FORCE_REFRESH: false
       run: |
         cd FMCG
         echo "=== Starting Daily Sales Only ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
+        echo "SCHEDULED_RUN: $SCHEDULED_RUN"
         
         # Set environment variables
         export PYTHONUNBUFFERED=1
         export GCP_SERVICE_ACCOUNT="${{ secrets.GCP_SERVICE_ACCOUNT }}"
         
-        # Run only daily sales generation
-        python daily_sales_only.py
+        # Run main.py with daily sales only logic
+        python main.py
         
         echo "=== Daily Sales Completed ==="
         echo "Time: $(date)"

@@ -8,3 +8,6 @@
 ERROR: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
 2026-01-04 18:17:06,138 - ERROR - Failed at: 2026-01-04 18:17:06
 2026-01-04 18:17:06,138 - ERROR - Elapsed time: 11.8 seconds
+2026-01-05 12:59:07,774 - INFO - Starting Daily Sales Only Process
+2026-01-05 12:59:20,054 - ERROR - Daily sales process failed: Your default credentials were not found. To set up Application Default Credentials, see https://cloud.google.com/docs/authentication/external/set-up-adc for more information.
+2026-01-05 12:59:20,059 - ERROR - Failed at: 2026-01-05 12:59:20.054974
