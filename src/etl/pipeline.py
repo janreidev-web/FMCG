@@ -20,14 +20,9 @@ from ..core.generators import (
 class ETLPipeline:
     """Main ETL pipeline for data generation and loading"""
     
-    def __init__(self, bq_manager: BigQueryManager):
-        self.bq_manager = bq_manager
-        self.faker = Faker('en_PH')  # Philippine locale
+    def __init__(self):
         self.logger = default_logger
-        
-        # Initialize generators
-        self.location_gen = LocationGenerator(self.faker)
-        self.department_gen = DepartmentGenerator(self.faker)
+        self.bigquery_client = BigQueryManager()
         
         # Will be initialized after dependencies are created
         self.job_gen = None
@@ -38,6 +33,20 @@ class ETLPipeline:
         
         # Data storage
         self.data_cache = {}
+        
+        # Retailer-specific transaction ranges (in PHP) - scaled for ₱20B/11years target
+        self.retailer_transaction_ranges = {
+            "Sari-Sari Store": {"min_qty": 1, "max_qty": 5, "min_amount": 10, "max_amount": 300, "daily_transactions": (10, 30)},
+            "Convenience Store": {"min_qty": 1, "max_qty": 10, "min_amount": 300, "max_amount": 1200, "daily_transactions": (5, 15)},
+            "Pharmacy": {"min_qty": 1, "max_qty": 15, "min_amount": 600, "max_amount": 3000, "daily_transactions": (3, 8)},
+            "Wholesale": {"min_qty": 10, "max_qty": 100, "min_amount": 1200, "max_amount": 8000, "daily_transactions": (1, 3)},
+            "Supermarket": {"min_qty": 5, "max_qty": 50, "min_amount": 2000, "max_amount": 6000, "daily_transactions": (2, 6)},
+            "Department Store": {"min_qty": 3, "max_qty": 30, "min_amount": 3000, "max_amount": 8000, "daily_transactions": (1, 4)}
+        }
+    
+    def get_retailer_transaction_params(self, retailer_type: str) -> dict:
+        """Get transaction parameters based on retailer type"""
+        return self.retailer_transaction_ranges.get(retailer_type, self.retailer_transaction_ranges["Convenience Store"])
     
     def setup_database(self) -> None:
         """Set up BigQuery dataset and tables"""
@@ -157,22 +166,43 @@ class ETLPipeline:
             # Generate daily sales
             daily_target = daily_amount if current_date > (datetime.now() - timedelta(days=30)) else daily_amount * 0.8
             
-            # Number of transactions per day
-            num_transactions = random.randint(50, 200)
+            # Calculate total transactions based on retailer distribution
+            total_transactions = 0
+            for _, retailer in retailers.iterrows():
+                retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
+                daily_tx_range = retailer_params["daily_transactions"]
+                total_transactions += random.randint(daily_tx_range[0], daily_tx_range[1])
             
-            for _ in range(num_transactions):
+            # Cap total transactions to reasonable limit
+            total_transactions = min(total_transactions, 200)
+            
+            for _ in range(total_transactions):
                 product = products.sample(1).iloc[0]
                 retailer = retailers.sample(1).iloc[0]
                 employee = employees.sample(1).iloc[0]
+                
+                # Get retailer-specific transaction parameters
+                retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
                 
                 # Random campaign assignment (30% chance)
                 campaign = None
                 if random.random() < 0.3:
                     campaign = campaigns.sample(1).iloc[0]
                 
-                quantity = random.randint(1, 50)
+                # Generate quantity and amount based on retailer type
+                quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
                 unit_price = product["unit_price"]
                 total_amount = quantity * unit_price
+                
+                # Ensure transaction is within retailer's expected range
+                if total_amount > retailer_params["max_amount"]:
+                    # Adjust quantity to fit max amount
+                    quantity = max(1, int(retailer_params["max_amount"] / unit_price))
+                    total_amount = quantity * unit_price
+                elif total_amount < retailer_params["min_amount"]:
+                    # Adjust quantity to meet min amount
+                    quantity = min(retailer_params["max_qty"], max(1, int(retailer_params["min_amount"] / unit_price)))
+                    total_amount = quantity * unit_price
                 
                 # Apply discount (10% chance)
                 discount = 0
@@ -419,23 +449,44 @@ class ETLPipeline:
         sale_id = 1
         current_date = datetime.now().date()
         
-        # Generate daily sales
-        num_transactions = random.randint(50, 200)
+        # Calculate total transactions based on retailer distribution
+        total_transactions = 0
+        for _, retailer in retailers.iterrows():
+            retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
+            daily_tx_range = retailer_params["daily_transactions"]
+            total_transactions += random.randint(daily_tx_range[0], daily_tx_range[1])
+        
+        # Cap total transactions to reasonable limit
+        total_transactions = min(total_transactions, 800)
         amount_generated = 0
         
-        while amount_generated < daily_amount and len(sales) < num_transactions:
+        while amount_generated < daily_amount and len(sales) < total_transactions:
             product = products.sample(1).iloc[0]
             retailer = retailers.sample(1).iloc[0]
             employee = employees.sample(1).iloc[0]
+            
+            # Get retailer-specific transaction parameters
+            retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
             
             # Random campaign assignment (30% chance)
             campaign = None
             if random.random() < 0.3 and len(campaigns) > 0:
                 campaign = campaigns.sample(1).iloc[0]
             
-            quantity = random.randint(1, 50)
+            # Generate quantity and amount based on retailer type
+            quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
             unit_price = product["unit_price"]
             total_amount = quantity * unit_price
+            
+            # Ensure transaction is within retailer's expected range
+            if total_amount > retailer_params["max_amount"]:
+                # Adjust quantity to fit max amount
+                quantity = max(1, int(retailer_params["max_amount"] / unit_price))
+                total_amount = quantity * unit_price
+            elif total_amount < retailer_params["min_amount"]:
+                # Adjust quantity to meet min amount
+                quantity = min(retailer_params["max_qty"], max(1, int(retailer_params["min_amount"] / unit_price)))
+                total_amount = quantity * unit_price
             
             # Apply discount (10% chance)
             discount = 0
