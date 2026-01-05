@@ -14,92 +14,15 @@ try:
     from ..helpers import random_date_range
     from ..geography import PH_GEOGRAPHY, pick_ph_location
     from ..config import DAILY_SALES_AMOUNT
-    from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key
+    from ..id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key, generate_unique_inventory_key
 except ImportError:
     # Fallback to absolute imports when running as script
     from helpers import random_date_range
     from geography import PH_GEOGRAPHY, pick_ph_location
     from config import DAILY_SALES_AMOUNT
-    from id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key
+    from id_generation import generate_unique_id, generate_readable_id, generate_unique_sale_key, generate_unique_wage_key, generate_unique_cost_key, generate_unique_marketing_cost_key, generate_unique_inventory_key
 
 fake = Faker()
-
-def generate_unique_wage_key(employee_id, effective_date, sequence_num):
-    """Generate unique wage key using employee + date + sequence"""
-    # Use hash-based approach for large employee ids
-    date_str = effective_date.strftime("%Y%m%d")
-    combined_str = f"{employee_id}{date_str}{sequence_num}"
-    # Create hash to ensure reasonable length and fit within BigQuery limits
-    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
-    unique_id = int(unique_hash, 16)
-    
-    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
-    max_safe_int = 9223372036854775807
-    if unique_id > max_safe_int:
-        unique_id = unique_id % max_safe_int
-    
-    return unique_id
-
-def generate_unique_cost_key(cost_date, category_code, sequence_num):
-    """Generate unique cost key using date + category + sequence"""
-    # Format: YYYYMMDD + category_code (2 digits) + sequence (6 digits)
-    date_str = cost_date.strftime("%Y%m%d")
-    category_map = {"Salaries & Wages": 10, "Rent & Utilities": 20, "Marketing & Sales": 30, 
-                    "Operations": 40, "Administrative": 50}
-    cat_code = category_map.get(category_code, 99)
-    return int(f"{date_str}{cat_code:02d}{sequence_num:06d}")
-
-def generate_unique_inventory_key(product_key, location_key, inventory_date, sequence_num):
-    """Generate unique inventory key using product + location + date + sequence"""
-    # Use hash-based approach for large keys
-    date_str = inventory_date.strftime("%Y%m%d")
-    combined_str = f"{product_key}{location_key}{date_str}{sequence_num}"
-    # Create hash to ensure reasonable length and fit within BigQuery limits
-    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
-    unique_id = int(unique_hash, 16)
-    
-    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
-    max_safe_int = 9223372036854775807
-    if unique_id > max_safe_int:
-        unique_id = unique_id % max_safe_int
-    
-    return f"INV{unique_id:015d}"  # Return as string with INV prefix
-
-def generate_unique_marketing_cost_key(campaign_key, cost_date, category_code, sequence_num):
-    """Generate unique marketing cost key using campaign + date + category + sequence"""
-    # Use hash-based approach for large campaign keys
-    date_str = cost_date.strftime("%Y%m%d")
-    category_map = {"Digital Advertising": 10, "Print Media": 20, "TV/Radio": 30, "Events": 40,
-                    "Sponsorships": 50, "Social Media": 60, "Content Creation": 70, 
-                    "Market Research": 80, "Brand Materials": 90}
-    cat_code = category_map.get(category_code, 99)
-    camp_key = campaign_key if campaign_key else 0
-    combined_str = f"{camp_key}{date_str}{cat_code}{sequence_num}"
-    # Create hash to ensure reasonable length and fit within BigQuery limits
-    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
-    unique_id = int(unique_hash, 16)
-    
-    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
-    max_safe_int = 9223372036854775807
-    if unique_id > max_safe_int:
-        unique_id = unique_id % max_safe_int
-    
-    return unique_id
-
-def generate_unique_employee_fact_key(employee_id, effective_date, sequence_num):
-    """Generate unique employee fact key using employee + date + sequence"""
-    # Use hash-based approach for large employee ids
-    date_str = effective_date.strftime("%Y%m%d")
-    combined_str = f"{employee_id}{date_str}{sequence_num}"
-    # Create hash to ensure reasonable length and fit within BigQuery limits
-    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
-    unique_id = int(unique_hash, 16)
-    
-    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
-    max_19_digit = 9999999999999999999
-    unique_id = unique_id % max_19_digit
-    
-    return f"EF{unique_id:016d}"  # Return as string with EF prefix
 
 def generate_dim_locations(num_locations=500, start_id=1):
     """Generate locations dimension table with normalized address data"""
@@ -583,8 +506,8 @@ def generate_fact_employee_wages(employees, jobs, departments=None, start_date=N
             
             wage_sequence += 1
             wages.append({
-                "wage_key": generate_unique_wage_key(employee["employee_id"], effective_date, wage_sequence),
-                "employee_key": start_id + wage_sequence - 1,  # Temporary - need to map employee_id to employee_key
+                "wage_id": generate_unique_wage_key(employee["employee_id"], effective_date, wage_sequence),
+                "employee_id": employee["employee_id"],  # Use the actual employee_id string
                 "effective_date": effective_date,
                 "job_title": job["job_title"],
                 "job_level": job["job_level"],
@@ -659,8 +582,8 @@ def generate_fact_employees(employees, jobs, start_id=1):
         fact_sequence += 1
         effective_date = date.today()
         employee_facts.append({
-            "employee_fact_id": generate_unique_employee_fact_key(employee["employee_id"], effective_date, fact_sequence),
-            "employee_id": employee["employee_id"],
+            "employee_fact_id": generate_unique_id("employee_fact"),
+            "employee_id": employee["employee_id"],  # Use the actual employee_id string
             "effective_date": effective_date,
             
             # Performance metrics
@@ -1637,7 +1560,7 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
                     for category in cost_categories:
                         cost_sequence += 1
                         costs.append({
-                            "marketing_cost_id": generate_unique_marketing_cost_key(campaign["campaign_id"], current_date, category, cost_sequence),
+                            "marketing_cost_id": generate_unique_marketing_cost_key(),
                             "cost_date": current_date,
                             "campaign_id": campaign["campaign_id"],
                             "campaign_type": campaign["campaign_type"],
@@ -1650,7 +1573,7 @@ def generate_fact_marketing_costs(campaigns, target_amount, start_date=None, end
                 for category in cost_categories:
                     cost_sequence += 1
                     costs.append({
-                        "marketing_cost_key": generate_unique_marketing_cost_key(None, current_date, category, cost_sequence),
+                        "marketing_cost_id": generate_unique_marketing_cost_key(),
                         "cost_date": current_date,
                         "campaign_id": None,
                         "campaign_type": "General",

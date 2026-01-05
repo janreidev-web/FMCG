@@ -29,6 +29,7 @@ try:
         generate_fact_inventory, generate_dim_retailers_normalized, generate_dim_campaigns,
         generate_fact_sales, generate_daily_sales_with_delivery_updates,
         generate_fact_operating_costs, generate_fact_marketing_costs,
+        generate_fact_employee_wages, generate_fact_employees,
         generate_dim_categories, generate_dim_brands, generate_dim_subcategories,
         validate_relationships
     )
@@ -92,6 +93,9 @@ class RelationalConsistencyTester:
         inventory = generate_fact_inventory(products[:5], locations[:3])
         sales = generate_fact_sales(employees[:3], products[:3], retailers[:3], campaigns[:3], target_amount=1000000, start_date=date.today(), end_date=date.today())
         marketing_costs = generate_fact_marketing_costs(campaigns[:3], target_amount=500000)
+        employee_wages = generate_fact_employee_wages(employees[:3], jobs[:3], departments[:3], start_date=date.today(), end_date=date.today())
+        employee_facts = generate_fact_employees(employees[:3], jobs[:3])
+        operating_costs = generate_fact_operating_costs(target_amount=100000, start_date=date.today(), end_date=date.today())
         
         # Expected ID patterns
         id_patterns = {
@@ -109,9 +113,10 @@ class RelationalConsistencyTester:
             'employee_id': r'^EMP\d{6}$',
             'sale_id': r'^SAL\d{6}$',
             'inventory_id': r'^INV\d{15}$',
-            'marketing_cost_key': r'^\d+$',  # Integer
-            'wage_key': r'^WAGE_[A-Z0-9]+_\d{8}_\d{3}$',  # WAGE_EMP000001_20260105_001
-            'cost_key': r'^COST_\d{8}_[A-Z]{3}_\d{3}$'  # COST_20260105_REN_001
+            'marketing_cost_id': r'^\d+$',  # Integer
+            'wage_id': r'^WAGE_[A-Z0-9]+_\d{8}_\d{3}$',  # WAGE_EMP000001_20260105_001
+            'cost_id': r'^COST_\d{8}_[A-Z]{3}_\d{3}$',  # COST_20260105_REN_001
+            'employee_fact_id': r'^\d+$'  # Integer
         }
         
         import re
@@ -132,7 +137,10 @@ class RelationalConsistencyTester:
             (employees, 'employee_id'),
             (sales, 'sale_id'),
             (inventory, 'inventory_id'),
-            (marketing_costs, 'marketing_cost_key')
+            (marketing_costs, 'marketing_cost_id'),
+            (employee_wages, 'wage_id'),
+            (employee_facts, 'employee_fact_id'),
+            (operating_costs, 'cost_id')
         ]
         
         for data_list, id_field in test_data:

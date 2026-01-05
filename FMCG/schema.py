@@ -31,7 +31,6 @@ FACT_EMPLOYEE_WAGES = f"{PROJECT_ID}.{DATASET}.fact_employee_wages"  # Employee 
 
 # Core employee dimension - only essential personal info
 DIM_EMPLOYEES_SCHEMA = [
-    {"name": "employee_key", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "employee_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "first_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "last_name", "type": "STRING", "mode": "REQUIRED"},
@@ -40,10 +39,10 @@ DIM_EMPLOYEES_SCHEMA = [
     {"name": "hire_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "termination_date", "type": "DATE", "mode": "NULLABLE"},
     {"name": "employment_status", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "location_key", "type": "INTEGER", "mode": "REQUIRED"},  # FK to dim_locations
-    {"name": "job_key", "type": "INTEGER", "mode": "REQUIRED"},       # FK to dim_jobs
-    {"name": "bank_key", "type": "INTEGER", "mode": "REQUIRED"},      # FK to dim_banks
-    {"name": "insurance_key", "type": "INTEGER", "mode": "REQUIRED"}, # FK to dim_insurance
+    {"name": "location_id", "type": "STRING", "mode": "REQUIRED"},  # FK to dim_locations
+    {"name": "job_id", "type": "STRING", "mode": "REQUIRED"},       # FK to dim_jobs
+    {"name": "bank_id", "type": "STRING", "mode": "REQUIRED"},      # FK to dim_banks
+    {"name": "insurance_id", "type": "STRING", "mode": "REQUIRED"}, # FK to dim_insurance
     {"name": "tin_number", "type": "STRING", "mode": "REQUIRED"},
     {"name": "sss_number", "type": "STRING", "mode": "REQUIRED"},
     {"name": "philhealth_number", "type": "STRING", "mode": "REQUIRED"},
@@ -59,7 +58,7 @@ DIM_EMPLOYEES_SCHEMA = [
 
 # Location dimension - normalized address information
 DIM_LOCATIONS_SCHEMA = [
-    {"name": "location_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "location_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "city", "type": "STRING", "mode": "REQUIRED"},
     {"name": "province", "type": "STRING", "mode": "REQUIRED"},
     {"name": "region", "type": "STRING", "mode": "REQUIRED"},
@@ -69,10 +68,10 @@ DIM_LOCATIONS_SCHEMA = [
 
 # Job dimension - normalized job information
 DIM_JOBS_SCHEMA = [
-    {"name": "job_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "job_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "job_title", "type": "STRING", "mode": "REQUIRED"},
     {"name": "job_level", "type": "STRING", "mode": "REQUIRED"},  # Entry, Junior, Senior, Manager, Director
-    {"name": "department_key", "type": "INTEGER", "mode": "REQUIRED"},  # FK to dim_departments
+    {"name": "department_id", "type": "STRING", "mode": "REQUIRED"},  # FK to dim_departments
     {"name": "work_setup", "type": "STRING", "mode": "REQUIRED"},  # On-site, Remote, Hybrid, Field-based
     {"name": "work_type", "type": "STRING", "mode": "REQUIRED"},   # Full-time, Part-time, Contract, Intern
     {"name": "base_salary_min", "type": "INTEGER", "mode": "REQUIRED"},
@@ -81,15 +80,15 @@ DIM_JOBS_SCHEMA = [
 
 # Department dimension
 DIM_DEPARTMENTS_SCHEMA = [
-    {"name": "department_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "department_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "department_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "department_code", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "parent_department_key", "type": "INTEGER", "mode": "NULLABLE"},  # For hierarchical departments
+    {"name": "parent_department_id", "type": "STRING", "mode": "NULLABLE"},  # For hierarchical departments
 ]
 
 # Bank dimension
 DIM_BANKS_SCHEMA = [
-    {"name": "bank_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "bank_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "bank_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "bank_code", "type": "STRING", "mode": "REQUIRED"},
     {"name": "branch_code", "type": "STRING", "mode": "NULLABLE"},
@@ -97,7 +96,7 @@ DIM_BANKS_SCHEMA = [
 
 # Insurance dimension
 DIM_INSURANCE_SCHEMA = [
-    {"name": "insurance_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "insurance_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "provider_name", "type": "STRING", "mode": "REQUIRED"},
     {"name": "provider_type", "type": "STRING", "mode": "REQUIRED"},  # Health, Life, Dental, Vision
     {"name": "coverage_level", "type": "STRING", "mode": "REQUIRED"},  # Basic, Standard, Premium
@@ -105,8 +104,8 @@ DIM_INSURANCE_SCHEMA = [
 
 # Employee fact table - time-varying employee metrics (simplified)
 FACT_EMPLOYEES_SCHEMA = [
-    {"name": "employee_fact_key", "type": "INTEGER", "mode": "REQUIRED"},
-    {"name": "employee_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "employee_fact_id", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "employee_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "effective_date", "type": "DATE", "mode": "REQUIRED"},
     
     # Performance metrics
@@ -142,8 +141,8 @@ FACT_EMPLOYEES_SCHEMA = [
 
 # Employee wage history table - dated compensation records
 FACT_EMPLOYEE_WAGES_SCHEMA = [
-    {"name": "wage_key", "type": "STRING", "mode": "REQUIRED"},
-    {"name": "employee_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "wage_id", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "employee_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "effective_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "job_title", "type": "STRING", "mode": "REQUIRED"},
     {"name": "job_level", "type": "STRING", "mode": "REQUIRED"},
@@ -221,7 +220,7 @@ DELIVERY_STATUS_UPDATES_SCHEMA = [
 DELIVERY_UPDATES_STAGING_SCHEMA = DELIVERY_STATUS_UPDATES_SCHEMA  # Same schema for staging table
 
 FACT_OPERATING_COSTS_SCHEMA = [
-    {"name": "cost_key", "type": "STRING", "mode": "REQUIRED"},
+    {"name": "cost_id", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cost_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "category", "type": "STRING", "mode": "REQUIRED"},
     {"name": "cost_type", "type": "STRING", "mode": "REQUIRED"},
@@ -272,7 +271,7 @@ FACT_INVENTORY_SCHEMA = [
 ]
 
 FACT_MARKETING_COSTS_SCHEMA = [
-    {"name": "marketing_cost_key", "type": "INTEGER", "mode": "REQUIRED"},
+    {"name": "marketing_cost_id", "type": "INTEGER", "mode": "REQUIRED"},
     {"name": "cost_date", "type": "DATE", "mode": "REQUIRED"},
     {"name": "campaign_id", "type": "STRING", "mode": "NULLABLE"},
     {"name": "campaign_type", "type": "STRING", "mode": "NULLABLE"},

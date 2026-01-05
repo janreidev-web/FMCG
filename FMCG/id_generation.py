@@ -91,6 +91,34 @@ def generate_unique_marketing_cost_key() -> int:
     """
     return generate_unique_id("marketing_cost")
 
+def generate_unique_inventory_key(product_key, location_key, inventory_date, sequence_num) -> str:
+    """
+    Generate unique inventory key using product + location + date + sequence
+    
+    Args:
+        product_key: Product identifier
+        location_key: Location identifier  
+        inventory_date: Date of inventory record
+        sequence_num: Sequence number
+    
+    Returns:
+        Unique inventory key string
+    """
+    # Use hash-based approach for large keys
+    date_str = inventory_date.strftime("%Y%m%d") if hasattr(inventory_date, 'strftime') else str(inventory_date)
+    combined_str = f"{product_key}{location_key}{date_str}{sequence_num}"
+    # Create hash to ensure reasonable length and fit within BigQuery limits
+    import hashlib
+    unique_hash = hashlib.md5(combined_str.encode()).hexdigest()[:12]
+    unique_id = int(unique_hash, 16)
+    
+    # Ensure it fits in 19 digits (BigQuery INTEGER limit)
+    max_safe_int = 9223372036854775807
+    if unique_id > max_safe_int:
+        unique_id = unique_id % max_safe_int
+    
+    return f"INV{unique_id:015d}"  # Return as string with INV prefix
+
 def reset_id_counters(entity_type: str = None) -> None:
     """
     Reset ID generation counters. Use with caution!
