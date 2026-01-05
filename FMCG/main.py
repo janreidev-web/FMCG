@@ -639,40 +639,159 @@ def main():
             if is_scheduled:
                 # Daily run: check latest sales date and generate only for missing dates
                 logger.info(f"=== DAILY RUN LOGIC ===")
-                    amount_per_sale = target_amount / num_sales
+                try:
+                    # Get the latest sales date from database
+                    project_id = os.environ.get("GCP_PROJECT_ID", "fmcg-data-simulator")
+                    dataset = os.environ.get("BQ_DATASET", "fmcg_analytics")
+                    fact_sales_table = f"{project_id}.{dataset}.fact_sales"
                     
-                    for i in range(num_sales):
-                        sample_sale = {
-                            "sale_id": 1000000 + i,  # Simple sequential keys
-                            "sale_date": sample_date,
-                            "product_id": available_products[i % len(available_products)]["product_id"],
-                            "retailer_id": retailers[i % len(retailers)]["retailer_id"],
-                            "case_quantity": 10,
-                            "unit_price": amount_per_sale / 10,  # Base price
-                            "discount_percent": 0.05,
-                            "tax_rate": 0.12,
-                            "total_amount": amount_per_sale,
-                            "commission_amount": amount_per_sale * 0.05,  # 5% commission
-                            "currency": "PHP",
-                            "payment_method": "Cash",
-                            "payment_status": "Paid",
-                            "delivery_status": "Delivered",
-                            "expected_delivery_date": sample_date + timedelta(days=1),
-                            "actual_delivery_date": sample_date + timedelta(days=1)
-                        }
-                        sales.append(sample_sale)
+                    # Check if there's already data for yesterday
+                    yesterday_check_query = f"SELECT COUNT(*) as count FROM `{fact_sales_table}` WHERE sale_date = '{yesterday}'"
+                    logger.info(f"Checking if data exists for {yesterday} with query: {yesterday_check_query}")
+                    yesterday_result = client.query(yesterday_check_query).to_dataframe()
+                    yesterday_count = yesterday_result['count'].iloc[0]
+                    logger.info(f"Found {yesterday_count} sales records for {yesterday}")
                     
-                    logger.info(f"Created {len(sales)} sample sales records")
+                    if yesterday_count > 0:
+                        logger.info(f"✅ Daily run: Sales data already exists for {yesterday}. No new data needed.")
+                    else:
+                        # Check latest sales date to determine missing dates
+                        latest_sales_query = f"SELECT MAX(sale_date) as latest_date FROM `{fact_sales_table}`"
+                        logger.info(f"Checking latest sales date with query: {latest_sales_query}")
+                        latest_result = client.query(latest_sales_query).to_dataframe()
+                        latest_date = latest_result['latest_date'].iloc[0]
+                        logger.info(f"Latest sales date from DB: {latest_date} (type: {type(latest_date)})")
+                        
+                        if latest_date and pd.notna(latest_date):
+                            # Convert to date if needed
+                            if isinstance(latest_date, date):
+                                # Already a date object, no conversion needed
+                                pass
+                            elif hasattr(latest_date, 'date'):
+                                # Has .date() method (datetime, Timestamp)
+                                latest_date = latest_date.date()
+                            else:
+                                # String or other format
+                                latest_date = pd.to_datetime(latest_date).date()
+                            
+                            logger.info(f"Converted latest date: {latest_date}")
+                            
+                            # Calculate start date (day after latest date)
+                            start_date = latest_date + timedelta(days=1)
+                            end_date = yesterday
+                            logger.info(f"Calculated start_date: {start_date}, yesterday: {yesterday}")
+                            
+                            if start_date > yesterday:
+                                logger.info(f"✅ Daily run: Sales data is up to date. Latest: {latest_date}, Yesterday: {yesterday}")
+                                logger.info("✅ No new sales to generate.")
+                            else:
+                                logger.info(f"📊 Daily run: Generating sales from {start_date} to {end_date} (missing dates)...")
+                                sales_target = DAILY_SALES_AMOUNT
+                                sales = generate_daily_sales_with_delivery_updates(
+                                    products=products,
+                                    retailers=retailers,
+                                    start_date=start_date,
+                                    end_date=end_date,
+                                    target_amount=sales_target
+                                )
+                                
+                                if sales:
+                                    logger.info(f"Generated {len(sales)} sales records")
+                                    append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_id")
+                                else:
+                                    logger.warning("No sales generated")
+                        else:
+                            logger.info("No existing sales data found, generating from scratch...")
+                            sales_target = DAILY_SALES_AMOUNT
+                            sales = generate_daily_sales_with_delivery_updates(
+                                products=products,
+                                retailers=retailers,
+                                start_date=yesterday,
+                                end_date=yesterday,
+                                target_amount=sales_target
+                            )
+                            
+                            if sales:
+                                logger.info(f"Generated {len(sales)} sales records")
+                                append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_id")
+                            else:
+                                logger.warning("No sales generated")
+                        
+                except Exception as e:
+                    logger.error(f"Error in daily sales generation: {e}")
+                    import traceback
+                    logger.error(f"Append traceback: {traceback.format_exc()}")
+            else:
+                # Manual run: generate historical data up to day before yesterday
+                logger.info(f"=== MANUAL RUN LOGIC ===")
+                sales_target = INITIAL_SALES_AMOUNT
+                start_date = date(2015, 1, 1)
+                end_date = day_before_yesterday
+                logger.info(f"🔧 Manual run: Generating ₱{sales_target:,.0f} in total sales from {start_date} to {end_date}...")
+                logger.info(f"🔧 Manual run will leave gap for daily run to generate: {yesterday}")
+                
+                sales = generate_fact_sales(
+                    products=products,
+                    retailers=retailers,
+                    start_date=start_date,
+                    end_date=end_date,
+                    target_amount=sales_target
+                )
+                
+                if sales:
+                    logger.info(f"Generated {len(sales):,} sales records")
+                    append_df_bq_safe(client, pd.DataFrame(sales), FACT_SALES, "sale_id")
                 else:
-                    logger.error("Cannot create sample sales - insufficient dimension data")
-                    logger.info(f"Available employees: {len(available_employees)}")
-                    logger.info(f"Available products: {len(available_products)}")
-                    logger.info(f"Available retailers: {len(retailers)}")
+                    logger.warning("No sales generated")
+            
+            # Log sales generation summary
+            logger.info(f"Sales generation completed:")
+            logger.info(f"  Total sales records: {len(sales):,}")
+            logger.info(f"  Total sales amount: ₱{sum(s['total_amount'] for s in sales):,.2f}")
+            
+            # Update delivery status for all runs (daily and scheduled)
+            logger.info("Checking delivery status...")
+            # For free tier, we can only monitor, not update directly
+            # The actual status updates will be handled using BigQuery free tier methods
+            update_delivery_status(client, FACT_SALES)
+            
+            # For scheduled runs, update delivery statuses using official BigQuery methods
+            if is_scheduled:
+                logger.info("Updating delivery statuses using BigQuery free tier methods...")
+                
+                try:
+                    # Method 1: Direct table overwrite (simple, no audit trail)
+                    logger.info("Method 1: Direct table overwrite...")
+                    method1_success = execute_method_1_overwrite(client, PROJECT_ID, DATASET, FACT_SALES)
                     
-            except Exception as e:
-                logger.error(f"Error creating sample sales: {e}")
-                import traceback
-                logger.error(f"Sample creation traceback: {traceback.format_exc()}")
+                    if method1_success:
+                        logger.info("Delivery statuses updated successfully")
+                        
+                        # Get updated status summary
+                        summary_df = get_delivery_status_summary(client, PROJECT_ID, DATASET)
+                        if not summary_df.empty:
+                            logger.info("Current Delivery Status Summary:")
+                            for _, row in summary_df.iterrows():
+                                logger.info(f"   {row['current_delivery_status']}: {row['order_count']:,} orders (PHP {row['total_value']:,.2f})")
+                    else:
+                        logger.warning("Method 1 failed, trying Method 2...")
+                        
+                        # Method 2: Append update records (with audit trail)
+                        logger.info("Method 2: Append update records...")
+                        method2_success = execute_method_2_append(client, PROJECT_ID, DATASET, 'delivery_status_updates')
+                        
+                        if method2_success:
+                            # Create current status view
+                            view_query = create_current_delivery_status_view(PROJECT_ID, DATASET, FACT_SALES, 'delivery_status_updates')
+                            client.query(view_query).result()
+                            logger.info("Delivery status updates appended and view created")
+                        else:
+                            logger.warning("All update methods failed, continuing with run...")
+                            
+                except Exception as e:
+                    logger.warning(f"Could not update delivery statuses: {e}")
+                    logger.info("Continuing with scheduled run...")
+                    logger.info("Tip: You can manually update statuses using BigQuery Console with WRITE_TRUNCATE")
         
         # Always try to append the sales data (even if empty, this will create the table)
         logger.info("About to append sales data to BigQuery...")
