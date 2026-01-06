@@ -214,6 +214,7 @@ class DepartmentGenerator(DataGenerator):
     """Generate department data"""
     
     DEPARTMENTS = [
+        {"name": "Executive", "budget": 10000000, "description": "Executive leadership and strategic management"},
         {"name": "Sales", "budget": 5000000, "description": "Sales and marketing operations"},
         {"name": "Finance", "budget": 2000000, "description": "Financial planning and accounting"},
         {"name": "Human Resources", "budget": 1500000, "description": "Employee management and development"},
@@ -245,27 +246,99 @@ class DepartmentGenerator(DataGenerator):
 
 
 class JobGenerator(DataGenerator):
-    """Generate job position data"""
+    """Generate comprehensive job position data with realistic roles and career progression"""
     
     JOBS = [
-        {"title": "Sales Representative", "level": "Entry", "min_salary": 18000, "max_salary": 25000, "dept": "Sales", "work_type": "Field"},
-        {"title": "Sales Manager", "level": "Mid", "min_salary": 35000, "max_salary": 45000, "dept": "Sales", "work_type": "Hybrid"},
-        {"title": "Sales Director", "level": "Senior", "min_salary": 60000, "max_salary": 80000, "dept": "Sales", "work_type": "Office"},
-        {"title": "Accountant", "level": "Entry", "min_salary": 20000, "max_salary": 30000, "dept": "Finance", "work_type": "Office"},
-        {"title": "Finance Manager", "level": "Mid", "min_salary": 40000, "max_salary": 55000, "dept": "Finance", "work_type": "Office"},
-        {"title": "HR Specialist", "level": "Entry", "min_salary": 22000, "max_salary": 32000, "dept": "Human Resources", "work_type": "Office"},
-        {"title": "HR Manager", "level": "Mid", "min_salary": 38000, "max_salary": 50000, "dept": "Human Resources", "work_type": "Office"},
-        {"title": "Operations Supervisor", "level": "Mid", "min_salary": 32000, "max_salary": 42000, "dept": "Operations", "work_type": "Field"},
-        {"title": "Operations Manager", "level": "Senior", "min_salary": 50000, "max_salary": 70000, "dept": "Operations", "work_type": "Hybrid"},
-        {"title": "IT Support", "level": "Entry", "min_salary": 25000, "max_salary": 35000, "dept": "IT", "work_type": "Hybrid"},
-        {"title": "Software Developer", "level": "Mid", "min_salary": 40000, "max_salary": 60000, "dept": "IT", "work_type": "Remote"},
-        {"title": "IT Manager", "level": "Senior", "min_salary": 55000, "max_salary": 75000, "dept": "IT", "work_type": "Office"},
-        {"title": "Marketing Coordinator", "level": "Entry", "min_salary": 20000, "max_salary": 28000, "dept": "Marketing", "work_type": "Office"},
-        {"title": "Marketing Manager", "level": "Mid", "min_salary": 42000, "max_salary": 58000, "dept": "Marketing", "work_type": "Office"},
-        {"title": "Customer Service Rep", "level": "Entry", "min_salary": 16000, "max_salary": 22000, "dept": "Customer Service", "work_type": "Office"},
-        {"title": "QA Analyst", "level": "Entry", "min_salary": 24000, "max_salary": 34000, "dept": "Quality Assurance", "work_type": "Field"},
-        {"title": "R&D Specialist", "level": "Mid", "min_salary": 45000, "max_salary": 65000, "dept": "Research & Development", "work_type": "Office"},
-        {"title": "Admin Assistant", "level": "Entry", "min_salary": 15000, "max_salary": 20000, "dept": "Administration", "work_type": "Office"},
+        # Executive Level
+        {"title": "Chief Executive Officer", "level": "Executive", "category": "Leadership", "min_salary": 150000, "max_salary": 250000, "dept": "Executive", "work_type": "Office", "is_managerial": True, "years_exp": 15, "education": "Master's Degree", "skills": "Strategic Planning, Leadership, Finance", "family": "Executive", "reporting_level": 1},
+        {"title": "Chief Operating Officer", "level": "Executive", "category": "Leadership", "min_salary": 120000, "max_salary": 200000, "dept": "Executive", "work_type": "Office", "is_managerial": True, "years_exp": 12, "education": "Master's Degree", "skills": "Operations Management, Strategy, Leadership", "family": "Executive", "reporting_level": 1},
+        {"title": "Chief Financial Officer", "level": "Executive", "category": "Finance", "min_salary": 110000, "max_salary": 180000, "dept": "Finance", "work_type": "Office", "is_managerial": True, "years_exp": 12, "education": "MBA/CPA", "skills": "Financial Planning, Risk Management, Compliance", "family": "Finance", "reporting_level": 1},
+        {"title": "Chief Marketing Officer", "level": "Executive", "category": "Marketing", "min_salary": 100000, "max_salary": 170000, "dept": "Marketing", "work_type": "Office", "is_managerial": True, "years_exp": 12, "education": "Master's Degree", "skills": "Marketing Strategy, Brand Management, Analytics", "family": "Marketing", "reporting_level": 1},
+        {"title": "Chief Technology Officer", "level": "Executive", "category": "Technology", "min_salary": 120000, "max_salary": 200000, "dept": "IT", "work_type": "Office", "is_managerial": True, "years_exp": 15, "education": "Master's Degree", "skills": "Technology Strategy, Innovation, Leadership", "family": "Technology", "reporting_level": 1},
+        
+        # Senior Management
+        {"title": "Vice President of Sales", "level": "Senior", "category": "Sales", "min_salary": 80000, "max_salary": 120000, "dept": "Sales", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "Bachelor's Degree", "skills": "Sales Strategy, Team Leadership, Negotiation", "family": "Sales", "reporting_level": 2},
+        {"title": "Vice President of Operations", "level": "Senior", "category": "Operations", "min_salary": 75000, "max_salary": 110000, "dept": "Operations", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "Bachelor's Degree", "skills": "Operations Management, Process Improvement, Logistics", "family": "Operations", "reporting_level": 2},
+        {"title": "Vice President of Finance", "level": "Senior", "category": "Finance", "min_salary": 70000, "max_salary": 100000, "dept": "Finance", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "MBA/CPA", "skills": "Financial Management, Reporting, Compliance", "family": "Finance", "reporting_level": 2},
+        {"title": "Vice President of Human Resources", "level": "Senior", "category": "Human Resources", "min_salary": 65000, "max_salary": 95000, "dept": "Human Resources", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "Master's Degree", "skills": "HR Strategy, Talent Management, Compliance", "family": "Human Resources", "reporting_level": 2},
+        {"title": "Vice President of Marketing", "level": "Senior", "category": "Marketing", "min_salary": 70000, "max_salary": 100000, "dept": "Marketing", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "Master's Degree", "skills": "Marketing Strategy, Brand Management, Digital Marketing", "family": "Marketing", "reporting_level": 2},
+        
+        # Directors
+        {"title": "Sales Director", "level": "Senior", "category": "Sales", "min_salary": 60000, "max_salary": 85000, "dept": "Sales", "work_type": "Hybrid", "is_managerial": True, "years_exp": 8, "education": "Bachelor's Degree", "skills": "Sales Management, Territory Planning, Team Leadership", "family": "Sales", "reporting_level": 3},
+        {"title": "Regional Sales Director", "level": "Senior", "category": "Sales", "min_salary": 65000, "max_salary": 90000, "dept": "Sales", "work_type": "Field", "is_managerial": True, "years_exp": 8, "education": "Bachelor's Degree", "skills": "Regional Sales, Account Management, Business Development", "family": "Sales", "reporting_level": 3},
+        {"title": "Operations Director", "level": "Senior", "category": "Operations", "min_salary": 55000, "max_salary": 80000, "dept": "Operations", "work_type": "Hybrid", "is_managerial": True, "years_exp": 8, "education": "Bachelor's Degree", "skills": "Operations Strategy, Supply Chain, Quality Control", "family": "Operations", "reporting_level": 3},
+        {"title": "Finance Director", "level": "Senior", "category": "Finance", "min_salary": 55000, "max_salary": 75000, "dept": "Finance", "work_type": "Office", "is_managerial": True, "years_exp": 8, "education": "MBA/CPA", "skills": "Financial Planning, Analysis, Reporting", "family": "Finance", "reporting_level": 3},
+        {"title": "Marketing Director", "level": "Senior", "category": "Marketing", "min_salary": 55000, "max_salary": 80000, "dept": "Marketing", "work_type": "Office", "is_managerial": True, "years_exp": 8, "education": "Master's Degree", "skills": "Marketing Strategy, Campaign Management, Analytics", "family": "Marketing", "reporting_level": 3},
+        {"title": "IT Director", "level": "Senior", "category": "Technology", "min_salary": 60000, "max_salary": 85000, "dept": "IT", "work_type": "Office", "is_managerial": True, "years_exp": 10, "education": "Master's Degree", "skills": "IT Strategy, Infrastructure Management, Security", "family": "Technology", "reporting_level": 3},
+        {"title": "HR Director", "level": "Senior", "category": "Human Resources", "min_salary": 50000, "max_salary": 70000, "dept": "Human Resources", "work_type": "Office", "is_managerial": True, "years_exp": 8, "education": "Master's Degree", "skills": "HR Management, Employee Relations, Compliance", "family": "Human Resources", "reporting_level": 3},
+        
+        # Managers
+        {"title": "Sales Manager", "level": "Mid", "category": "Sales", "min_salary": 35000, "max_salary": 50000, "dept": "Sales", "work_type": "Hybrid", "is_managerial": True, "years_exp": 5, "education": "Bachelor's Degree", "skills": "Sales Leadership, Coaching, Performance Management", "family": "Sales", "reporting_level": 4},
+        {"title": "Area Sales Manager", "level": "Mid", "category": "Sales", "min_salary": 38000, "max_salary": 55000, "dept": "Sales", "work_type": "Field", "is_managerial": True, "years_exp": 5, "education": "Bachelor's Degree", "skills": "Area Sales, Account Management, Team Leadership", "family": "Sales", "reporting_level": 4},
+        {"title": "Key Account Manager", "level": "Mid", "category": "Sales", "min_salary": 32000, "max_salary": 48000, "dept": "Sales", "work_type": "Field", "is_managerial": False, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Account Management, Negotiation, Relationship Building", "family": "Sales", "reporting_level": 5},
+        {"title": "Operations Manager", "level": "Mid", "category": "Operations", "min_salary": 32000, "max_salary": 48000, "dept": "Operations", "work_type": "Hybrid", "is_managerial": True, "years_exp": 5, "education": "Bachelor's Degree", "skills": "Operations Management, Process Improvement, Team Leadership", "family": "Operations", "reporting_level": 4},
+        {"title": "Warehouse Manager", "level": "Mid", "category": "Operations", "min_salary": 30000, "max_salary": 45000, "dept": "Operations", "work_type": "Field", "is_managerial": True, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Warehouse Operations, Inventory Management, Safety", "family": "Operations", "reporting_level": 4},
+        {"title": "Finance Manager", "level": "Mid", "category": "Finance", "min_salary": 35000, "max_salary": 50000, "dept": "Finance", "work_type": "Office", "is_managerial": True, "years_exp": 5, "education": "MBA/CPA", "skills": "Financial Management, Budgeting, Analysis", "family": "Finance", "reporting_level": 4},
+        {"title": "Accounting Manager", "level": "Mid", "category": "Finance", "min_salary": 32000, "max_salary": 45000, "dept": "Finance", "work_type": "Office", "is_managerial": True, "years_exp": 4, "education": "Accounting Degree", "skills": "Accounting, Reporting, Compliance", "family": "Finance", "reporting_level": 4},
+        {"title": "Marketing Manager", "level": "Mid", "category": "Marketing", "min_salary": 33000, "max_salary": 48000, "dept": "Marketing", "work_type": "Office", "is_managerial": True, "years_exp": 5, "education": "Bachelor's Degree", "skills": "Marketing Management, Campaign Management, Analytics", "family": "Marketing", "reporting_level": 4},
+        {"title": "Digital Marketing Manager", "level": "Mid", "category": "Marketing", "min_salary": 30000, "max_salary": 45000, "dept": "Marketing", "work_type": "Remote", "is_managerial": True, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Digital Marketing, SEO, Social Media, Analytics", "family": "Marketing", "reporting_level": 4},
+        {"title": "Brand Manager", "level": "Mid", "category": "Marketing", "min_salary": 32000, "max_salary": 46000, "dept": "Marketing", "work_type": "Office", "is_managerial": True, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Brand Management, Market Research, Creative Strategy", "family": "Marketing", "reporting_level": 4},
+        {"title": "HR Manager", "level": "Mid", "category": "Human Resources", "min_salary": 30000, "max_salary": 45000, "dept": "Human Resources", "work_type": "Office", "is_managerial": True, "years_exp": 5, "education": "Bachelor's Degree", "skills": "HR Management, Recruitment, Employee Relations", "family": "Human Resources", "reporting_level": 4},
+        {"title": "IT Manager", "level": "Mid", "category": "Technology", "min_salary": 35000, "max_salary": 52000, "dept": "IT", "work_type": "Office", "is_managerial": True, "years_exp": 6, "education": "Bachelor's Degree", "skills": "IT Management, Infrastructure, Security", "family": "Technology", "reporting_level": 4},
+        {"title": "Software Development Manager", "level": "Mid", "category": "Technology", "min_salary": 40000, "max_salary": 60000, "dept": "IT", "work_type": "Office", "is_managerial": True, "years_exp": 6, "education": "Bachelor's Degree", "skills": "Software Development, Agile, Team Leadership", "family": "Technology", "reporting_level": 4},
+        
+        # Senior Professionals
+        {"title": "Senior Sales Representative", "level": "Senior", "category": "Sales", "min_salary": 28000, "max_salary": 40000, "dept": "Sales", "work_type": "Field", "is_managerial": False, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Sales, Negotiation, Customer Relations", "family": "Sales", "reporting_level": 6},
+        {"title": "Senior Accountant", "level": "Senior", "category": "Finance", "min_salary": 28000, "max_salary": 38000, "dept": "Finance", "work_type": "Office", "is_managerial": False, "years_exp": 4, "education": "Accounting Degree", "skills": "Accounting, Financial Reporting, Analysis", "family": "Finance", "reporting_level": 6},
+        {"title": "Senior Financial Analyst", "level": "Senior", "category": "Finance", "min_salary": 30000, "max_salary": 42000, "dept": "Finance", "work_type": "Office", "is_managerial": False, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Financial Analysis, Modeling, Reporting", "family": "Finance", "reporting_level": 6},
+        {"title": "Senior Marketing Specialist", "level": "Senior", "category": "Marketing", "min_salary": 26000, "max_salary": 38000, "dept": "Marketing", "work_type": "Office", "is_managerial": False, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Marketing, Campaign Management, Analytics", "family": "Marketing", "reporting_level": 6},
+        {"title": "Senior Software Developer", "level": "Senior", "category": "Technology", "min_salary": 35000, "max_salary": 50000, "dept": "IT", "work_type": "Remote", "is_managerial": False, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Software Development, Architecture, Testing", "family": "Technology", "reporting_level": 6},
+        {"title": "Senior Quality Assurance Analyst", "level": "Senior", "category": "Quality Assurance", "min_salary": 26000, "max_salary": 36000, "dept": "Operations", "work_type": "Field", "is_managerial": False, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Quality Assurance, Testing, Process Improvement", "family": "Quality Assurance", "reporting_level": 6},
+        
+        # Mid-Level Professionals
+        {"title": "Sales Representative", "level": "Entry", "category": "Sales", "min_salary": 18000, "max_salary": 28000, "dept": "Sales", "work_type": "Field", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "Sales, Communication, Customer Service", "family": "Sales", "reporting_level": 7},
+        {"title": "Sales Coordinator", "level": "Entry", "category": "Sales", "min_salary": 16000, "max_salary": 24000, "dept": "Sales", "work_type": "Office", "is_managerial": False, "years_exp": 0, "education": "Bachelor's Degree", "skills": "Coordination, Administration, Customer Service", "family": "Sales", "reporting_level": 7},
+        {"title": "Accountant", "level": "Entry", "category": "Finance", "min_salary": 20000, "max_salary": 30000, "dept": "Finance", "work_type": "Office", "is_managerial": False, "years_exp": 1, "education": "Accounting Degree", "skills": "Accounting, Bookkeeping, Financial Reporting", "family": "Finance", "reporting_level": 7},
+        {"title": "Financial Analyst", "level": "Entry", "category": "Finance", "min_salary": 22000, "max_salary": 32000, "dept": "Finance", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Financial Analysis, Excel, Reporting", "family": "Finance", "reporting_level": 7},
+        {"title": "Marketing Coordinator", "level": "Entry", "category": "Marketing", "min_salary": 18000, "max_salary": 26000, "dept": "Marketing", "work_type": "Office", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "Marketing Coordination, Social Media, Content", "family": "Marketing", "reporting_level": 7},
+        {"title": "Marketing Specialist", "level": "Entry", "category": "Marketing", "min_salary": 20000, "max_salary": 30000, "dept": "Marketing", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Marketing, Digital Marketing, Analytics", "family": "Marketing", "reporting_level": 7},
+        {"title": "HR Specialist", "level": "Entry", "category": "Human Resources", "min_salary": 18000, "max_salary": 28000, "dept": "Human Resources", "work_type": "Office", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "HR Administration, Recruitment, Employee Relations", "family": "Human Resources", "reporting_level": 7},
+        {"title": "HR Coordinator", "level": "Entry", "category": "Human Resources", "min_salary": 16000, "max_salary": 24000, "dept": "Human Resources", "work_type": "Office", "is_managerial": False, "years_exp": 0, "education": "Bachelor's Degree", "skills": "HR Coordination, Administration, Onboarding", "family": "Human Resources", "reporting_level": 7},
+        {"title": "IT Support Specialist", "level": "Entry", "category": "Technology", "min_salary": 18000, "max_salary": 28000, "dept": "IT", "work_type": "Hybrid", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "IT Support, Troubleshooting, Customer Service", "family": "Technology", "reporting_level": 7},
+        {"title": "Software Developer", "level": "Entry", "category": "Technology", "min_salary": 25000, "max_salary": 38000, "dept": "IT", "work_type": "Remote", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Software Development, Programming, Testing", "family": "Technology", "reporting_level": 7},
+        {"title": "Junior Software Developer", "level": "Entry", "category": "Technology", "min_salary": 20000, "max_salary": 30000, "dept": "IT", "work_type": "Remote", "is_managerial": False, "years_exp": 0, "education": "Bachelor's Degree", "skills": "Programming, Web Development, Databases", "family": "Technology", "reporting_level": 7},
+        
+        # Operations Roles
+        {"title": "Operations Supervisor", "level": "Mid", "category": "Operations", "min_salary": 25000, "max_salary": 35000, "dept": "Operations", "work_type": "Field", "is_managerial": True, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Supervision, Operations, Safety", "family": "Operations", "reporting_level": 5},
+        {"title": "Production Supervisor", "level": "Mid", "category": "Operations", "min_salary": 24000, "max_salary": 34000, "dept": "Operations", "work_type": "Field", "is_managerial": True, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Production Supervision, Quality Control, Safety", "family": "Operations", "reporting_level": 5},
+        {"title": "Logistics Coordinator", "level": "Entry", "category": "Operations", "min_salary": 18000, "max_salary": 26000, "dept": "Operations", "work_type": "Office", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "Logistics, Coordination, Supply Chain", "family": "Operations", "reporting_level": 7},
+        {"title": "Quality Assurance Analyst", "level": "Entry", "category": "Quality Assurance", "min_salary": 20000, "max_salary": 30000, "dept": "Operations", "work_type": "Field", "is_managerial": False, "years_exp": 1, "education": "Bachelor's Degree", "skills": "Quality Assurance, Testing, Documentation", "family": "Quality Assurance", "reporting_level": 7},
+        {"title": "Quality Control Inspector", "level": "Entry", "category": "Quality Assurance", "min_salary": 17000, "max_salary": 25000, "dept": "Operations", "work_type": "Field", "is_managerial": False, "years_exp": 0, "education": "High School", "skills": "Quality Control, Inspection, Documentation", "family": "Quality Assurance", "reporting_level": 7},
+        
+        # Customer Service
+        {"title": "Customer Service Manager", "level": "Mid", "category": "Customer Service", "min_salary": 28000, "max_salary": 40000, "dept": "Customer Service", "work_type": "Office", "is_managerial": True, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Customer Service Management, Team Leadership, Problem Solving", "family": "Customer Service", "reporting_level": 4},
+        {"title": "Customer Service Representative", "level": "Entry", "category": "Customer Service", "min_salary": 15000, "max_salary": 22000, "dept": "Customer Service", "work_type": "Office", "is_managerial": False, "years_exp": 0, "education": "High School", "skills": "Customer Service, Communication, Problem Solving", "family": "Customer Service", "reporting_level": 7},
+        {"title": "Customer Service Team Lead", "level": "Mid", "category": "Customer Service", "min_salary": 22000, "max_salary": 30000, "dept": "Customer Service", "work_type": "Office", "is_managerial": True, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Team Leadership, Customer Service, Training", "family": "Customer Service", "reporting_level": 5},
+        
+        # Research & Development
+        {"title": "R&D Manager", "level": "Mid", "category": "Research & Development", "min_salary": 35000, "max_salary": 50000, "dept": "Research & Development", "work_type": "Office", "is_managerial": True, "years_exp": 5, "education": "Master's Degree", "skills": "R&D Management, Innovation, Project Management", "family": "Research & Development", "reporting_level": 4},
+        {"title": "R&D Specialist", "level": "Entry", "category": "Research & Development", "min_salary": 25000, "max_salary": 38000, "dept": "Research & Development", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Research, Analysis, Innovation", "family": "Research & Development", "reporting_level": 7},
+        {"title": "Product Development Specialist", "level": "Entry", "category": "Research & Development", "min_salary": 24000, "max_salary": 36000, "dept": "Research & Development", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Product Development, Market Research, Innovation", "family": "Research & Development", "reporting_level": 7},
+        
+        # Administration
+        {"title": "Office Manager", "level": "Mid", "category": "Administration", "min_salary": 24000, "max_salary": 34000, "dept": "Administration", "work_type": "Office", "is_managerial": True, "years_exp": 3, "education": "Bachelor's Degree", "skills": "Office Management, Administration, Coordination", "family": "Administration", "reporting_level": 4},
+        {"title": "Administrative Assistant", "level": "Entry", "category": "Administration", "min_salary": 14000, "max_salary": 20000, "dept": "Administration", "work_type": "Office", "is_managerial": False, "years_exp": 0, "education": "High School", "skills": "Administration, Communication, Organization", "family": "Administration", "reporting_level": 7},
+        {"title": "Executive Assistant", "level": "Entry", "category": "Administration", "min_salary": 18000, "max_salary": 26000, "dept": "Administration", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Executive Support, Communication, Organization", "family": "Administration", "reporting_level": 6},
+        
+        # Supply Chain & Procurement
+        {"title": "Procurement Manager", "level": "Mid", "category": "Procurement", "min_salary": 30000, "max_salary": 45000, "dept": "Operations", "work_type": "Office", "is_managerial": True, "years_exp": 4, "education": "Bachelor's Degree", "skills": "Procurement, Negotiation, Supply Chain", "family": "Procurement", "reporting_level": 4},
+        {"title": "Procurement Specialist", "level": "Entry", "category": "Procurement", "min_salary": 20000, "max_salary": 30000, "dept": "Operations", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Procurement, Vendor Management, Negotiation", "family": "Procurement", "reporting_level": 7},
+        {"title": "Supply Chain Analyst", "level": "Entry", "category": "Procurement", "min_salary": 22000, "max_salary": 32000, "dept": "Operations", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Supply Chain, Analysis, Logistics", "family": "Procurement", "reporting_level": 7},
+        
+        # Data & Analytics
+        {"title": "Data Analyst", "level": "Entry", "category": "Analytics", "min_salary": 22000, "max_salary": 34000, "dept": "IT", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Data Analysis, SQL, Excel, Visualization", "family": "Analytics", "reporting_level": 7},
+        {"title": "Business Analyst", "level": "Entry", "category": "Analytics", "min_salary": 24000, "max_salary": 36000, "dept": "IT", "work_type": "Office", "is_managerial": False, "years_exp": 2, "education": "Bachelor's Degree", "skills": "Business Analysis, Requirements, Process Mapping", "family": "Analytics", "reporting_level": 7},
+        {"title": "Data Scientist", "level": "Mid", "category": "Analytics", "min_salary": 32000, "max_salary": 48000, "dept": "IT", "work_type": "Remote", "is_managerial": False, "years_exp": 3, "education": "Master's Degree", "skills": "Data Science, Machine Learning, Statistics", "family": "Analytics", "reporting_level": 6},
     ]
     
     def __init__(self, faker: Faker, departments_df: pd.DataFrame):
@@ -274,7 +347,7 @@ class JobGenerator(DataGenerator):
         self.dept_name_to_id = dict(zip(departments_df["department_name"], departments_df["department_id"]))
     
     def generate_jobs(self) -> pd.DataFrame:
-        """Generate job position data"""
+        """Generate comprehensive job position data"""
         jobs = []
         
         for i, job in enumerate(self.JOBS):
@@ -282,11 +355,18 @@ class JobGenerator(DataGenerator):
                 "job_id": id_generator.generate_id('dim_jobs'),
                 "job_title": job["title"],
                 "job_level": job["level"],
+                "job_category": job["category"],
                 "min_salary": job["min_salary"],
                 "max_salary": job["max_salary"],
                 "department_id": self.dept_name_to_id[job["dept"]],
                 "work_type": job["work_type"],
-                "description": f"{job['level']} level {job['title']} position",
+                "is_managerial": job["is_managerial"],
+                "years_experience_required": job["years_exp"],
+                "education_required": job["education"],
+                "skills_required": job["skills"],
+                "job_family": job["family"],
+                "reporting_level": job["reporting_level"],
+                "description": f"{job['level']} level {job['title']} position in {job['category']}. Requires {job['years_exp']} years experience and {job['education']}.",
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
@@ -356,23 +436,39 @@ class EmployeeGenerator(DataGenerator):
                 first_name = self.faker.first_name_female()
                 last_name = self.faker.last_name_female()
             
-            # Generate employment type and work setup based on job characteristics
+            # Generate employment type based on hire date and job characteristics
+            today = datetime.now().date()
+            hire_date_obj = hire_date if isinstance(hire_date, date) else hire_date.date()
+            months_employed = (today - hire_date_obj).days / 30.44  # Average days per month
             job_title = str(job.get("job_title", ""))
             
-            # Employment type logic
+            # Employment type logic based on tenure
             if "Intern" in job_title or "Trainee" in job_title:
                 employment_type = "Intern"
             elif "Consultant" in job_title or "Advisor" in job_title:
                 employment_type = "Consultant"
-            elif "Manager" in job_title or "Director" in job_title:
+            elif months_employed <= 6:
+                # Hired in past 6 months = Probationary (unless terminated before completing 6 months)
+                if termination_date:
+                    termination_date_obj = termination_date if isinstance(termination_date, date) else termination_date.date()
+                    months_until_termination = (termination_date_obj - hire_date_obj).days / 30.44
+                    if months_until_termination <= 6:
+                        employment_type = "Probationary"  # Terminated during probation
+                    else:
+                        employment_type = "Regular"  # Completed probation then terminated
+                else:
+                    employment_type = "Probationary"  # Currently in probation
+            elif "Manager" in job_title or "Director" in job_title or "Executive" in job_title:
+                # Management roles are typically Regular or Contract
                 employment_type = random.choice(["Regular", "Contract"])
             elif "Sales" in job_title and random.random() < 0.3:
                 employment_type = "Commission-Based"
             else:
-                # 70% Regular, 15% Contract, 10% Probationary, 5% others
+                # For employees with more than 6 months tenure
+                # 80% Regular, 15% Contract, 5% others
                 employment_type = random.choices(
-                    ["Regular", "Contract", "Probationary", "Project-Based", "Part-Time"],
-                    weights=[70, 15, 10, 3, 2]
+                    ["Regular", "Contract", "Project-Based", "Part-Time"],
+                    weights=[80, 15, 3, 2]
                 )[0]
             
             # Work setup logic

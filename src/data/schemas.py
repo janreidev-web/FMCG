@@ -127,15 +127,22 @@ DIM_JOBS = TableSchema(
         {"name": "job_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "job_title", "type": "STRING", "mode": "REQUIRED"},
         {"name": "job_level", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "job_category", "type": "STRING", "mode": "REQUIRED"},
         {"name": "min_salary", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "max_salary", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "department_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "work_type", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "is_managerial", "type": "BOOLEAN", "mode": "REQUIRED"},
+        {"name": "years_experience_required", "type": "INTEGER", "mode": "REQUIRED"},
+        {"name": "education_required", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "skills_required", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "job_family", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "reporting_level", "type": "INTEGER", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
         {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
         {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
     ],
-    description="Job positions with salary ranges and work arrangements"
+    description="Comprehensive job positions with detailed attributes, salary ranges, and career progression"
 )
 
 DIM_CAMPAIGNS = TableSchema(
