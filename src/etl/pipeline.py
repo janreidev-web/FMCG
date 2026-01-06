@@ -265,11 +265,14 @@ class ETLPipeline:
                 elif order_date >= jan_2026 and order_date <= today - timedelta(days=3):
                     # Recent orders from 2026 (but not too recent) are shipped or delivered
                     delivery_status = random.choice(["Shipped", "Delivered"])
-                    delivery_date = order_date + timedelta(days=random.randint(1, 7))
+                    if delivery_status == "Delivered":
+                        delivery_date = order_date + timedelta(days=random.randint(1, 7))
+                    else:  # Shipped items don't have delivery date yet
+                        delivery_date = None
                 else:
                     # Very recent orders (first week of January 2026) are pending or shipped
                     delivery_status = random.choice(["Pending", "Shipped"])
-                    delivery_date = order_date + timedelta(days=random.randint(2, 10)) if delivery_status == "Shipped" else None
+                    delivery_date = None  # Neither pending nor shipped have delivery dates
                 
                 sale = {
                     "sale_id": self.id_generator.generate_id('fact_sales'),
@@ -492,8 +495,8 @@ class ETLPipeline:
                 
                 # Adjust salary based on employment status
                 termination_date = employee.get("termination_date")
-                if termination_date and pd.notna(termination_date) and current_date.date() >= termination_date:
-                    # Terminated employees - no salary
+                if termination_date and pd.notna(termination_date) and current_date.date() > termination_date:
+                    # Terminated employees - no salary AFTER termination date
                     base_salary = 0.0
                     cost_of_living_adjustment = 0.0
                     performance_bonus = 0.0
@@ -512,12 +515,12 @@ class ETLPipeline:
                     meal_allowance = 0.0
                     communication_allowance = 0.0
                     hazard_pay = 0.0
-                    performance_rating = None
+                    performance_rating = 0.0
                     training_hours_completed = 0.0
                     sick_days_used = 0.0
                     vacation_days_used = 0.0
                 else:
-                    # Active employees - comprehensive compensation
+                    # Active employees (including those working up to their termination date)
                     hire_date = employee.get("hire_date")
                     if hire_date and pd.notna(hire_date):
                         years_worked = (current_date.date() - hire_date).days / 365.25
@@ -700,12 +703,14 @@ class ETLPipeline:
         self.logger.info("Starting incremental update...")
         
         try:
-            # Generate new sales data for today
-            today_sales_df = self._generate_daily_sales(config)
+            # Generate new sales data for yesterday
+            yesterday_sales_df = self._generate_daily_sales(config)
             
-            if len(today_sales_df) > 0:
-                self.bigquery_client.load_dataframe(today_sales_df, "fact_sales", "WRITE_APPEND")
-                self.logger.info(f"Added {len(today_sales_df)} new sales records")
+            if len(yesterday_sales_df) > 0:
+                self.bigquery_client.load_dataframe(yesterday_sales_df, "fact_sales", "WRITE_APPEND")
+                self.logger.info(f"Added {len(yesterday_sales_df)} new sales records")
+            else:
+                self.logger.info("No new sales data to append (may already exist for target date)")
             
             self.logger.info("Incremental update completed")
             
@@ -723,10 +728,43 @@ class ETLPipeline:
         employees = self.bigquery_client.execute_query("SELECT * FROM dim_employees WHERE termination_date IS NULL")
         campaigns = self.bigquery_client.execute_query("SELECT * FROM dim_campaigns WHERE status = 'Active'")
         
+        # Get max sale_id from existing data to continue the sequence
+        try:
+            max_id_query = """
+                SELECT MAX(CAST(REGEXP_EXTRACT(sale_id, r'SAL(\\d+)') AS INT64)) as max_id 
+                FROM fact_sales 
+                WHERE sale_id LIKE 'SAL%'
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+                self.logger.info(f"Found max sale_id: {max_id}")
+            else:
+                max_id = 0
+                self.logger.info("No existing sales found, starting from ID 1")
+        except Exception as e:
+            self.logger.warning(f"Could not get max sale_id: {e}, starting from 1")
+            max_id = 0
+        
+        # Check if sales already exist for target date to avoid duplicates
+        target_date = datetime.now().date() - timedelta(days=1)
+        try:
+            existing_count_query = f"""
+                SELECT COUNT(*) as count 
+                FROM fact_sales 
+                WHERE DATE(order_date) = '{target_date}'
+            """
+            existing_result = self.bigquery_client.execute_query(existing_count_query)
+            if len(existing_result) > 0 and existing_result.iloc[0]['count'] > 0:
+                existing_count = existing_result.iloc[0]['count']
+                self.logger.warning(f"Found {existing_count} existing sales for {target_date}, skipping generation")
+                return pd.DataFrame()  # Return empty DataFrame
+        except Exception as e:
+            self.logger.warning(f"Could not check existing sales: {e}")
+        
         sales = []
-        sale_id = 1
         # Generate for yesterday specifically (so daily workflow can run today)
-        current_date = datetime.now().date() - timedelta(days=1)
+        current_date = target_date
         
         self.logger.info(f"Generating daily sales for {current_date}")
         
@@ -742,7 +780,7 @@ class ETLPipeline:
         
         self.logger.info(f"Generating {total_transactions} transactions for {current_date}")
         
-        for _ in range(total_transactions):
+        for i in range(total_transactions):
             product = products.sample(1).iloc[0]
             retailer = retailers.sample(1).iloc[0]
             employee = employees.sample(1).iloc[0]
@@ -777,10 +815,19 @@ class ETLPipeline:
             final_amount = total_amount * (1 - discount_rate)
             commission_amount = final_amount * commission_rate
             
-            employee = employees.sample(1).iloc[0]
+            # Generate proper sale_id using the ID generator
+            sale_id = self.id_generator.generate_id('fact_sales')
+            
+            # Delivery status logic based on date (yesterday orders should be shipped/delivered)
+            delivery_status = random.choice(["Shipped", "Delivered"])
+            if delivery_status == "Delivered":
+                delivery_date = current_date + timedelta(days=random.randint(1, 3))
+            else:  # Shipped items don't have delivery date yet
+                delivery_date = None
             
             sale = {
-                "sale_id": f"SAL-{sale_id:08d}",
+                "sale_id": sale_id,
+                "date": current_date,  # Required field
                 "product_id": product["product_id"],
                 "retailer_id": retailer["retailer_id"],
                 "employee_id": employee["employee_id"],
@@ -792,15 +839,13 @@ class ETLPipeline:
                 "discount_amount": total_amount * discount_rate,
                 "final_amount": final_amount,
                 "commission_rate": commission_rate,
-                "commission_amount": commission_amount,
                 "order_date": current_date,
-                "delivery_date": current_date + timedelta(days=random.randint(1, 7)),
-                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
+                "delivery_date": delivery_date,
+                "delivery_status": delivery_status,
                 "created_at": datetime.combine(current_date, datetime.min.time()),
                 "updated_at": datetime.combine(current_date, datetime.min.time())
             }
             sales.append(sale)
-            sale_id += 1
         
         sales_df = pd.DataFrame(sales)
         self.logger.info(f"Generated {len(sales_df)} daily sales for {current_date}")
