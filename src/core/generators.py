@@ -493,6 +493,98 @@ class RetailerGenerator(DataGenerator):
         return pd.DataFrame(retailers)
 
 
+class BankGenerator(DataGenerator):
+    """Generate bank data"""
+    
+    def __init__(self, faker: Faker):
+        super().__init__(faker)
+        self.bank_names = [
+            "Banco de Oro", "Metropolitan Bank & Trust Company", "Bank of the Philippine Islands",
+            "LandBank of the Philippines", "Philippine National Bank", "Security Bank Corporation",
+            "UnionBank of the Philippines", "China Banking Corporation", "Rizal Commercial Banking Corporation",
+            "Philippine Bank of Communications", "Asian Development Bank", "Maybank Philippines",
+            "Citibank Philippines", "HSBC Philippines", "Standard Chartered Philippines"
+        ]
+        
+        self.bank_codes = [
+            "BDO", "MBTC", "BPI", "LANDBANK", "PNB", "SECB", 
+            "UBP", "CHINABANK", "RCBC", "PBCOM", "ADB", "MAYBANK",
+            "CITIBANK", "HSBC", "SCB"
+        ]
+        
+        self.account_types = ["Savings", "Checking", "Payroll", "Time Deposit"]
+    
+    def generate_banks(self, count: int = 15) -> pd.DataFrame:
+        """Generate bank data"""
+        banks = []
+        
+        for i in range(min(count, len(self.bank_names))):
+            bank = {
+                "bank_id": f"BNK-{i+1:03d}",
+                "bank_name": self.bank_names[i],
+                "bank_code": self.bank_codes[i],
+                "branch_name": f"{self.faker.city()} Branch",
+                "account_type": random.choice(self.account_types),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            banks.append(bank)
+        
+        return pd.DataFrame(banks)
+
+
+class InsuranceGenerator(DataGenerator):
+    """Generate insurance data"""
+    
+    def __init__(self, faker: Faker):
+        super().__init__(faker)
+        self.insurance_companies = [
+            "Philippine Health Insurance Corporation", "Social Security System", "Government Service Insurance System",
+            "Philam Life", "Sun Life of Canada", "Manulife Philippines", "AXA Philippines",
+            "Insular Life", "Prudentialife", "Pacific Cross Insurance", "Chartered Insurance",
+            "Malayan Insurance", "Mapfre Insurance", "Generali Philippines", "BPI/MS Insurance"
+        ]
+        
+        self.policy_types = [
+            "HMO", "Life Insurance", "Health Insurance", "Accident Insurance", 
+            "Disability Insurance", "Retirement Insurance", "Critical Illness Insurance"
+        ]
+    
+    def generate_insurance(self, count: int = 12) -> pd.DataFrame:
+        """Generate insurance data"""
+        insurance = []
+        
+        for i in range(min(count, len(self.insurance_companies))):
+            policy_type = random.choice(self.policy_types)
+            
+            # Generate realistic coverage and premium amounts based on policy type
+            if policy_type in ["HMO", "Health Insurance"]:
+                coverage = random.uniform(50000, 500000)
+                premium = random.uniform(1000, 8000)
+            elif policy_type == "Life Insurance":
+                coverage = random.uniform(500000, 5000000)
+                premium = random.uniform(5000, 25000)
+            elif policy_type == "Accident Insurance":
+                coverage = random.uniform(100000, 1000000)
+                premium = random.uniform(2000, 10000)
+            else:
+                coverage = random.uniform(100000, 2000000)
+                premium = random.uniform(3000, 15000)
+            
+            insurance_record = {
+                "insurance_id": f"INS-{i+1:03d}",
+                "insurance_name": self.insurance_companies[i],
+                "policy_type": policy_type,
+                "coverage_amount": round(coverage, 2),
+                "premium_amount": round(premium, 2),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            insurance.append(insurance_record)
+        
+        return pd.DataFrame(insurance)
+
+
 class CampaignGenerator(DataGenerator):
     """Generate marketing campaign data"""
     

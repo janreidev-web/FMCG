@@ -14,7 +14,7 @@ from ..utils.bigquery_client import BigQueryManager
 from ..utils.logger import default_logger
 from ..core.generators import (
     LocationGenerator, DepartmentGenerator, JobGenerator, EmployeeGenerator,
-    ProductGenerator, RetailerGenerator, CampaignGenerator
+    ProductGenerator, RetailerGenerator, CampaignGenerator, BankGenerator, InsuranceGenerator
 )
 
 
@@ -39,6 +39,8 @@ class ETLPipeline:
         # Initialize generators
         self.location_gen = LocationGenerator(self.faker)
         self.department_gen = DepartmentGenerator(self.faker)
+        self.bank_gen = BankGenerator(self.faker)
+        self.insurance_gen = InsuranceGenerator(self.faker)
         
         # Will be initialized after dependencies are created
         self.job_gen = None
@@ -91,15 +93,35 @@ class ETLPipeline:
         departments_df = self.department_gen.generate_departments()
         self.data_cache["dim_departments"] = departments_df
         
+        # Generate banks (needed for employees)
+        banks_df = self.bank_gen.generate_banks(15)
+        self.data_cache["dim_banks"] = banks_df
+        
+        # Generate insurance (needed for employees)
+        insurance_df = self.insurance_gen.generate_insurance(12)
+        self.data_cache["dim_insurance"] = insurance_df
+        
         # Generate jobs (depends on departments)
         self.job_gen = JobGenerator(self.faker, departments_df)
         jobs_df = self.job_gen.generate_jobs()
         self.data_cache["dim_jobs"] = jobs_df
         
-        # Generate employees (depends on departments, jobs, locations)
+        # Generate employees (depends on departments, jobs, locations, banks, insurance)
         employee_count = config.get("initial_employees", 350)
         self.employee_gen = EmployeeGenerator(self.faker, departments_df, jobs_df, locations_df)
         employees_df = self.employee_gen.generate_employees(employee_count)
+        
+        # Assign bank_id and insurance_id to employees
+        # Assign random bank to 80% of employees
+        employees_with_banks = employees_df.sample(frac=0.8, random_state=42).index
+        for idx in employees_with_banks:
+            employees_df.loc[idx, 'bank_id'] = banks_df.sample(1).iloc[0]['bank_id']
+        
+        # Assign random insurance to 90% of employees
+        employees_with_insurance = employees_df.sample(frac=0.9, random_state=42).index
+        for idx in employees_with_insurance:
+            employees_df.loc[idx, 'insurance_id'] = insurance_df.sample(1).iloc[0]['insurance_id']
+        
         self.data_cache["dim_employees"] = employees_df
         
         # Generate products and related dimensions
