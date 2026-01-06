@@ -334,8 +334,10 @@ class EmployeeGenerator(DataGenerator):
             
             # 10% chance of being terminated
             termination_date = None
+            status = "Active"
             if random.random() < 0.1:
                 termination_date = self.faker.date_between(start_date=hire_date, end_date="today")
+                status = "Terminated"
             
             # Generate gender first, then name to match
             gender = random.choice(["Male", "Female"])
@@ -359,9 +361,10 @@ class EmployeeGenerator(DataGenerator):
                 "job_id": job["job_id"],
                 "hire_date": hire_date,
                 "termination_date": termination_date,
+                "status": status,
                 "location_id": location["location_id"],
-                "bank_id": None,  # Will be set after bank generation
-                "insurance_id": None,  # Will be set after insurance generation
+                "bank_id": f"BNK-{random.randint(1, 15):03d}",  # Always assign a bank
+                "insurance_id": f"INS-{random.randint(1, 12):03d}",  # Always assign insurance
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
@@ -523,7 +526,6 @@ class BankGenerator(DataGenerator):
                 "bank_id": f"BNK-{i+1:03d}",
                 "bank_name": self.bank_names[i],
                 "bank_code": self.bank_codes[i],
-                "branch_name": f"{self.faker.city()} Branch",
                 "account_type": random.choice(self.account_types),
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
@@ -595,26 +597,52 @@ class CampaignGenerator(DataGenerator):
     ]
     
     def generate_campaigns(self, count: int) -> pd.DataFrame:
-        """Generate marketing campaign data"""
+        """Generate marketing campaign data spanning from 2015 to present"""
         campaigns = []
         
-        for i in range(count):
-            start_date = self.faker.date_between(start_date="-2y", end_date="today")
-            duration = random.randint(30, 180)  # 1-6 months
-            end_date = start_date + timedelta(days=duration)
-            
-            campaign = {
-                "campaign_id": id_generator.generate_id('dim_campaigns'),
-                "campaign_name": f"Campaign {i+1}: {random.choice(self.CAMPAIGN_TYPES)}",
-                "campaign_type": random.choice(self.CAMPAIGN_TYPES),
-                "start_date": start_date,
-                "end_date": end_date,
-                "budget": random.uniform(50000, 500000),
-                "target_audience": random.choice(["All Customers", "Young Adults", "Families", "Business Owners"]),
-                "status": random.choice(["Active", "Completed", "Planned", "Cancelled"]),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now()
-            }
-            campaigns.append(campaign)
+        # Calculate campaigns per year to distribute evenly
+        current_year = datetime.now().year
+        years_span = current_year - 2015 + 1  # Include current year
+        campaigns_per_year = max(1, count // years_span)
+        
+        campaign_index = 0
+        for year in range(2015, current_year + 1):
+            year_campaigns = min(campaigns_per_year, count - campaign_index)
+            if year_campaigns <= 0:
+                break
+                
+            for i in range(year_campaigns):
+                # Start campaigns throughout the year
+                start_month = random.randint(1, 12)
+                start_day = random.randint(1, 28)  # Avoid month-end issues
+                start_date = datetime(year, start_month, start_day).date()
+                
+                # Duration of 3-5 months (90-150 days)
+                duration = random.randint(90, 150)
+                end_date = start_date + timedelta(days=duration)
+                
+                # Determine status based on dates
+                today = datetime.now().date()
+                if end_date < today:
+                    status = random.choice(["Completed", "Cancelled"])
+                elif start_date > today:
+                    status = "Planned"
+                else:
+                    status = "Active"
+                
+                campaign = {
+                    "campaign_id": id_generator.generate_id('dim_campaigns'),
+                    "campaign_name": f"Campaign {campaign_index+1}: {random.choice(self.CAMPAIGN_TYPES)}",
+                    "campaign_type": random.choice(self.CAMPAIGN_TYPES),
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "budget": random.uniform(50000, 500000),
+                    "target_audience": random.choice(["All Customers", "Young Adults", "Families", "Business Owners"]),
+                    "status": status,
+                    "created_at": datetime.now(),
+                    "updated_at": datetime.now()
+                }
+                campaigns.append(campaign)
+                campaign_index += 1
         
         return pd.DataFrame(campaigns)

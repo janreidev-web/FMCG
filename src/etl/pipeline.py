@@ -12,6 +12,7 @@ from faker import Faker
 from ..data.schemas import ALL_SCHEMAS, get_bigquery_schema
 from ..utils.bigquery_client import BigQueryManager
 from ..utils.logger import default_logger
+from ..utils.id_generation import IDGenerator
 from ..core.generators import (
     LocationGenerator, DepartmentGenerator, JobGenerator, EmployeeGenerator,
     ProductGenerator, RetailerGenerator, CampaignGenerator, BankGenerator, InsuranceGenerator
@@ -41,6 +42,7 @@ class ETLPipeline:
         self.department_gen = DepartmentGenerator(self.faker)
         self.bank_gen = BankGenerator(self.faker)
         self.insurance_gen = InsuranceGenerator(self.faker)
+        self.id_generator = IDGenerator()
         
         # Will be initialized after dependencies are created
         self.job_gen = None
@@ -54,11 +56,11 @@ class ETLPipeline:
         
         # Retailer-specific transaction ranges (in PHP) - scaled for ₱20B/11years target
         self.retailer_transaction_ranges = {
-            "Sari-Sari Store": {"min_qty": 1, "max_qty": 5, "min_amount": 10, "max_amount": 300, "daily_transactions": (10, 30)},
-            "Convenience Store": {"min_qty": 1, "max_qty": 10, "min_amount": 300, "max_amount": 1200, "daily_transactions": (5, 15)},
-            "Pharmacy": {"min_qty": 1, "max_qty": 15, "min_amount": 600, "max_amount": 3000, "daily_transactions": (3, 8)},
-            "Wholesale": {"min_qty": 10, "max_qty": 100, "min_amount": 1200, "max_amount": 8000, "daily_transactions": (1, 3)},
-            "Supermarket": {"min_qty": 5, "max_qty": 50, "min_amount": 2000, "max_amount": 6000, "daily_transactions": (2, 6)},
+            "Sari-Sari Store": {"min_qty": 5, "max_qty": 50, "min_amount": 50, "max_amount": 3000, "daily_transactions": (10, 30)},
+            "Convenience Store": {"min_qty": 10, "max_qty": 100, "min_amount": 3000, "max_amount": 15000, "daily_transactions": (5, 15)},
+            "Pharmacy": {"min_qty": 2, "max_qty": 20, "min_amount": 15000, "max_amount": 25000, "daily_transactions": (3, 8)},
+            "Wholesale": {"min_qty": 50, "max_qty": 500, "min_amount": 25000, "max_amount": 100000, "daily_transactions": (2, 6)},
+            "Supermarket": {"min_qty": 20, "max_qty": 200, "min_amount": 50000, "max_amount": 75000, "daily_transactions": (3, 10)},
             "Department Store": {"min_qty": 3, "max_qty": 30, "min_amount": 3000, "max_amount": 8000, "daily_transactions": (1, 4)}
         }
     
@@ -110,17 +112,6 @@ class ETLPipeline:
         employee_count = config.get("initial_employees", 350)
         self.employee_gen = EmployeeGenerator(self.faker, departments_df, jobs_df, locations_df)
         employees_df = self.employee_gen.generate_employees(employee_count)
-        
-        # Assign bank_id and insurance_id to employees
-        # Assign random bank to 80% of employees
-        employees_with_banks = employees_df.sample(frac=0.8, random_state=42).index
-        for idx in employees_with_banks:
-            employees_df.loc[idx, 'bank_id'] = banks_df.sample(1).iloc[0]['bank_id']
-        
-        # Assign random insurance to 90% of employees
-        employees_with_insurance = employees_df.sample(frac=0.9, random_state=42).index
-        for idx in employees_with_insurance:
-            employees_df.loc[idx, 'insurance_id'] = insurance_df.sample(1).iloc[0]['insurance_id']
         
         self.data_cache["dim_employees"] = employees_df
         
@@ -222,6 +213,8 @@ class ETLPipeline:
         total_generated = 0
         
         current_date = start_date
+        today = datetime.now().date()
+        jan_2026 = datetime(2026, 1, 1).date()
         
         while current_date <= end_date:
             # Calculate daily transactions with variation
@@ -263,8 +256,23 @@ class ETLPipeline:
                 final_amount = total_amount * (1 - discount_rate)
                 commission_amount = final_amount * commission_rate
                 
+                # Determine delivery status based on date
+                order_date = current_date.date()
+                if order_date <= datetime(2025, 12, 31).date():
+                    # Orders from 2015-2025 are already delivered
+                    delivery_status = "Delivered"
+                    delivery_date = order_date + timedelta(days=random.randint(1, 14))
+                elif order_date >= jan_2026 and order_date <= today - timedelta(days=3):
+                    # Recent orders from 2026 (but not too recent) are shipped or delivered
+                    delivery_status = random.choice(["Shipped", "Delivered"])
+                    delivery_date = order_date + timedelta(days=random.randint(1, 7))
+                else:
+                    # Very recent orders (first week of January 2026) are pending or shipped
+                    delivery_status = random.choice(["Pending", "Shipped"])
+                    delivery_date = order_date + timedelta(days=random.randint(2, 10)) if delivery_status == "Shipped" else None
+                
                 sale = {
-                    "sale_id": f"SAL-{sale_id:08d}",
+                    "sale_id": self.id_generator.generate_id('fact_sales'),
                     "product_id": product["product_id"],
                     "retailer_id": retailer["retailer_id"],
                     "employee_id": employee["employee_id"],
@@ -277,16 +285,15 @@ class ETLPipeline:
                     "final_amount": final_amount,
                     "commission_rate": commission_rate,
                     "commission_amount": commission_amount,
-                    "order_date": current_date.date(),
-                    "delivery_date": current_date.date() + timedelta(days=random.randint(1, 7)),
-                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
-                    "created_at": current_date,
-                    "updated_at": current_date
+                    "order_date": order_date,
+                    "delivery_date": delivery_date,
+                    "delivery_status": delivery_status,
+                    "created_at": current_date
                 }
                 sales.append(sale)
                 sale_id += 1
+                total_generated += 1
             
-            total_generated += daily_tx
             current_date += timedelta(days=1)
         
         # Convert to DataFrame
@@ -366,8 +373,8 @@ class ETLPipeline:
         costs = []
         cost_id = 1
         
-        # Generate monthly costs for the last 2 years
-        start_date = datetime.now() - timedelta(days=730)
+        # Generate monthly costs from 2015 to present
+        start_date = datetime(2015, 1, 1)
         
         current_date = start_date
         while current_date <= datetime.now():
@@ -429,7 +436,7 @@ class ETLPipeline:
                 amount = daily_budget * random.uniform(0.5, 2.0)
                 
                 cost_record = {
-                    "marketing_cost_id": marketing_cost_id,
+                    "marketing_cost_id": self.id_generator.generate_id('fact_marketing_costs'),
                     "date": current_date,
                     "campaign_id": campaign["campaign_id"],
                     "cost_category": cost_category,
@@ -445,14 +452,14 @@ class ETLPipeline:
         return pd.DataFrame(marketing_costs)
     
     def _generate_employee_facts(self, config: Dict[str, Any]) -> pd.DataFrame:
-        """Generate employee fact data with dynamic salaries and metrics"""
+        """Generate comprehensive employee fact data with detailed compensation"""
         employees = self.data_cache["dim_employees"]
         jobs = self.data_cache["dim_jobs"]
         
         employee_facts = []
         employee_fact_id = 1
         
-        # Generate monthly employee facts for the last 6 months (reduced from 2 years)
+        # Generate monthly employee facts for the last 6 months
         start_date = datetime.now() - timedelta(days=180)
         
         current_date = start_date
@@ -463,63 +470,147 @@ class ETLPipeline:
                 min_salary = job_info["min_salary"]
                 max_salary = job_info["max_salary"]
                 
-                # Dynamic salary calculation
+                # Base salary calculation
                 base_salary = random.uniform(min_salary, max_salary)
                 
                 # Adjust salary based on employment status
                 termination_date = employee.get("termination_date")
                 if termination_date and pd.notna(termination_date) and current_date.date() >= termination_date:
                     # Terminated employees - no salary
-                    salary = 0.0
-                    bonus = 0.0
+                    base_salary = 0.0
+                    cost_of_living_adjustment = 0.0
+                    performance_bonus = 0.0
+                    quarterly_bonus = 0.0
+                    overtime_hours = 0.0
                     overtime_pay = 0.0
+                    holiday_pay = 0.0
+                    night_shift_differential = 0.0
                     commission_earned = 0.0
+                    sales_target = 0.0
+                    sales_achieved = 0.0
+                    attendance_bonus = 0.0
+                    productivity_bonus = 0.0
+                    training_allowance = 0.0
+                    transport_allowance = 0.0
+                    meal_allowance = 0.0
+                    communication_allowance = 0.0
+                    hazard_pay = 0.0
                     performance_rating = None
+                    training_hours_completed = 0.0
+                    sick_days_used = 0.0
+                    vacation_days_used = 0.0
                 else:
-                    # Active employees - dynamic salary with raises
+                    # Active employees - comprehensive compensation
                     hire_date = employee.get("hire_date")
                     if hire_date and pd.notna(hire_date):
                         years_worked = (current_date.date() - hire_date).days / 365.25
                         annual_raise = 0.03  # 3% annual raise
-                        salary = base_salary * (1 + annual_raise * years_worked)
-                    else:
-                        salary = base_salary
+                        base_salary = base_salary * (1 + annual_raise * years_worked)
                     
-                    # Performance-based bonus (quarterly)
-                    if current_date.month % 3 == 0:  # Quarterly bonus
-                        performance_rating = random.uniform(3.0, 5.0)
-                        bonus = salary * 0.1 * performance_rating / 4.0  # 10% of salary quarterly
-                    else:
-                        performance_rating = random.uniform(3.0, 5.0)
-                        bonus = 0.0
+                    # Cost of living adjustment (quarterly)
+                    cost_of_living_adjustment = base_salary * 0.02 if current_date.month % 3 == 0 else 0.0
                     
-                    # Overtime for some employees
-                    if random.random() < 0.3:  # 30% chance of overtime
-                        overtime_rate = salary / 160 * 1.5  # 1.5x rate for overtime
-                        overtime_pay = random.uniform(5, 20) * overtime_rate
+                    # Performance bonus (quarterly)
+                    if current_date.month % 3 == 0:
+                        performance_rating = random.uniform(3.0, 5.0)
+                        performance_bonus = base_salary * 0.1 * performance_rating / 4.0
+                        quarterly_bonus = base_salary * 0.05
                     else:
+                        performance_rating = random.uniform(3.0, 5.0)
+                        performance_bonus = 0.0
+                        quarterly_bonus = 0.0
+                    
+                    # Overtime (30% chance)
+                    if random.random() < 0.3:
+                        overtime_hours = random.uniform(5, 25)
+                        overtime_rate = base_salary / 160 * 1.5  # 1.5x rate
+                        overtime_pay = overtime_hours * overtime_rate
+                    else:
+                        overtime_hours = 0.0
                         overtime_pay = 0.0
+                    
+                    # Holiday pay (if holiday in month)
+                    holiday_pay = base_salary / 160 * 8 * 1.5 if random.random() < 0.2 else 0.0
+                    
+                    # Night shift differential (20% chance)
+                    night_shift_differential = base_salary * 0.1 if random.random() < 0.2 else 0.0
                     
                     # Commission for sales roles
                     job_title = str(job_info.get("job_title", ""))
                     if "Sales" in job_title:
-                        commission_earned = random.uniform(1000, 5000)
+                        sales_target = random.uniform(50000, 200000)
+                        sales_achieved = sales_target * random.uniform(0.8, 1.2)
+                        commission_rate = 0.05
+                        commission_earned = sales_achieved * commission_rate
                     else:
+                        sales_target = 0.0
+                        sales_achieved = 0.0
                         commission_earned = 0.0
+                    
+                    # Various allowances
+                    attendance_bonus = base_salary * 0.02 if random.random() < 0.8 else 0.0
+                    productivity_bonus = base_salary * 0.03 if random.random() < 0.6 else 0.0
+                    training_allowance = 5000 if random.random() < 0.3 else 0.0
+                    transport_allowance = 2000
+                    meal_allowance = 3000
+                    communication_allowance = 1000
+                    hazard_pay = base_salary * 0.05 if job_title in ["Operations", "Quality Assurance"] and random.random() < 0.5 else 0.0
+                    
+                    # Training and leave
+                    training_hours_completed = random.uniform(0, 20) if random.random() < 0.4 else 0.0
+                    sick_days_used = random.uniform(0, 2) if random.random() < 0.3 else 0.0
+                    vacation_days_used = random.uniform(0, 3) if random.random() < 0.4 else 0.0
                 
-                # Total compensation
-                total_compensation = salary + bonus + overtime_pay + commission_earned
+                # Calculate compensation totals
+                gross_compensation = (base_salary + cost_of_living_adjustment + performance_bonus + 
+                                    quarterly_bonus + overtime_pay + holiday_pay + night_shift_differential + 
+                                    commission_earned + attendance_bonus + productivity_bonus + 
+                                    training_allowance + transport_allowance + meal_allowance + 
+                                    communication_allowance + hazard_pay)
+                
+                # Philippine deductions (approximately)
+                tax_withheld = gross_compensation * 0.15 if gross_compensation > 20000 else gross_compensation * 0.10
+                sss_contribution = min(gross_compensation * 0.045, 900) if gross_compensation > 0 else 0
+                philhealth_contribution = min(gross_compensation * 0.0275, 1100) if gross_compensation > 0 else 0
+                pagibig_contribution = min(gross_compensation * 0.02, 400) if gross_compensation > 0 else 0
+                
+                total_deductions = tax_withheld + sss_contribution + philhealth_contribution + pagibig_contribution
+                net_compensation = gross_compensation - total_deductions
+                total_compensation = gross_compensation  # For compatibility
                 
                 employee_fact = {
                     "employee_fact_id": f"EF-{employee_fact_id:08d}",
                     "employee_id": employee["employee_id"],
                     "date": current_date.date(),
-                    "salary": round(salary, 2),
-                    "bonus": round(bonus, 2) if bonus > 0 else None,
+                    "base_salary": round(base_salary, 2),
+                    "cost_of_living_adjustment": round(cost_of_living_adjustment, 2) if cost_of_living_adjustment > 0 else None,
+                    "performance_bonus": round(performance_bonus, 2) if performance_bonus > 0 else None,
+                    "quarterly_bonus": round(quarterly_bonus, 2) if quarterly_bonus > 0 else None,
+                    "overtime_hours": round(overtime_hours, 1) if overtime_hours > 0 else None,
                     "overtime_pay": round(overtime_pay, 2) if overtime_pay > 0 else None,
+                    "holiday_pay": round(holiday_pay, 2) if holiday_pay > 0 else None,
+                    "night_shift_differential": round(night_shift_differential, 2) if night_shift_differential > 0 else None,
                     "commission_earned": round(commission_earned, 2) if commission_earned > 0 else None,
+                    "sales_target": round(sales_target, 2) if sales_target > 0 else None,
+                    "sales_achieved": round(sales_achieved, 2) if sales_achieved > 0 else None,
+                    "attendance_bonus": round(attendance_bonus, 2) if attendance_bonus > 0 else None,
+                    "productivity_bonus": round(productivity_bonus, 2) if productivity_bonus > 0 else None,
+                    "training_allowance": round(training_allowance, 2) if training_allowance > 0 else None,
+                    "transport_allowance": round(transport_allowance, 2),
+                    "meal_allowance": round(meal_allowance, 2),
+                    "communication_allowance": round(communication_allowance, 2),
+                    "hazard_pay": round(hazard_pay, 2) if hazard_pay > 0 else None,
                     "total_compensation": round(total_compensation, 2),
+                    "gross_compensation": round(gross_compensation, 2),
+                    "tax_withheld": round(tax_withheld, 2) if tax_withheld > 0 else None,
+                    "sss_contribution": round(sss_contribution, 2) if sss_contribution > 0 else None,
+                    "philhealth_contribution": round(philhealth_contribution, 2) if philhealth_contribution > 0 else None,
+                    "pagibig_contribution": round(pagibig_contribution, 2) if pagibig_contribution > 0 else None,
+                    "net_compensation": round(net_compensation, 2),
                     "performance_rating": performance_rating if performance_rating and performance_rating > 0 else None,
+                    "training_hours_completed": round(training_hours_completed, 1) if training_hours_completed > 0 else None,
+                    "sick_days_used": round(sick_days_used, 1) if sick_days_used > 0 else None,
+                    "vacation_days_used": round(vacation_days_used, 1) if vacation_days_used > 0 else None,
                     "created_at": current_date
                 }
                 employee_facts.append(employee_fact)
