@@ -5,7 +5,7 @@ ETL pipeline for FMCG Data Analytics Platform
 import random
 import os
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from typing import Dict, List, Any, Optional
 from faker import Faker
 
@@ -328,8 +328,8 @@ class ETLPipeline:
         inventory = []
         inventory_id = 1
         
-        # Generate monthly inventory snapshots for the last 2 years
-        start_date = datetime.now() - timedelta(days=730)  # 2 years ago
+        # Generate monthly inventory snapshots from company founding (2015-01-01) to present
+        start_date = datetime(2015, 1, 1)
         
         current_date = start_date
         while current_date <= datetime.now():
@@ -440,7 +440,6 @@ class ETLPipeline:
                 amount = daily_budget * random.uniform(0.5, 2.0)
                 
                 cost_record = {
-                    "marketing_cost_id": self.id_generator.generate_id('fact_marketing_costs'),
                     "date": current_date,
                     "campaign_id": campaign["campaign_id"],
                     "cost_category": cost_category,
@@ -449,34 +448,71 @@ class ETLPipeline:
                     "created_at": current_date
                 }
                 marketing_costs.append(cost_record)
-                marketing_cost_id += 1
                 
                 current_date += timedelta(days=random.randint(1, 7))
         
-        return pd.DataFrame(marketing_costs)
+        # Convert to DataFrame and sort by date
+        marketing_costs_df = pd.DataFrame(marketing_costs)
+        marketing_costs_df = marketing_costs_df.sort_values('date').reset_index(drop=True)
+        
+        # Assign IDs in chronological order
+        for idx, row in marketing_costs_df.iterrows():
+            marketing_costs_df.at[idx, 'marketing_cost_id'] = self.id_generator.generate_id('fact_marketing_costs')
+        
+        return marketing_costs_df
     
     def _generate_employee_facts(self, config: Dict[str, Any]) -> pd.DataFrame:
-        """Generate comprehensive employee fact data with detailed compensation"""
+        """Generate comprehensive employee fact data based on actual employee tenure"""
         employees = self.data_cache["dim_employees"]
         jobs = self.data_cache["dim_jobs"]
         
         employee_facts = []
         employee_fact_id = 1
         
-        # Generate monthly employee facts for the last 6 months
-        start_date = datetime.now() - timedelta(days=180)
+        self.logger.info(f"Generating employee facts for {len(employees)} employees based on actual tenure")
         
-        current_date = start_date
-        while current_date <= datetime.now():
-            for _, employee in employees.iterrows():
-                # Get job info for salary range
-                job_info = jobs[jobs["job_id"] == employee["job_id"]].iloc[0]
-                min_salary = job_info["min_salary"]
-                max_salary = job_info["max_salary"]
+        for _, employee in employees.iterrows():
+            # Get job info for salary range
+            job_info = jobs[jobs["job_id"] == employee["job_id"]].iloc[0]
+            min_salary = job_info["min_salary"]
+            max_salary = job_info["max_salary"]
+            
+            # Get employee employment details
+            employment_type = employee.get("employment_type", "Regular")
+            work_setup = employee.get("work_setup", "On-Site")
+            hire_date = employee.get("hire_date")
+            termination_date = employee.get("termination_date")
+            
+            # Skip if no hire date
+            if not hire_date or pd.isna(hire_date):
+                continue
+            
+            # Determine the period for this employee
+            start_date = hire_date
+            if termination_date and pd.notna(termination_date):
+                end_date = termination_date
+            else:
+                end_date = datetime.now()
+            
+            # Ensure both dates are datetime objects for comparison
+            if isinstance(start_date, pd.Timestamp):
+                start_date = start_date.to_pydatetime()
+            elif isinstance(start_date, date) and not isinstance(start_date, datetime):
+                start_date = datetime.combine(start_date, datetime.min.time())
                 
-                # Get employee employment details
-                employment_type = employee.get("employment_type", "Regular")
-                work_setup = employee.get("work_setup", "On-Site")
+            if isinstance(end_date, pd.Timestamp):
+                end_date = end_date.to_pydatetime()
+            elif isinstance(end_date, date) and not isinstance(end_date, datetime):
+                end_date = datetime.combine(end_date, datetime.min.time())
+            
+            # Generate monthly data for this employee's tenure
+            current_date = start_date.replace(day=1)  # Start from first day of hire month
+            
+            while current_date <= end_date:
+                # Skip if before hire date
+                if current_date < start_date:
+                    current_date = self._next_month(current_date)
+                    continue
                 
                 # Base salary calculation with employment type adjustments
                 base_salary = random.uniform(min_salary, max_salary)
@@ -491,113 +527,90 @@ class ETLPipeline:
                 elif employment_type == "Consultant":
                     base_salary = base_salary * 1.3  # 30% premium for consultants
                 elif employment_type == "Probationary":
-                    base_salary = base_salary * 0.8  # 80% during probation
+                    # Check if still in probation period (first 6 months)
+                    months_worked = (current_date.date() - start_date.date()).days / 30.44
+                    if months_worked <= 6:
+                        base_salary = base_salary * 0.8  # 80% during probation
+                    else:
+                        # Completed probation, regular salary
+                        pass
                 
-                # Adjust salary based on employment status
-                termination_date = employee.get("termination_date")
-                if termination_date and pd.notna(termination_date) and current_date.date() > termination_date:
-                    # Terminated employees - no salary AFTER termination date
-                    base_salary = 0.0
-                    cost_of_living_adjustment = 0.0
+                # Adjust salary based on years worked (annual raises)
+                years_worked = (current_date.date() - start_date.date()).days / 365.25
+                annual_raise = 0.03  # 3% annual raise
+                base_salary = base_salary * (1 + annual_raise * years_worked)
+                
+                # Cost of living adjustment (quarterly)
+                cost_of_living_adjustment = base_salary * 0.02 if current_date.month % 3 == 0 else 0.0
+                
+                # Performance bonus (quarterly)
+                if current_date.month % 3 == 0:
+                    performance_rating = random.uniform(3.0, 5.0)
+                    performance_bonus = base_salary * 0.1 * performance_rating / 4.0
+                    quarterly_bonus = base_salary * 0.05
+                else:
+                    performance_rating = random.uniform(3.0, 5.0)
                     performance_bonus = 0.0
                     quarterly_bonus = 0.0
+                
+                # Overtime (30% chance)
+                if random.random() < 0.3:
+                    overtime_hours = random.uniform(5, 25)
+                    overtime_rate = base_salary / 160 * 1.5  # 1.5x rate
+                    overtime_pay = overtime_hours * overtime_rate
+                else:
                     overtime_hours = 0.0
                     overtime_pay = 0.0
-                    holiday_pay = 0.0
-                    night_shift_differential = 0.0
-                    commission_earned = 0.0
+                
+                # Holiday pay (if holiday in month)
+                holiday_pay = base_salary / 160 * 8 * 1.5 if random.random() < 0.2 else 0.0
+                
+                # Night shift differential (20% chance)
+                night_shift_differential = base_salary * 0.1 if random.random() < 0.2 else 0.0
+                
+                # Commission for sales roles
+                job_title = str(job_info.get("job_title", ""))
+                if "Sales" in job_title:
+                    sales_target = random.uniform(50000, 200000)
+                    sales_achieved = sales_target * random.uniform(0.8, 1.2)
+                    commission_rate = 0.05
+                    commission_earned = sales_achieved * commission_rate
+                else:
                     sales_target = 0.0
                     sales_achieved = 0.0
-                    attendance_bonus = 0.0
-                    productivity_bonus = 0.0
-                    training_allowance = 0.0
-                    transport_allowance = 0.0
-                    meal_allowance = 0.0
-                    communication_allowance = 0.0
-                    hazard_pay = 0.0
-                    performance_rating = 0.0
-                    training_hours_completed = 0.0
-                    sick_days_used = 0.0
-                    vacation_days_used = 0.0
+                    commission_earned = 0.0
+                
+                # Various allowances based on work setup (always provide base allowances)
+                if work_setup == "Remote":
+                    transport_allowance = 1000  # Reduced for remote
+                    meal_allowance = 1500  # Reduced for remote
+                    communication_allowance = 3000  # Increased for remote
+                elif work_setup == "Hybrid":
+                    transport_allowance = 1500  # Partial for hybrid
+                    meal_allowance = 2250  # Partial for hybrid
+                    communication_allowance = 2000  # Moderate for hybrid
+                else:  # On-Site, Office-Based, Field-Based
+                    transport_allowance = 2000
+                    meal_allowance = 3000
+                    communication_allowance = 1000
+                
+                # Bonuses (provide base values with chance for additional)
+                attendance_bonus = base_salary * 0.02 if random.random() < 0.8 else base_salary * 0.01
+                productivity_bonus = base_salary * 0.03 if random.random() < 0.6 else base_salary * 0.015
+                training_allowance = 5000 if random.random() < 0.3 else 2000  # Base training allowance
+                
+                # Hazard pay for specific work setups
+                if work_setup == "Field-Based" and job_title in ["Operations", "Quality Assurance", "Driver", "Delivery"]:
+                    hazard_pay = base_salary * 0.08  # Higher for field-based
+                elif job_title in ["Operations", "Quality Assurance"] and random.random() < 0.5:
+                    hazard_pay = base_salary * 0.05
                 else:
-                    # Active employees (including those working up to their termination date)
-                    hire_date = employee.get("hire_date")
-                    if hire_date and pd.notna(hire_date):
-                        years_worked = (current_date.date() - hire_date).days / 365.25
-                        annual_raise = 0.03  # 3% annual raise
-                        base_salary = base_salary * (1 + annual_raise * years_worked)
-                    
-                    # Cost of living adjustment (quarterly)
-                    cost_of_living_adjustment = base_salary * 0.02 if current_date.month % 3 == 0 else 0.0
-                    
-                    # Performance bonus (quarterly)
-                    if current_date.month % 3 == 0:
-                        performance_rating = random.uniform(3.0, 5.0)
-                        performance_bonus = base_salary * 0.1 * performance_rating / 4.0
-                        quarterly_bonus = base_salary * 0.05
-                    else:
-                        performance_rating = random.uniform(3.0, 5.0)
-                        performance_bonus = 0.0
-                        quarterly_bonus = 0.0
-                    
-                    # Overtime (30% chance)
-                    if random.random() < 0.3:
-                        overtime_hours = random.uniform(5, 25)
-                        overtime_rate = base_salary / 160 * 1.5  # 1.5x rate
-                        overtime_pay = overtime_hours * overtime_rate
-                    else:
-                        overtime_hours = 0.0
-                        overtime_pay = 0.0
-                    
-                    # Holiday pay (if holiday in month)
-                    holiday_pay = base_salary / 160 * 8 * 1.5 if random.random() < 0.2 else 0.0
-                    
-                    # Night shift differential (20% chance)
-                    night_shift_differential = base_salary * 0.1 if random.random() < 0.2 else 0.0
-                    
-                    # Commission for sales roles
-                    job_title = str(job_info.get("job_title", ""))
-                    if "Sales" in job_title:
-                        sales_target = random.uniform(50000, 200000)
-                        sales_achieved = sales_target * random.uniform(0.8, 1.2)
-                        commission_rate = 0.05
-                        commission_earned = sales_achieved * commission_rate
-                    else:
-                        sales_target = 0.0
-                        sales_achieved = 0.0
-                        commission_earned = 0.0
-                    
-                    # Various allowances based on work setup (always provide base allowances)
-                    if work_setup == "Remote":
-                        transport_allowance = 1000  # Reduced for remote
-                        meal_allowance = 1500  # Reduced for remote
-                        communication_allowance = 3000  # Increased for remote
-                    elif work_setup == "Hybrid":
-                        transport_allowance = 1500  # Partial for hybrid
-                        meal_allowance = 2250  # Partial for hybrid
-                        communication_allowance = 2000  # Moderate for hybrid
-                    else:  # On-Site, Office-Based, Field-Based
-                        transport_allowance = 2000
-                        meal_allowance = 3000
-                        communication_allowance = 1000
-                    
-                    # Bonuses (provide base values with chance for additional)
-                    attendance_bonus = base_salary * 0.02 if random.random() < 0.8 else base_salary * 0.01
-                    productivity_bonus = base_salary * 0.03 if random.random() < 0.6 else base_salary * 0.015
-                    training_allowance = 5000 if random.random() < 0.3 else 2000  # Base training allowance
-                    
-                    # Hazard pay for specific work setups
-                    if work_setup == "Field-Based" and job_title in ["Operations", "Quality Assurance", "Driver", "Delivery"]:
-                        hazard_pay = base_salary * 0.08  # Higher for field-based
-                    elif job_title in ["Operations", "Quality Assurance"] and random.random() < 0.5:
-                        hazard_pay = base_salary * 0.05
-                    else:
-                        hazard_pay = base_salary * 0.02  # Base hazard pay for all employees
-                    
-                    # Training and leave (provide base values)
-                    training_hours_completed = random.uniform(2, 20) if random.random() < 0.4 else random.uniform(0, 2)
-                    sick_days_used = random.uniform(0, 2) if random.random() < 0.3 else 0.0
-                    vacation_days_used = random.uniform(1, 3) if random.random() < 0.4 else 0.0
+                    hazard_pay = base_salary * 0.02  # Base hazard pay for all employees
+                
+                # Training and leave (provide base values)
+                training_hours_completed = random.uniform(2, 20) if random.random() < 0.4 else random.uniform(0, 2)
+                sick_days_used = random.uniform(0, 2) if random.random() < 0.3 else 0.0
+                vacation_days_used = random.uniform(1, 3) if random.random() < 0.4 else 0.0
                 
                 # Calculate compensation totals
                 gross_compensation = (base_salary + cost_of_living_adjustment + performance_bonus + 
@@ -653,10 +666,19 @@ class ETLPipeline:
                 }
                 employee_facts.append(employee_fact)
                 employee_fact_id += 1
-            
-            current_date += timedelta(days=30)  # Monthly snapshots
+                
+                # Move to next month
+                current_date = self._next_month(current_date)
         
+        self.logger.info(f"Generated {len(employee_facts)} employee fact records")
         return pd.DataFrame(employee_facts)
+    
+    def _next_month(self, date):
+        """Helper function to get first day of next month"""
+        if date.month == 12:
+            return date.replace(year=date.year + 1, month=1, day=1)
+        else:
+            return date.replace(month=date.month + 1, day=1)
     
     def load_fact_data(self) -> None:
         """Load fact data into BigQuery - optimized for free tier"""

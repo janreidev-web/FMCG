@@ -395,7 +395,7 @@ class EmployeeGenerator(DataGenerator):
         self.locations_df = locations_df
     
     def generate_employees(self, count: int) -> pd.DataFrame:
-        """Generate employee data"""
+        """Generate employee data with IDs based on hire date order"""
         employees = []
         
         for i in range(count):
@@ -415,8 +415,9 @@ class EmployeeGenerator(DataGenerator):
             # Generate realistic salary within job range
             salary = random.uniform(job["min_salary"], job["max_salary"])
             
-            # Random hire date within last 10 years
-            hire_date = self.faker.date_between(start_date="-10y", end_date="today")
+            # Random hire date from company founding (2015-01-01) to today
+            from datetime import date
+            hire_date = self.faker.date_between(start_date=date(2015, 1, 1), end_date="today")
             
             # 10% chance of being terminated
             termination_date = None
@@ -487,8 +488,8 @@ class EmployeeGenerator(DataGenerator):
                     weights=[50, 25, 15, 7, 3]
                 )[0]
             
+            # Create employee without ID first
             employee = {
-                "employee_id": id_generator.generate_id('dim_employees'),
                 "first_name": first_name,
                 "last_name": last_name,
                 "gender": gender,
@@ -509,7 +510,15 @@ class EmployeeGenerator(DataGenerator):
             }
             employees.append(employee)
         
-        return pd.DataFrame(employees)
+        # Convert to DataFrame and sort by hire date
+        employees_df = pd.DataFrame(employees)
+        employees_df = employees_df.sort_values('hire_date').reset_index(drop=True)
+        
+        # Assign IDs in chronological order (Employee 1 = earliest hire)
+        for idx, row in employees_df.iterrows():
+            employees_df.at[idx, 'employee_id'] = id_generator.generate_id('dim_employees')
+        
+        return employees_df
 
 
 class ProductGenerator(DataGenerator):
@@ -581,8 +590,11 @@ class ProductGenerator(DataGenerator):
             base_price = random.uniform(10, 500)
             cost = base_price * random.uniform(0.3, 0.7)
             
+            # Generate launch date from company founding (2015-01-01) to today
+            from datetime import date
+            launch_date = self.faker.date_between(start_date=date(2015, 1, 1), end_date="today")
+            
             product = {
-                "product_id": id_generator.generate_id('dim_products'),
                 "product_name": f"{brand['brand_name']} {subcategory['subcategory_name']} {i+1}",
                 "sku": f"SKU-{i+1:06d}",
                 "category_id": category["category_id"],
@@ -591,14 +603,20 @@ class ProductGenerator(DataGenerator):
                 "unit_price": round(base_price, 2),
                 "cost": round(cost, 2),
                 "status": random.choice(["Active", "Discontinued", "Pending"]),
-                "launch_date": self.faker.date_between(start_date="-5y", end_date="today"),
+                "launch_date": launch_date,
                 "discontinued_date": None,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
             products.append(product)
         
+        # Convert to DataFrame and sort by launch date
         products_df = pd.DataFrame(products)
+        products_df = products_df.sort_values('launch_date').reset_index(drop=True)
+        
+        # Assign IDs in chronological order (Product 1 = earliest launch)
+        for idx, row in products_df.iterrows():
+            products_df.at[idx, 'product_id'] = id_generator.generate_id('dim_products')
         
         return products_df, categories_df, subcategories_df, brands_df
 
@@ -770,7 +788,6 @@ class CampaignGenerator(DataGenerator):
                     status = "Active"
                 
                 campaign = {
-                    "campaign_id": id_generator.generate_id('dim_campaigns'),
                     "campaign_name": f"Campaign {campaign_index+1}: {random.choice(self.CAMPAIGN_TYPES)}",
                     "campaign_type": random.choice(self.CAMPAIGN_TYPES),
                     "start_date": start_date,
@@ -784,4 +801,12 @@ class CampaignGenerator(DataGenerator):
                 campaigns.append(campaign)
                 campaign_index += 1
         
-        return pd.DataFrame(campaigns)
+        # Convert to DataFrame and sort by start date
+        campaigns_df = pd.DataFrame(campaigns)
+        campaigns_df = campaigns_df.sort_values('start_date').reset_index(drop=True)
+        
+        # Assign IDs in chronological order (Campaign 1 = earliest start)
+        for idx, row in campaigns_df.iterrows():
+            campaigns_df.at[idx, 'campaign_id'] = id_generator.generate_id('dim_campaigns')
+        
+        return campaigns_df
