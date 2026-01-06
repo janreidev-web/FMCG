@@ -202,8 +202,6 @@ class LocationGenerator(DataGenerator):
                 "region": region,
                 "province": province,
                 "city": city,
-                "latitude": float(self.faker.latitude()),
-                "longitude": float(self.faker.longitude()),
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
@@ -236,8 +234,6 @@ class DepartmentGenerator(DataGenerator):
             department = {
                 "department_id": id_generator.generate_id('dim_departments'),
                 "department_name": dept["name"],
-                "parent_department_id": None,  # Top level departments
-                "manager_id": None,
                 "budget": dept["budget"],
                 "description": dept["description"],
                 "created_at": datetime.now(),
@@ -302,6 +298,16 @@ class JobGenerator(DataGenerator):
 class EmployeeGenerator(DataGenerator):
     """Generate employee data"""
     
+    EMPLOYMENT_TYPES = [
+        "Regular", "Contract", "Probationary", "Project-Based", 
+        "Part-Time", "Intern", "Consultant", "Seasonal"
+    ]
+    
+    WORK_SETUPS = [
+        "On-Site", "Remote", "Hybrid", "Field-Based", 
+        "Work-from-Home", "Office-Based", "Flexible"
+    ]
+    
     def __init__(self, faker: Faker, departments_df: pd.DataFrame, jobs_df: pd.DataFrame, locations_df: pd.DataFrame):
         super().__init__(faker)
         self.departments_df = departments_df
@@ -350,6 +356,41 @@ class EmployeeGenerator(DataGenerator):
                 first_name = self.faker.first_name_female()
                 last_name = self.faker.last_name_female()
             
+            # Generate employment type and work setup based on job characteristics
+            job_title = str(job.get("job_title", ""))
+            
+            # Employment type logic
+            if "Intern" in job_title or "Trainee" in job_title:
+                employment_type = "Intern"
+            elif "Consultant" in job_title or "Advisor" in job_title:
+                employment_type = "Consultant"
+            elif "Manager" in job_title or "Director" in job_title:
+                employment_type = random.choice(["Regular", "Contract"])
+            elif "Sales" in job_title and random.random() < 0.3:
+                employment_type = "Commission-Based"
+            else:
+                # 70% Regular, 15% Contract, 10% Probationary, 5% others
+                employment_type = random.choices(
+                    ["Regular", "Contract", "Probationary", "Project-Based", "Part-Time"],
+                    weights=[70, 15, 10, 3, 2]
+                )[0]
+            
+            # Work setup logic
+            if "Sales" in job_title or "Field" in job_title:
+                work_setup = random.choice(["Field-Based", "Hybrid", "On-Site"])
+            elif "IT" in job_title or "Developer" in job_title:
+                work_setup = random.choice(["Remote", "Hybrid", "On-Site"])
+            elif "Driver" in job_title or "Delivery" in job_title:
+                work_setup = "Field-Based"
+            elif "Manager" in job_title or "Director" in job_title:
+                work_setup = random.choice(["Office-Based", "Hybrid"])
+            else:
+                # 50% On-Site, 25% Hybrid, 15% Remote, 10% others
+                work_setup = random.choices(
+                    ["On-Site", "Hybrid", "Remote", "Office-Based", "Flexible"],
+                    weights=[50, 25, 15, 7, 3]
+                )[0]
+            
             employee = {
                 "employee_id": id_generator.generate_id('dim_employees'),
                 "first_name": first_name,
@@ -362,6 +403,8 @@ class EmployeeGenerator(DataGenerator):
                 "hire_date": hire_date,
                 "termination_date": termination_date,
                 "status": status,
+                "employment_type": employment_type,
+                "work_setup": work_setup,
                 "location_id": location["location_id"],
                 "bank_id": f"BNK-{random.randint(1, 15):03d}",  # Always assign a bank
                 "insurance_id": f"INS-{random.randint(1, 12):03d}",  # Always assign insurance

@@ -273,6 +273,7 @@ class ETLPipeline:
                 
                 sale = {
                     "sale_id": self.id_generator.generate_id('fact_sales'),
+                    "date": order_date,
                     "product_id": product["product_id"],
                     "retailer_id": retailer["retailer_id"],
                     "employee_id": employee["employee_id"],
@@ -470,8 +471,24 @@ class ETLPipeline:
                 min_salary = job_info["min_salary"]
                 max_salary = job_info["max_salary"]
                 
-                # Base salary calculation
+                # Get employee employment details
+                employment_type = employee.get("employment_type", "Regular")
+                work_setup = employee.get("work_setup", "On-Site")
+                
+                # Base salary calculation with employment type adjustments
                 base_salary = random.uniform(min_salary, max_salary)
+                
+                # Adjust base salary based on employment type
+                if employment_type == "Intern":
+                    base_salary = base_salary * 0.3  # 30% of regular salary
+                elif employment_type == "Part-Time":
+                    base_salary = base_salary * 0.6  # 60% of regular salary
+                elif employment_type == "Contract":
+                    base_salary = base_salary * 1.1  # 10% premium for contract
+                elif employment_type == "Consultant":
+                    base_salary = base_salary * 1.3  # 30% premium for consultants
+                elif employment_type == "Probationary":
+                    base_salary = base_salary * 0.8  # 80% during probation
                 
                 # Adjust salary based on employment status
                 termination_date = employee.get("termination_date")
@@ -547,19 +564,37 @@ class ETLPipeline:
                         sales_achieved = 0.0
                         commission_earned = 0.0
                     
-                    # Various allowances
-                    attendance_bonus = base_salary * 0.02 if random.random() < 0.8 else 0.0
-                    productivity_bonus = base_salary * 0.03 if random.random() < 0.6 else 0.0
-                    training_allowance = 5000 if random.random() < 0.3 else 0.0
-                    transport_allowance = 2000
-                    meal_allowance = 3000
-                    communication_allowance = 1000
-                    hazard_pay = base_salary * 0.05 if job_title in ["Operations", "Quality Assurance"] and random.random() < 0.5 else 0.0
+                    # Various allowances based on work setup (always provide base allowances)
+                    if work_setup == "Remote":
+                        transport_allowance = 1000  # Reduced for remote
+                        meal_allowance = 1500  # Reduced for remote
+                        communication_allowance = 3000  # Increased for remote
+                    elif work_setup == "Hybrid":
+                        transport_allowance = 1500  # Partial for hybrid
+                        meal_allowance = 2250  # Partial for hybrid
+                        communication_allowance = 2000  # Moderate for hybrid
+                    else:  # On-Site, Office-Based, Field-Based
+                        transport_allowance = 2000
+                        meal_allowance = 3000
+                        communication_allowance = 1000
                     
-                    # Training and leave
-                    training_hours_completed = random.uniform(0, 20) if random.random() < 0.4 else 0.0
+                    # Bonuses (provide base values with chance for additional)
+                    attendance_bonus = base_salary * 0.02 if random.random() < 0.8 else base_salary * 0.01
+                    productivity_bonus = base_salary * 0.03 if random.random() < 0.6 else base_salary * 0.015
+                    training_allowance = 5000 if random.random() < 0.3 else 2000  # Base training allowance
+                    
+                    # Hazard pay for specific work setups
+                    if work_setup == "Field-Based" and job_title in ["Operations", "Quality Assurance", "Driver", "Delivery"]:
+                        hazard_pay = base_salary * 0.08  # Higher for field-based
+                    elif job_title in ["Operations", "Quality Assurance"] and random.random() < 0.5:
+                        hazard_pay = base_salary * 0.05
+                    else:
+                        hazard_pay = base_salary * 0.02  # Base hazard pay for all employees
+                    
+                    # Training and leave (provide base values)
+                    training_hours_completed = random.uniform(2, 20) if random.random() < 0.4 else random.uniform(0, 2)
                     sick_days_used = random.uniform(0, 2) if random.random() < 0.3 else 0.0
-                    vacation_days_used = random.uniform(0, 3) if random.random() < 0.4 else 0.0
+                    vacation_days_used = random.uniform(1, 3) if random.random() < 0.4 else 0.0
                 
                 # Calculate compensation totals
                 gross_compensation = (base_salary + cost_of_living_adjustment + performance_bonus + 
@@ -583,35 +618,35 @@ class ETLPipeline:
                     "employee_id": employee["employee_id"],
                     "date": current_date.date(),
                     "base_salary": round(base_salary, 2),
-                    "cost_of_living_adjustment": round(cost_of_living_adjustment, 2) if cost_of_living_adjustment > 0 else None,
-                    "performance_bonus": round(performance_bonus, 2) if performance_bonus > 0 else None,
-                    "quarterly_bonus": round(quarterly_bonus, 2) if quarterly_bonus > 0 else None,
-                    "overtime_hours": round(overtime_hours, 1) if overtime_hours > 0 else None,
-                    "overtime_pay": round(overtime_pay, 2) if overtime_pay > 0 else None,
-                    "holiday_pay": round(holiday_pay, 2) if holiday_pay > 0 else None,
-                    "night_shift_differential": round(night_shift_differential, 2) if night_shift_differential > 0 else None,
-                    "commission_earned": round(commission_earned, 2) if commission_earned > 0 else None,
-                    "sales_target": round(sales_target, 2) if sales_target > 0 else None,
-                    "sales_achieved": round(sales_achieved, 2) if sales_achieved > 0 else None,
-                    "attendance_bonus": round(attendance_bonus, 2) if attendance_bonus > 0 else None,
-                    "productivity_bonus": round(productivity_bonus, 2) if productivity_bonus > 0 else None,
-                    "training_allowance": round(training_allowance, 2) if training_allowance > 0 else None,
+                    "cost_of_living_adjustment": round(cost_of_living_adjustment, 2),
+                    "performance_bonus": round(performance_bonus, 2),
+                    "quarterly_bonus": round(quarterly_bonus, 2),
+                    "overtime_hours": round(overtime_hours, 1),
+                    "overtime_pay": round(overtime_pay, 2),
+                    "holiday_pay": round(holiday_pay, 2),
+                    "night_shift_differential": round(night_shift_differential, 2),
+                    "commission_earned": round(commission_earned, 2),
+                    "sales_target": round(sales_target, 2),
+                    "sales_achieved": round(sales_achieved, 2),
+                    "attendance_bonus": round(attendance_bonus, 2),
+                    "productivity_bonus": round(productivity_bonus, 2),
+                    "training_allowance": round(training_allowance, 2),
                     "transport_allowance": round(transport_allowance, 2),
                     "meal_allowance": round(meal_allowance, 2),
                     "communication_allowance": round(communication_allowance, 2),
-                    "hazard_pay": round(hazard_pay, 2) if hazard_pay > 0 else None,
+                    "hazard_pay": round(hazard_pay, 2),
                     "total_compensation": round(total_compensation, 2),
                     "gross_compensation": round(gross_compensation, 2),
-                    "tax_withheld": round(tax_withheld, 2) if tax_withheld > 0 else None,
-                    "sss_contribution": round(sss_contribution, 2) if sss_contribution > 0 else None,
-                    "philhealth_contribution": round(philhealth_contribution, 2) if philhealth_contribution > 0 else None,
-                    "pagibig_contribution": round(pagibig_contribution, 2) if pagibig_contribution > 0 else None,
+                    "tax_withheld": round(tax_withheld, 2),
+                    "sss_contribution": round(sss_contribution, 2),
+                    "philhealth_contribution": round(philhealth_contribution, 2),
+                    "pagibig_contribution": round(pagibig_contribution, 2),
                     "net_compensation": round(net_compensation, 2),
-                    "performance_rating": performance_rating if performance_rating and performance_rating > 0 else None,
-                    "training_hours_completed": round(training_hours_completed, 1) if training_hours_completed > 0 else None,
-                    "sick_days_used": round(sick_days_used, 1) if sick_days_used > 0 else None,
-                    "vacation_days_used": round(vacation_days_used, 1) if vacation_days_used > 0 else None,
-                    "created_at": current_date
+                    "performance_rating": round(performance_rating, 2),
+                    "training_hours_completed": round(training_hours_completed, 1),
+                    "sick_days_used": round(sick_days_used, 1),
+                    "vacation_days_used": round(vacation_days_used, 1),
+                    "created_at": datetime.now()
                 }
                 employee_facts.append(employee_fact)
                 employee_fact_id += 1
