@@ -38,10 +38,11 @@ DIM_EMPLOYEES = TableSchema(
         {"name": "job_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "hire_date", "type": "DATE", "mode": "REQUIRED"},
         {"name": "termination_date", "type": "DATE", "mode": "NULLABLE"},
-        {"name": "salary", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "location_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "bank_id", "type": "STRING", "mode": "NULLABLE"},
         {"name": "insurance_id", "type": "STRING", "mode": "NULLABLE"},
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
     ],
     description="Employee master data with demographics and employment details"
 )
@@ -58,11 +59,11 @@ DIM_PRODUCTS = TableSchema(
         {"name": "brand_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "unit_price", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "cost", "type": "FLOAT", "mode": "REQUIRED"},
-        {"name": "weight", "type": "FLOAT", "mode": "NULLABLE"},
-        {"name": "volume", "type": "FLOAT", "mode": "NULLABLE"},
         {"name": "status", "type": "STRING", "mode": "REQUIRED"},
         {"name": "launch_date", "type": "DATE", "mode": "REQUIRED"},
         {"name": "discontinued_date", "type": "DATE", "mode": "NULLABLE"},
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
     ],
     description="Product master data with pricing and categorization"
 )
@@ -82,7 +83,9 @@ DIM_RETAILERS = TableSchema(
         {"name": "payment_terms", "type": "STRING", "mode": "NULLABLE"},
         {"name": "status", "type": "STRING", "mode": "REQUIRED"},
         {"name": "registration_date", "type": "DATE", "mode": "REQUIRED"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Retailer master data with geographic and business details"
 )
 
@@ -96,7 +99,9 @@ DIM_LOCATIONS = TableSchema(
         {"name": "city", "type": "STRING", "mode": "REQUIRED"},
         {"name": "latitude", "type": "FLOAT", "mode": "NULLABLE"},
         {"name": "longitude", "type": "FLOAT", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Location data with Philippines geographic hierarchy"
 )
 
@@ -110,7 +115,9 @@ DIM_DEPARTMENTS = TableSchema(
         {"name": "manager_id", "type": "STRING", "mode": "NULLABLE"},
         {"name": "budget", "type": "FLOAT", "mode": "NULLABLE"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Organizational department structure"
 )
 
@@ -126,7 +133,9 @@ DIM_JOBS = TableSchema(
         {"name": "department_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "work_type", "type": "STRING", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Job positions with salary ranges and work arrangements"
 )
 
@@ -142,7 +151,9 @@ DIM_CAMPAIGNS = TableSchema(
         {"name": "budget", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "target_audience", "type": "STRING", "mode": "NULLABLE"},
         {"name": "status", "type": "STRING", "mode": "REQUIRED"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Marketing campaign definitions and timelines"
 )
 
@@ -153,7 +164,9 @@ DIM_CATEGORIES = TableSchema(
         {"name": "category_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "category_name", "type": "STRING", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Product categories for FMCG classification"
 )
 
@@ -165,7 +178,9 @@ DIM_SUBCATEGORIES = TableSchema(
         {"name": "subcategory_name", "type": "STRING", "mode": "REQUIRED"},
         {"name": "category_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Product subcategories for detailed classification"
 )
 
@@ -176,7 +191,9 @@ DIM_BRANDS = TableSchema(
         {"name": "brand_id", "type": "STRING", "mode": "REQUIRED"},
         {"name": "brand_name", "type": "STRING", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Brand information for FMCG products"
 )
 
@@ -189,7 +206,9 @@ DIM_BANKS = TableSchema(
         {"name": "bank_code", "type": "STRING", "mode": "REQUIRED"},
         {"name": "branch_name", "type": "STRING", "mode": "NULLABLE"},
         {"name": "account_type", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Bank information for employee payroll"
 )
 
@@ -202,7 +221,9 @@ DIM_INSURANCE = TableSchema(
         {"name": "policy_type", "type": "STRING", "mode": "REQUIRED"},
         {"name": "coverage_amount", "type": "FLOAT", "mode": "NULLABLE"},
         {"name": "premium_amount", "type": "FLOAT", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+        {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Insurance information for employee benefits"
 )
 
@@ -225,7 +246,8 @@ FACT_SALES = TableSchema(
         {"name": "order_date", "type": "DATE", "mode": "REQUIRED"},
         {"name": "delivery_date", "type": "DATE", "mode": "NULLABLE"},
         {"name": "delivery_status", "type": "STRING", "mode": "REQUIRED"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Sales transactions with order and delivery tracking"
 )
 
@@ -244,7 +266,8 @@ FACT_INVENTORY = TableSchema(
         {"name": "stock_lost", "type": "INTEGER", "mode": "NULLABLE"},
         {"name": "unit_cost", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "total_value", "type": "FLOAT", "mode": "REQUIRED"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Inventory movements and valuations"
 )
 
@@ -259,7 +282,8 @@ FACT_OPERATING_COSTS = TableSchema(
         {"name": "department_id", "type": "STRING", "mode": "NULLABLE"},
         {"name": "amount", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Operating expenses by category and department"
 )
 
@@ -273,8 +297,27 @@ FACT_MARKETING_COSTS = TableSchema(
         {"name": "cost_category", "type": "STRING", "mode": "REQUIRED"},
         {"name": "amount", "type": "FLOAT", "mode": "REQUIRED"},
         {"name": "description", "type": "STRING", "mode": "NULLABLE"},
-            ],
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
     description="Marketing campaign expenses by category"
+)
+
+FACT_EMPLOYEES = TableSchema(
+    name="fact_employees",
+    type=TableType.FACT,
+    fields=[
+        {"name": "employee_fact_id", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "employee_id", "type": "STRING", "mode": "REQUIRED"},
+        {"name": "date", "type": "DATE", "mode": "REQUIRED"},
+        {"name": "salary", "type": "FLOAT", "mode": "REQUIRED"},
+        {"name": "bonus", "type": "FLOAT", "mode": "NULLABLE"},
+        {"name": "overtime_pay", "type": "FLOAT", "mode": "NULLABLE"},
+        {"name": "commission_earned", "type": "FLOAT", "mode": "NULLABLE"},
+        {"name": "total_compensation", "type": "FLOAT", "mode": "REQUIRED"},
+        {"name": "performance_rating", "type": "FLOAT", "mode": "NULLABLE"},
+        {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
+    ],
+    description="Employee quantitative metrics and compensation tracking"
 )
 
 # All schemas dictionary for easy access
@@ -295,6 +338,7 @@ ALL_SCHEMAS = {
     "fact_inventory": FACT_INVENTORY,
     "fact_operating_costs": FACT_OPERATING_COSTS,
     "fact_marketing_costs": FACT_MARKETING_COSTS,
+    "fact_employees": FACT_EMPLOYEES,
 }
 
 

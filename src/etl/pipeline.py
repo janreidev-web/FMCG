@@ -3,6 +3,7 @@ ETL pipeline for FMCG Data Analytics Platform
 """
 
 import random
+import os
 import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
@@ -22,7 +23,15 @@ class ETLPipeline:
     
     def __init__(self, bq_manager=None):
         self.logger = default_logger
-        self.bigquery_client = bq_manager or BigQueryManager()
+        
+        if bq_manager:
+            self.bigquery_client = bq_manager
+        else:
+            # Try to get from environment or use defaults
+            project_id = os.getenv('GCP_PROJECT_ID', 'fmcg-data-generator')
+            dataset = os.getenv('GCP_DATASET', 'fmcg_warehouse')
+            credentials_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
+            self.bigquery_client = BigQueryManager(project_id, dataset, credentials_path)
         
         # Initialize faker for data generation
         self.faker = Faker('en_PH')
@@ -129,7 +138,7 @@ class ETLPipeline:
         self.logger.info("Dimension data loading completed")
     
     def generate_fact_data(self, config: Dict[str, Any]) -> None:
-        """Generate fact tables"""
+        """Generate fact table data"""
         self.logger.info("Generating fact data...")
         
         # Generate sales data
@@ -145,13 +154,17 @@ class ETLPipeline:
         self.data_cache["fact_operating_costs"] = costs_df
         
         # Generate marketing costs
-        marketing_costs_df = self._generate_marketing_costs(config)
-        self.data_cache["fact_marketing_costs"] = marketing_costs_df
+        marketing_df = self._generate_marketing_costs(config)
+        self.data_cache["fact_marketing_costs"] = marketing_df
+        
+        # Generate employee facts
+        employee_facts_df = self._generate_employee_facts(config)
+        self.data_cache["fact_employees"] = employee_facts_df
         
         self.logger.info("Fact data generation completed")
     
     def _generate_sales_data(self, config: Dict[str, Any]) -> pd.DataFrame:
-        """Generate sales transaction data - optimized for free tier"""
+        """Generate sales transaction data - full 500K target"""
         initial_amount = config.get("initial_sales_amount", 8000000000)
         daily_amount = config.get("daily_sales_amount", 2000000)
         
@@ -161,8 +174,8 @@ class ETLPipeline:
         employees = self.data_cache["dim_employees"]
         campaigns = self.data_cache["dim_campaigns"]
         
-        # Calculate target transactions for 11 years (reduced for free tier)
-        target_transactions = 100000  # Reduced from 500K to 100K
+        # Calculate target transactions for 11 years (increased to 500K)
+        target_transactions = 500000  # Increased from 100K to 500K
         
         # Set exact date range: January 1, 2015 to day before yesterday
         start_date = datetime(2015, 1, 1)
@@ -173,8 +186,8 @@ class ETLPipeline:
         base_daily_transactions = target_transactions // total_days
         
         # Add some variation (±20%)
-        min_daily_tx = max(10, int(base_daily_transactions * 0.8))
-        max_daily_tx = int(base_daily_transactions * 1.2)
+        min_daily_tx = max(1, int(base_daily_transactions * 0.8))
+        max_daily_tx = max(min_daily_tx + 1, int(base_daily_transactions * 1.2))
         
         self.logger.info(f"Target: {target_transactions:,} transactions")
         self.logger.info(f"Date range: {start_date.date()} to {end_date.date()} ({total_days} days)")
@@ -204,11 +217,13 @@ class ETLPipeline:
                 # Random campaign assignment (30% chance)
                 campaign = None
                 if random.random() < 0.3 and len(campaigns) > 0:
-                    campaign = campaigns.sample(1).iloc[0]
+                    campaign_sample = campaigns.sample(1)
+                    if len(campaign_sample) > 0:
+                        campaign = campaign_sample.iloc[0]
                 
                 # Generate quantity and amount based on retailer type
                 quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
-                unit_price = product["unit_price"]
+                unit_price = float(product["unit_price"])
                 total_amount = quantity * unit_price
                 
                 # Ensure transaction is within retailer's expected range
@@ -220,7 +235,7 @@ class ETLPipeline:
                     total_amount = quantity * unit_price
                 
                 # Calculate discount and commission
-                discount_rate = random.uniform(0.05, 0.15) if campaign else 0
+                discount_rate = random.uniform(0.05, 0.15) if campaign is not None else 0
                 commission_rate = random.uniform(0.02, 0.08)
                 
                 final_amount = total_amount * (1 - discount_rate)
@@ -231,7 +246,7 @@ class ETLPipeline:
                     "product_id": product["product_id"],
                     "retailer_id": retailer["retailer_id"],
                     "employee_id": employee["employee_id"],
-                    "campaign_id": campaign["campaign_id"] if campaign else None,
+                    "campaign_id": campaign["campaign_id"] if campaign is not None else None,
                     "quantity": quantity,
                     "unit_price": unit_price,
                     "total_amount": total_amount,
@@ -242,7 +257,9 @@ class ETLPipeline:
                     "commission_amount": commission_amount,
                     "order_date": current_date.date(),
                     "delivery_date": current_date.date() + timedelta(days=random.randint(1, 7)),
-                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"])
+                    "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
+                    "created_at": current_date,
+                    "updated_at": current_date
                 }
                 sales.append(sale)
                 sale_id += 1
@@ -262,11 +279,11 @@ class ETLPipeline:
         estimated_storage_mb = len(sales_df) * 1024 / (1024 * 1024)
         self.logger.info(f"Estimated storage: {estimated_storage_mb:.1f} MB for sales data")
         
-        # Check if within free tier limits (10GB total)
+        # Check storage requirements
         if estimated_storage_mb < 10240:  # 10GB in MB
             self.logger.info("✅ Within free tier storage limits!")
         else:
-            self.logger.warning("⚠️ May exceed free tier storage limits")
+            self.logger.warning(f"⚠️ Exceeds free tier limits (~{estimated_storage_mb/1024:.1f} GB)")
         
         return sales_df
     
@@ -278,17 +295,13 @@ class ETLPipeline:
         inventory = []
         inventory_id = 1
         
-        # Generate monthly inventory snapshots for the last 1 year (reduced from 2)
-        start_date = datetime.now() - timedelta(days=365)  # 1 year ago
+        # Generate monthly inventory snapshots for the last 2 years
+        start_date = datetime.now() - timedelta(days=730)  # 2 years ago
         
         current_date = start_date
         while current_date <= datetime.now():
-            # Sample only 20% of products and locations to reduce data volume
-            sample_products = products.sample(frac=0.2, random_state=42)
-            sample_locations = locations.sample(frac=0.2, random_state=42)
-            
-            for _, product in sample_products.iterrows():
-                for _, location in sample_locations.iterrows():
+            for _, product in products.iterrows():
+                for _, location in locations.iterrows():
                     # Random inventory levels
                     opening_stock = random.randint(100, 1000)
                     stock_received = random.randint(0, 200)
@@ -306,8 +319,9 @@ class ETLPipeline:
                         "stock_received": stock_received,
                         "stock_sold": stock_sold,
                         "stock_lost": stock_lost if stock_lost > 0 else None,
-                        "unit_cost": product["cost"],
-                        "total_value": closing_stock * product["cost"]
+                        "unit_cost": float(product["cost"]),
+                        "total_value": closing_stock * float(product["cost"]),
+                        "created_at": current_date
                     }
                     inventory.append(inventory_record)
                     inventory_id += 1
@@ -330,15 +344,12 @@ class ETLPipeline:
         costs = []
         cost_id = 1
         
-        # Generate monthly costs for the last 1 year (reduced from 2)
-        start_date = datetime.now() - timedelta(days=365)
+        # Generate monthly costs for the last 2 years
+        start_date = datetime.now() - timedelta(days=730)
         
         current_date = start_date
         while current_date <= datetime.now():
-            # Sample only 50% of departments to reduce data volume
-            sample_departments = departments.sample(frac=0.5, random_state=42)
-            
-            for _, department in sample_departments.iterrows():
+            for _, department in departments.iterrows():
                 cost_category = random.choice(cost_categories)
                 cost_type = random.choice(cost_types)
                 
@@ -359,7 +370,8 @@ class ETLPipeline:
                     "cost_type": cost_type,
                     "department_id": department["department_id"],
                     "amount": amount,
-                    "description": f"{cost_category} - {cost_type} expense"
+                    "description": f"{cost_category} - {cost_type} expense",
+                    "created_at": current_date
                 }
                 costs.append(cost_record)
                 cost_id += 1
@@ -380,10 +392,8 @@ class ETLPipeline:
         marketing_costs = []
         marketing_cost_id = 1
         
-        # Generate costs for each campaign (sample 50% to reduce volume)
-        sample_campaigns = campaigns.sample(frac=0.5, random_state=42)
-        
-        for _, campaign in sample_campaigns.iterrows():
+        # Generate costs for each campaign
+        for _, campaign in campaigns.iterrows():
             # Generate costs throughout campaign duration
             current_date = campaign["start_date"]
             while current_date <= campaign["end_date"]:
@@ -402,7 +412,8 @@ class ETLPipeline:
                     "campaign_id": campaign["campaign_id"],
                     "cost_category": cost_category,
                     "amount": amount,
-                    "description": f"{cost_category} expense for {campaign['campaign_name']}"
+                    "description": f"{cost_category} expense for {campaign['campaign_name']}",
+                    "created_at": current_date
                 }
                 marketing_costs.append(cost_record)
                 marketing_cost_id += 1
@@ -410,6 +421,91 @@ class ETLPipeline:
                 current_date += timedelta(days=random.randint(1, 7))
         
         return pd.DataFrame(marketing_costs)
+    
+    def _generate_employee_facts(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate employee fact data with dynamic salaries and metrics"""
+        employees = self.data_cache["dim_employees"]
+        jobs = self.data_cache["dim_jobs"]
+        
+        employee_facts = []
+        employee_fact_id = 1
+        
+        # Generate monthly employee facts for the last 6 months (reduced from 2 years)
+        start_date = datetime.now() - timedelta(days=180)
+        
+        current_date = start_date
+        while current_date <= datetime.now():
+            for _, employee in employees.iterrows():
+                # Get job info for salary range
+                job_info = jobs[jobs["job_id"] == employee["job_id"]].iloc[0]
+                min_salary = job_info["min_salary"]
+                max_salary = job_info["max_salary"]
+                
+                # Dynamic salary calculation
+                base_salary = random.uniform(min_salary, max_salary)
+                
+                # Adjust salary based on employment status
+                termination_date = employee.get("termination_date")
+                if termination_date and pd.notna(termination_date) and current_date.date() >= termination_date:
+                    # Terminated employees - no salary
+                    salary = 0.0
+                    bonus = 0.0
+                    overtime_pay = 0.0
+                    commission_earned = 0.0
+                    performance_rating = None
+                else:
+                    # Active employees - dynamic salary with raises
+                    hire_date = employee.get("hire_date")
+                    if hire_date and pd.notna(hire_date):
+                        years_worked = (current_date.date() - hire_date).days / 365.25
+                        annual_raise = 0.03  # 3% annual raise
+                        salary = base_salary * (1 + annual_raise * years_worked)
+                    else:
+                        salary = base_salary
+                    
+                    # Performance-based bonus (quarterly)
+                    if current_date.month % 3 == 0:  # Quarterly bonus
+                        performance_rating = random.uniform(3.0, 5.0)
+                        bonus = salary * 0.1 * performance_rating / 4.0  # 10% of salary quarterly
+                    else:
+                        performance_rating = random.uniform(3.0, 5.0)
+                        bonus = 0.0
+                    
+                    # Overtime for some employees
+                    if random.random() < 0.3:  # 30% chance of overtime
+                        overtime_rate = salary / 160 * 1.5  # 1.5x rate for overtime
+                        overtime_pay = random.uniform(5, 20) * overtime_rate
+                    else:
+                        overtime_pay = 0.0
+                    
+                    # Commission for sales roles
+                    job_title = str(job_info.get("job_title", ""))
+                    if "Sales" in job_title:
+                        commission_earned = random.uniform(1000, 5000)
+                    else:
+                        commission_earned = 0.0
+                
+                # Total compensation
+                total_compensation = salary + bonus + overtime_pay + commission_earned
+                
+                employee_fact = {
+                    "employee_fact_id": f"EF-{employee_fact_id:08d}",
+                    "employee_id": employee["employee_id"],
+                    "date": current_date.date(),
+                    "salary": round(salary, 2),
+                    "bonus": round(bonus, 2) if bonus > 0 else None,
+                    "overtime_pay": round(overtime_pay, 2) if overtime_pay > 0 else None,
+                    "commission_earned": round(commission_earned, 2) if commission_earned > 0 else None,
+                    "total_compensation": round(total_compensation, 2),
+                    "performance_rating": performance_rating if performance_rating and performance_rating > 0 else None,
+                    "created_at": current_date
+                }
+                employee_facts.append(employee_fact)
+                employee_fact_id += 1
+            
+            current_date += timedelta(days=30)  # Monthly snapshots
+        
+        return pd.DataFrame(employee_facts)
     
     def load_fact_data(self) -> None:
         """Load fact data into BigQuery - optimized for free tier"""
@@ -509,11 +605,13 @@ class ETLPipeline:
             # Random campaign assignment (30% chance)
             campaign = None
             if random.random() < 0.3 and len(campaigns) > 0:
-                campaign = campaigns.sample(1).iloc[0]
+                campaign_sample = campaigns.sample(1)
+                if len(campaign_sample) > 0:
+                    campaign = campaign_sample.iloc[0]
             
             # Generate quantity and amount based on retailer type
             quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
-            unit_price = product["unit_price"]
+            unit_price = float(product["unit_price"])
             total_amount = quantity * unit_price
             
             # Ensure transaction is within retailer's expected range
@@ -525,18 +623,20 @@ class ETLPipeline:
                 total_amount = quantity * unit_price
             
             # Calculate discount and commission
-            discount_rate = random.uniform(0.05, 0.15) if campaign else 0
+            discount_rate = random.uniform(0.05, 0.15) if campaign is not None else 0
             commission_rate = random.uniform(0.02, 0.08)
             
             final_amount = total_amount * (1 - discount_rate)
             commission_amount = final_amount * commission_rate
+            
+            employee = employees.sample(1).iloc[0]
             
             sale = {
                 "sale_id": f"SAL-{sale_id:08d}",
                 "product_id": product["product_id"],
                 "retailer_id": retailer["retailer_id"],
                 "employee_id": employee["employee_id"],
-                "campaign_id": campaign["campaign_id"] if campaign else None,
+                "campaign_id": campaign["campaign_id"] if campaign is not None else None,
                 "quantity": quantity,
                 "unit_price": unit_price,
                 "total_amount": total_amount,
@@ -547,7 +647,9 @@ class ETLPipeline:
                 "commission_amount": commission_amount,
                 "order_date": current_date,
                 "delivery_date": current_date + timedelta(days=random.randint(1, 7)),
-                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"])
+                "delivery_status": random.choice(["Pending", "Shipped", "Delivered"]),
+                "created_at": datetime.combine(current_date, datetime.min.time()),
+                "updated_at": datetime.combine(current_date, datetime.min.time())
             }
             sales.append(sale)
             sale_id += 1
