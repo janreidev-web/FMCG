@@ -744,17 +744,18 @@ class ETLPipeline:
         """Generate daily sales for incremental updates - specifically for yesterday"""
         daily_amount = config.get("daily_sales_amount", 2000000)
         
-        # Get reference data from BigQuery
-        products = self.bigquery_client.execute_query("SELECT * FROM dim_products WHERE status = 'Active'")
-        retailers = self.bigquery_client.execute_query("SELECT * FROM dim_retailers WHERE status = 'Active'")
-        employees = self.bigquery_client.execute_query("SELECT * FROM dim_employees WHERE termination_date IS NULL")
-        campaigns = self.bigquery_client.execute_query("SELECT * FROM dim_campaigns WHERE status = 'Active'")
+        # Get reference data from BigQuery with proper dataset qualification
+        dataset_name = self.bigquery_client.dataset
+        products = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_products WHERE status = 'Active'")
+        retailers = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_retailers WHERE status = 'Active'")
+        employees = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_employees WHERE termination_date IS NULL")
+        campaigns = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_campaigns WHERE status = 'Active'")
         
         # Get max sale_id from existing data to continue the sequence
         try:
-            max_id_query = """
+            max_id_query = f"""
                 SELECT MAX(CAST(REGEXP_EXTRACT(sale_id, r'SAL(\\d+)') AS INT64)) as max_id 
-                FROM fact_sales 
+                FROM {dataset_name}.fact_sales 
                 WHERE sale_id LIKE 'SAL%'
             """
             max_id_result = self.bigquery_client.execute_query(max_id_query)
@@ -773,16 +774,15 @@ class ETLPipeline:
         try:
             existing_count_query = f"""
                 SELECT COUNT(*) as count 
-                FROM fact_sales 
-                WHERE DATE(order_date) = '{target_date}'
+                FROM {dataset_name}.fact_sales 
+                WHERE DATE(date) = DATE('{target_date}')
             """
             existing_result = self.bigquery_client.execute_query(existing_count_query)
             if len(existing_result) > 0 and existing_result.iloc[0]['count'] > 0:
-                existing_count = existing_result.iloc[0]['count']
-                self.logger.warning(f"Found {existing_count} existing sales for {target_date}, skipping generation")
+                self.logger.info(f"Sales already exist for {target_date}, skipping generation")
                 return pd.DataFrame()  # Return empty DataFrame
         except Exception as e:
-            self.logger.warning(f"Could not check existing sales: {e}")
+            self.logger.warning(f"Could not check existing sales: {e}, proceeding with generation")
         
         sales = []
         # Generate for yesterday specifically (so daily workflow can run today)
@@ -837,8 +837,9 @@ class ETLPipeline:
             final_amount = total_amount * (1 - discount_rate)
             commission_amount = final_amount * commission_rate
             
-            # Generate proper sale_id using the ID generator
-            sale_id = self.id_generator.generate_id('fact_sales')
+            # Generate proper sale_id continuing from max existing ID
+            max_id += 1
+            sale_id = f"SAL{max_id:015d}"
             
             # Delivery status logic based on date (yesterday orders should be shipped/delivered)
             delivery_status = random.choice(["Shipped", "Delivered"])
