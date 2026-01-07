@@ -1,33 +1,100 @@
 # FMCG Data Analytics Platform
 
-A sophisticated, enterprise-grade data analytics platform designed specifically for Fast-Moving Consumer Goods (FMCG) businesses seeking comprehensive insights into their operations, sales performance, and market dynamics.
+**A comprehensive normalized dimensional data warehouse solution for Fast-Moving Consumer Goods analytics with automated ETL pipelines and realistic business simulation**
+
+[![Python](https://img.shields.io/badge/Python-3.14-blue.svg)](https://www.python.org/downloads/)
+[![BigQuery](https://img.shields.io/badge/Google%20Cloud-BigQuery-orange.svg)](https://cloud.google.com/bigquery)
+[![GitHub Actions](https://img.shields.io/badge/GitHub%20Actions-Automated-brightgreen.svg)](https://github.com/features/actions)
+
+*Normalized Dimensional Modeling • Synthetic Data Generation • Automated ETL • Geographic Intelligence • Chronological ID Sequencing*
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Data Model](#data-model)
+- [Automated Workflows](#automated-workflows)
+- [Project Structure](#project-structure)
+- [Installation & Setup](#installation--setup)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Data Quality](#data-quality)
+- [Performance & Optimization](#performance--optimization)
+- [Security](#security)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## Overview
 
-The FMCG Data Analytics Platform delivers a complete data warehousing and analytics solution that transforms raw business data into actionable intelligence. Built with modern architecture principles and scalable cloud infrastructure, this platform enables FMCG companies to make data-driven decisions with confidence and precision.
+The FMCG Data Analytics Platform is a **complete data warehousing solution** designed specifically for Fast-Moving Consumer Goods businesses. It implements a **normalized star schema architecture** with realistic synthetic data generation, automated ETL pipelines, and comprehensive business intelligence capabilities.
 
-### Core Capabilities
+### What This Platform Does
 
-- **Sales Performance Analytics**: Comprehensive tracking of sales transactions, revenue trends, and performance metrics across all channels
-- **Inventory Management Intelligence**: Real-time monitoring of stock levels, turnover rates, and supply chain optimization
-- **Employee Workforce Analytics**: Detailed insights into workforce productivity, compensation patterns, and organizational dynamics
-- **Marketing Campaign Effectiveness**: End-to-end tracking of marketing initiatives, ROI analysis, and campaign performance metrics
-- **Geographic Distribution Insights**: Philippines-wide coverage with granular regional, provincial, and municipal level analytics
-- **Financial Cost Management**: Detailed tracking of operating costs, marketing expenses, and budget optimization
+- **Generates realistic FMCG business data** across all major domains
+- **Maintains chronological ID ordering** (Employee 1 = earliest hire, Product 1 = earliest launch)
+- **Automates data updates** with separate daily, monthly, and quarterly workflows
+- **Optimizes for BigQuery free tier** while maintaining enterprise-grade functionality
+- **Provides complete geographic coverage** of the Philippines with regional intelligence
+
+### Business Domains Covered
+
+| **Domain** | **Key Metrics** | **Analytics Value** |
+|:----------:|:---------------:|:-------------------:|
+| **Sales** | Revenue, Volume, Commission, Order Status | Performance tracking & forecasting |
+| **Products** | Pricing, Categories, Launch Dates | Product mix analysis & optimization |
+| **Employees** | Hire Dates, Compensation, Tenure | Complete workforce planning |
+| **Retailers** | Geographic distribution, Types | Market penetration analysis |
+| **Inventory** | Stock levels, Locations, Valuation | Supply chain optimization |
+| **Marketing** | Campaign ROI, Spend, Effectiveness | Marketing effectiveness |
+| **Operations** | Cost structure, Department allocation | Financial planning & analysis |
 
 ---
 
-## Architecture Highlights
+## Key Features
+
+### Data Generation Excellence
+
+- **Chronological ID Sequencing**: All entities maintain proper date-based ordering
+  - Employee IDs assigned by hire date (earliest hire = Employee 1)
+  - Product IDs assigned by launch date (earliest launch = Product 1)
+  - Campaign IDs assigned by start date (earliest campaign = Campaign 1)
+  
+- **Realistic Business Logic**: Data generation follows real-world patterns
+  - Company founding date: 2015-01-01
+  - Employee tenure spans from hire date to termination/current date
+  - Order progression: Pending → Shipped → Delivered
+  - Geographic distribution based on Philippines administrative boundaries
+
+### Automated Workflows
+
+- **Daily Sales Generation**: 99-148 transactions with order status updates
+- **Monthly Business Updates**: 1-3 new employees, 1-2 new products, operating costs, inventory
+- **Quarterly Campaign Management**: 1 new campaign per quarter with comprehensive marketing costs
+
+### Data Quality & Integrity
+
+- **Temporal Accuracy**: All dates respect business logic and chronological constraints
+- **Referential Integrity**: Foreign key relationships maintained across all tables
+- **Duplicate Prevention**: ID-based filtering prevents data duplication
+- **Consistent Sequencing**: No gaps or duplicates in ID sequences
+
+---
+
+## Architecture
 
 ### Modern Design Principles
 
-- **Modular Architecture**: Clean separation of concerns with loosely coupled components
-- **Scalable Infrastructure**: Built on Google BigQuery for petabyte-scale data processing
-- **Automated Workflows**: Scheduled ETL processes with intelligent data generation
-- **Real-time Processing**: Streamlined data pipelines for near real-time analytics
-- **Enterprise Security**: Robust data governance and security frameworks
+| **Component** | **Technology** | **Purpose** |
+|:--------------:|:--------------:|:------------:|
+| **Data Warehouse** | Google BigQuery | Scalable cloud storage with SQL analytics |
+| **ETL Pipeline** | Python + Pandas | Automated data generation and loading |
+| **Orchestration** | GitHub Actions | Scheduled workflows with proper separation |
+| **Data Model** | **Normalized Star Schema** | Optimized for query performance & storage |
 
 ### Technology Stack
 
@@ -39,52 +106,77 @@ The FMCG Data Analytics Platform delivers a complete data warehousing and analyt
 
 ---
 
-## Data Model Architecture
+## Data Model
+
+### Normalized Star Schema Architecture
+
+The platform implements a **normalized dimensional modeling** approach with optimized relationships:
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│ dim_products    │    │ dim_campaigns   │    │ dim_retailers   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+        │                     │                     │
+        └─────────────────────┼─────────────────────┘
+                              │
+                ┌─────────────────┐
+                │   fact_sales    │
+                │ fact_employees  │
+                │ fact_inventory  │
+                │ fact_operating_ │
+                │ fact_marketing_ │
+                └─────────────────┘
+```
 
 ### Dimension Tables
 
-- **Products**: Comprehensive product catalog with pricing, categories, and lifecycle management
-- **Employees**: Workforce data with compensation, tenure, and organizational structure
-- **Retailers**: Distribution network with geographic and performance metrics
-- **Campaigns**: Marketing initiatives with budget tracking and effectiveness metrics
-- **Locations**: Geographic hierarchy from national to municipal level
-- **Departments**: Organizational structure with cost center allocation
-- **Jobs**: Position definitions with salary ranges and career progression
+| **Table** | **Purpose** | **Key Features** |
+|:----------:|:-----------:|:----------------:|
+| **dim_employees** | Workforce master data | Hire dates, compensation, work setup |
+| **dim_products** | Product catalog | Launch dates, pricing, categories |
+| **dim_campaigns** | Marketing campaigns | Budget, duration, effectiveness |
+| **dim_retailers** | Distribution network | Geographic distribution, types |
+| **dim_locations** | Geographic hierarchy | Philippines regions, provinces, cities |
+| **dim_departments** | Organizational structure | Cost centers, hierarchies |
+| **dim_jobs** | Position definitions | Salary ranges, career progression |
 
 ### Fact Tables
 
-- **Sales Transactions**: Detailed sales data with order tracking and delivery status
-- **Inventory Levels**: Stock monitoring with valuation and turnover metrics
-- **Operating Costs**: Departmental expense tracking with categorization
-- **Marketing Costs**: Campaign-specific expense allocation and ROI tracking
-- **Employee Compensation**: Detailed payroll and benefits analytics
+| **Table** | **Purpose** | **Update Frequency** |
+|:----------:|:-----------:|:-------------------:|
+| **fact_sales** | Sales transactions | Daily (99-148 transactions) |
+| **fact_employees** | Employee compensation | Monthly (full tenure coverage) |
+| **fact_inventory** | Stock levels | Monthly (snapshots) |
+| **fact_operating_costs** | Business expenses | Monthly (per department) |
+| **fact_marketing_costs** | Marketing spend | Quarterly (per campaign) |
 
 ---
 
-## Automated Data Updates
+## Automated Workflows
 
-### Daily Operations
+### Daily Operations (Every Day)
 
-**Sales Generation**: 99-148 transactions per day with realistic order progression
-- Order status tracking: Pending → Shipped → Delivered
-- Geographic distribution across all regions
-- Product and retailer relationship modeling
-- Campaign influence attribution
+**Sales Generation with Order Status Progression**
+- **Volume**: 99-148 transactions per day
+- **Order Status**: Pending → Shipped → Delivered progression
+- **Geographic Distribution**: Across all Philippines regions
+- **Campaign Attribution**: Latest campaigns prioritized
+- **ID Sequencing**: Continues from existing max sale_id
 
-### Monthly Updates
+### Monthly Updates (Last Day of Month)
 
-**Business Growth Simulation**: Controlled expansion of core business entities
-- **New Employees**: 1-3 hires per month with proper sequencing
-- **Product Launches**: 1-2 new products per month
-- **Operating Costs**: Monthly expense generation per department
-- **Inventory Snapshots**: End-of-month stock level reporting
+**Business Growth Simulation**
+- **New Employees**: 1-3 hires per month with chronological IDs
+- **New Products**: 1-2 launches per month with chronological IDs
+- **Operating Costs**: Monthly expenses per department
+- **Inventory Snapshots**: End-of-month stock levels
 
-### Quarterly Campaigns
+### Quarterly Campaigns (1st Day of Quarter)
 
-**Marketing Strategy**: Strategic campaign planning and execution
+**Marketing Strategy Execution**
 - **New Campaigns**: 1 major campaign per quarter
-- **Marketing Costs**: Comprehensive expense tracking across all channels
-- **Performance Analytics**: ROI measurement and effectiveness assessment
+- **Marketing Costs**: Comprehensive expense tracking
+- **Performance Analytics**: ROI measurement and assessment
 
 ---
 
@@ -117,16 +209,26 @@ FMCG-Data-Analytics/
 └── requirements.txt             # Python dependencies
 ```
 
+### Key Components
+
+- **`src/etl/pipeline.py`**: Main ETL orchestration with all generation methods
+- **`src/core/generators.py`**: Core data generation engines with business logic
+- **`scripts/monthly_update.py`**: Monthly business growth automation
+- **`scripts/quarterly_campaign_update.py`**: Quarterly campaign management
+- **`.github/workflows/`**: Automated execution schedules
+
 ---
 
 ## Installation & Setup
 
 ### Prerequisites
 
-- Python 3.14 or higher
-- Google Cloud Project with BigQuery API enabled
-- Service account with appropriate permissions
-- GitHub repository access (for automated workflows)
+| **Requirement** | **Version/Details** | **Purpose** |
+|:---------------:|:-------------------:|:-----------:|
+| **Python** | 3.14 or higher | ETL pipeline execution |
+| **Google Cloud Platform** | Active GCP account | Cloud data warehouse |
+| **BigQuery Dataset** | Created in your GCP project | Data storage and analytics |
+| **Service Account** | BigQuery Admin permissions | Data access and management |
 
 ### Quick Start Guide
 
@@ -160,12 +262,12 @@ FMCG-Data-Analytics/
 
 ---
 
-## Configuration Management
+## Configuration
 
 ### Environment Variables
 
-| Variable | Description | Default Value |
-|----------|-------------|--------------|
+| **Variable** | **Description** | **Default Value** |
+|:------------:|:---------------:|:-----------------:|
 | `GCP_PROJECT_ID` | Google Cloud Project ID | `fmcg-data-generator` |
 | `BQ_DATASET` | BigQuery Dataset Name | `fmcg_warehouse` |
 | `INITIAL_SALES_AMOUNT` | Initial sales volume target | `8000000000` |
@@ -173,7 +275,7 @@ FMCG-Data-Analytics/
 
 ### Customization Options
 
-The platform supports extensive customization through configuration parameters:
+The platform supports extensive customization:
 
 - **Data Volume Control**: Adjust transaction volumes and generation frequencies
 - **Geographic Scope**: Configure regional coverage and distribution patterns
@@ -182,11 +284,36 @@ The platform supports extensive customization through configuration parameters:
 
 ---
 
-## Data Quality & Integrity
+## Usage
 
-### ID Sequencing
+### Execution Modes
+
+#### Manual Initial Run
+```bash
+python src/main.py
+```
+Generates complete historical dataset from 2015 to present.
+
+#### Automated Scheduled Runs
+- **Daily**: GitHub Actions generates incremental sales data
+- **Monthly**: Automated business growth simulation
+- **Quarterly**: Strategic campaign creation and cost tracking
+
+### Data Generation Process
+
+1. **Dimension Tables**: Generate master data (employees, products, retailers, etc.)
+2. **Historical Facts**: Create 10+ years of historical data
+3. **Incremental Updates**: Daily, monthly, and quarterly automated updates
+4. **Quality Assurance**: ID sequencing and data integrity validation
+
+---
+
+## Data Quality
+
+### Chronological ID Sequencing
 
 All entities maintain strict chronological ID ordering:
+
 - **Employee IDs**: Assigned by hire date (earliest hire = Employee 1)
 - **Product IDs**: Assigned by launch date (earliest launch = Product 1)
 - **Campaign IDs**: Assigned by start date (earliest campaign = Campaign 1)
@@ -201,14 +328,7 @@ All entities maintain strict chronological ID ordering:
 
 ---
 
-## Performance & Scalability
-
-### Optimization Strategies
-
-- **Batch Processing**: Efficient bulk operations for large datasets
-- **Query Optimization**: BigQuery best practices for cost-effective queries
-- **Incremental Updates**: Targeted data updates to minimize processing overhead
-- **Caching Layer**: Intelligent caching for frequently accessed reference data
+## Performance & Optimization
 
 ### Free Tier Optimization
 
@@ -219,49 +339,16 @@ The platform is designed to operate efficiently within BigQuery free tier limits
 - **Quarterly Campaigns**: Strategic marketing data generation
 - **Efficient Queries**: Optimized for slot consumption and cost management
 
----
+### Optimization Strategies
 
-## Monitoring & Maintenance
-
-### Automated Workflows
-
-- **Daily Sales**: Automatic sales data generation and order status updates
-- **Monthly Updates**: Business growth simulation and data refresh
-- **Quarterly Campaigns**: Marketing campaign creation and cost tracking
-- **Data Validation**: Automated quality checks and integrity verification
-
-### Logging & Debugging
-
-Comprehensive logging framework provides detailed insights into:
-- Data generation processes and volumes
-- Error handling and recovery procedures
-- Performance metrics and execution times
-- Data quality validation results
+- **Batch Processing**: Efficient bulk operations for large datasets
+- **Query Optimization**: BigQuery best practices for cost-effective queries
+- **Incremental Updates**: Targeted data updates to minimize processing overhead
+- **Caching Layer**: Intelligent caching for frequently accessed reference data
 
 ---
 
-## Business Intelligence & Analytics
-
-### Key Performance Indicators
-
-The platform enables tracking of critical FMCG metrics:
-
-- **Sales Performance**: Revenue trends, product performance, regional analysis
-- **Inventory Efficiency**: Turnover rates, stock levels, supply chain metrics
-- **Employee Productivity**: Compensation analysis, tenure patterns, workforce metrics
-- **Marketing ROI**: Campaign effectiveness, cost per acquisition, conversion rates
-- **Geographic Insights**: Regional performance, market penetration, distribution analysis
-
-### Analytics Capabilities
-
-- **Time Series Analysis**: Trend identification and seasonal pattern detection
-- **Comparative Analysis**: Period-over-period growth and performance benchmarking
-- **Geographic Analytics**: Regional performance mapping and market analysis
-- **Product Analytics**: Category performance, pricing optimization, lifecycle management
-
----
-
-## Security & Compliance
+## Security
 
 ### Data Governance
 
@@ -279,7 +366,7 @@ The platform enables tracking of critical FMCG metrics:
 
 ---
 
-## Contributing & Development
+## Contributing
 
 ### Development Guidelines
 
@@ -298,34 +385,14 @@ The platform enables tracking of critical FMCG metrics:
 
 ---
 
-## Support & Documentation
-
-### Documentation Resources
-
-- **Architecture Guide**: Detailed system architecture and design decisions
-- **API Reference**: Complete API documentation with examples
-- **Deployment Guide**: Step-by-step deployment instructions
-- **Troubleshooting**: Common issues and resolution procedures
-
-### Community Support
-
-- **GitHub Issues**: Bug reports and feature requests
-- **Discussion Forums**: Community discussions and best practices
-- **Wiki Pages**: Collaborative documentation and guides
-- **Code Reviews**: Peer review and code quality discussions
-
----
-
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for complete details.
 
 ---
 
-## Acknowledgments
-
-Built with modern data engineering principles and best practices for the FMCG industry. Special thanks to the open-source community for the tools and libraries that make this platform possible.
-
----
-
 *For technical support or inquiries, please refer to the documentation or create an issue in the GitHub repository.*
+
+**Last Updated**: January 2026  
+**Version**: 2.0  
+**Status**: Production Ready
