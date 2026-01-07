@@ -294,6 +294,34 @@ python src/main.py
 ```
 Generates complete historical dataset from 2015 to present.
 
+#### Manual Workflow Execution
+
+The platform supports manual execution through GitHub Actions for testing and on-demand data generation:
+
+**Available Manual Runs:**
+
+| **Run Type** | **Purpose** | **What It Does** | **When to Use** |
+|:------------:|:-----------:|:---------------:|:--------------:|
+| **Full** | Complete data generation | All dimensions + All fact tables (historical from 2015) | Initial setup or complete refresh |
+| **Daily** | Sales data only | New sales transactions (99-148) with order status updates | Testing sales generation or manual sales refresh |
+| **Monthly** | Business growth simulation | New employees (1-3), New products (1-2), Operating costs, Inventory | Testing monthly updates or manual business growth |
+| **Quarterly** | Campaign management | New campaign (1) and Marketing costs | Testing quarterly campaigns or manual campaign refresh |
+
+**How to Trigger Manual Runs:**
+
+1. Go to your repository's **Actions** tab
+2. Select **Manual Data Generation** workflow
+3. Click **Run workflow**
+4. Choose the **Run Type** you need
+5. Adjust optional parameters (sales amounts, employee/product counts)
+6. Click **Run workflow** to execute
+
+**Manual Run Parameters:**
+- **Initial Sales Amount**: Override default ₱8B target (for full runs)
+- **Daily Sales Amount**: Override default ₱2M daily target
+- **New Employees Count**: Override default 1-3 employees (for monthly runs)
+- **New Products Count**: Override default 1-2 products (for monthly runs)
+
 #### Automated Scheduled Runs
 - **Daily**: GitHub Actions generates incremental sales data
 - **Monthly**: Automated business growth simulation
