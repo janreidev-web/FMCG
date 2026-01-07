@@ -858,15 +858,12 @@ class ETLPipeline:
                 "quantity": quantity,
                 "unit_price": unit_price,
                 "total_amount": total_amount,
-                "discount_rate": discount_rate,
                 "discount_amount": total_amount * discount_rate,
-                "final_amount": final_amount,
                 "commission_rate": commission_rate,
                 "order_date": current_date,
                 "delivery_date": delivery_date,
                 "delivery_status": delivery_status,
-                "created_at": datetime.combine(current_date, datetime.min.time()),
-                "updated_at": datetime.combine(current_date, datetime.min.time())
+                "created_at": datetime.combine(current_date, datetime.min.time())
             }
             sales.append(sale)
         
