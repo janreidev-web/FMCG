@@ -56,17 +56,16 @@ jobs:
         GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID || 'fmcg-data-generator' }}
         BQ_DATASET: ${{ secrets.BQ_DATASET || 'fmcg_warehouse' }}
         GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-        INITIAL_SALES_AMOUNT: ${{ secrets.INITIAL_SALES_AMOUNT || '8000000000' }}
         SCHEDULED_RUN: true
       run: |
         echo "=== Starting Monthly Update ==="
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
         echo "SCHEDULED_RUN: $SCHEDULED_RUN"
-        echo "This will update: Inventory, Products, Employees, Operating Costs"
+        echo "This will update: New Employees (1-3), New Products (1-2), Operating Costs, Inventory"
         
-        # Run full pipeline for monthly updates (includes all dimensions and facts)
-        python src/main.py
+        # Run monthly update script (employees, costs, products, inventory)
+        python scripts/monthly_update.py
         
         echo "=== Monthly Update Completed ==="
         echo "Time: $(date)"

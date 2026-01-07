@@ -64,10 +64,10 @@ jobs:
         echo "Time: $(date)"
         echo "Working Directory: $(pwd)"
         echo "SCHEDULED_RUN: $SCHEDULED_RUN"
-        echo "This will update: Campaign Costs Only"
+        echo "This will update: New Campaign (1) and Marketing Costs"
         
-        # Run full pipeline for quarterly updates (includes campaign data)
-        python src/main.py
+        # Run quarterly campaign update script
+        python scripts/quarterly_campaign_update.py
         
         echo "=== Quarterly Campaign Update Completed ==="
         echo "Time: $(date)"

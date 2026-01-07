@@ -768,6 +768,445 @@ class ETLPipeline:
             self.logger.warning(f"Could not update shipped orders: {e}")
             # Continue with sales generation even if update fails
     
+    def _generate_quarterly_campaigns(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate 1 new campaign for quarterly update"""
+        import random
+        from datetime import date, timedelta
+        
+        # Fixed to 1 campaign per quarter
+        new_campaigns_count = 1
+        
+        # Get existing data for context
+        dataset_name = self.bigquery_client.dataset
+        
+        # Get max campaign_id for sequencing
+        try:
+            max_id_query = f"""
+                SELECT MAX(CAST(REGEXP_EXTRACT(campaign_id, r'CAM(\\d+)') AS INT64)) as max_id 
+                FROM {dataset_name}.dim_campaigns 
+                WHERE campaign_id LIKE 'CAM%'
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+            else:
+                max_id = 0
+        except Exception as e:
+            self.logger.warning(f"Could not get max campaign_id: {e}")
+            max_id = 0
+        
+        campaign_types = [
+            "Product Launch", "Seasonal Promotion", "Brand Awareness", 
+            "Discount Campaign", "Loyalty Program", "Digital Marketing",
+            "In-Store Promotion", "Social Media Campaign"
+        ]
+        
+        # Generate new campaigns
+        campaigns = []
+        current_year = datetime.now().year
+        current_quarter = (datetime.now().month - 1) // 3 + 1
+        
+        # Calculate quarter start and end dates
+        quarter_start_month = (current_quarter - 1) * 3 + 1
+        quarter_start = date(current_year, quarter_start_month, 1)
+        
+        if current_quarter == 4:
+            quarter_end = date(current_year + 1, 1, 1) - timedelta(days=1)
+        else:
+            quarter_end = date(current_year, quarter_start_month + 3, 1) - timedelta(days=1)
+        
+        for i in range(new_campaigns_count):
+            # Generate campaign dates within the quarter
+            start_day = random.randint(1, 28)
+            start_date = date(current_year, quarter_start_month + random.randint(0, 2), start_day)
+            
+            # Ensure start_date is within quarter
+            if start_date < quarter_start:
+                start_date = quarter_start
+            elif start_date > quarter_end:
+                start_date = quarter_end
+            
+            # Duration of 2-3 months (60-90 days)
+            duration = random.randint(60, 90)
+            end_date = start_date + timedelta(days=duration)
+            
+            # Cap end date to quarter end
+            if end_date > quarter_end:
+                end_date = quarter_end
+            
+            # Determine status based on dates
+            today = datetime.now().date()
+            if end_date < today:
+                status = random.choice(["Completed", "Cancelled"])
+            elif start_date > today:
+                status = "Planned"
+            else:
+                status = "Active"
+            
+            max_id += 1
+            campaign = {
+                "campaign_id": f"CAM{max_id:015d}",
+                "campaign_name": f"Q{current_quarter} Campaign {max_id}: {random.choice(campaign_types)}",
+                "campaign_type": random.choice(campaign_types),
+                "start_date": start_date,
+                "end_date": end_date,
+                "budget": random.uniform(50000, 500000),
+                "target_audience": random.choice(["All Customers", "Young Adults", "Families", "Business Owners"]),
+                "status": status,
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            campaigns.append(campaign)
+        
+        return pd.DataFrame(campaigns)
+    
+    def _generate_quarterly_marketing_costs(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate marketing costs for current quarter"""
+        import random
+        
+        # Get all campaigns (including newly created ones)
+        dataset_name = self.bigquery_client.dataset
+        campaigns_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_campaigns")
+        
+        if len(campaigns_df) == 0:
+            return pd.DataFrame()
+        
+        cost_categories = [
+            "Advertising", "Promotions", "Events", "Digital Marketing", 
+            "Print Media", "TV/Radio", "Social Media", "Influencer Marketing"
+        ]
+        
+        marketing_costs = []
+        current_year = datetime.now().year
+        current_quarter = (datetime.now().month - 1) // 3 + 1
+        
+        # Calculate quarter months
+        quarter_start_month = (current_quarter - 1) * 3 + 1
+        quarter_months = [quarter_start_month, quarter_start_month + 1, quarter_start_month + 2]
+        
+        # Generate costs for each campaign for each month in the quarter
+        for _, campaign in campaigns_df.iterrows():
+            for month in quarter_months:
+                # Generate 3-5 cost entries per campaign per month
+                num_entries = random.randint(3, 5)
+                
+                for i in range(num_entries):
+                    cost_category = random.choice(cost_categories)
+                    
+                    # Cost based on campaign budget
+                    budget = campaign["budget"]
+                    amount = budget * random.uniform(0.02, 0.08)  # 2-8% of quarterly budget per entry
+                    
+                    cost_date = datetime(current_year, month, random.randint(1, 28)).date()
+                    
+                    cost_record = {
+                        "marketing_cost_id": self.id_generator.generate_id('fact_marketing_costs'),
+                        "date": cost_date,
+                        "campaign_id": campaign["campaign_id"],
+                        "cost_category": cost_category,
+                        "amount": amount,
+                        "description": f"{cost_category} expense for {campaign['campaign_name']} - Q{current_quarter}/{current_year}",
+                        "created_at": datetime.combine(cost_date, datetime.min.time())
+                    }
+                    marketing_costs.append(cost_record)
+        
+        return pd.DataFrame(marketing_costs)
+    
+    def _generate_monthly_employees(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate 1-3 new employees for monthly update"""
+        import random
+        from datetime import date
+        
+        new_employees_count = random.randint(1, 3)  # 1-3 new employees per month
+        
+        # Get existing data for context
+        dataset_name = self.bigquery_client.dataset
+        jobs_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_jobs")
+        locations_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_locations")
+        
+        # Get max employee_id for sequencing
+        try:
+            max_id_query = f"""
+                SELECT MAX(CAST(REGEXP_EXTRACT(employee_id, r'EMP(\\d+)') AS INT64)) as max_id 
+                FROM {dataset_name}.dim_employees 
+                WHERE employee_id LIKE 'EMP%'
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+            else:
+                max_id = 0
+        except Exception as e:
+            self.logger.warning(f"Could not get max employee_id: {e}")
+            max_id = 0
+        
+        # Generate new employees
+        employees = []
+        for i in range(new_employees_count):
+            job = jobs_df.sample(1).iloc[0]
+            location = locations_df.sample(1).iloc[0]
+            
+            # Generate hire date for this month
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            hire_date = date(current_year, current_month, random.randint(1, 28))
+            
+            max_id += 1
+            employee = {
+                "employee_id": f"EMP{max_id:015d}",
+                "first_name": f"New{max_id}",
+                "last_name": f"Employee{max_id}",
+                "email": f"new.employee{max_id}@company.com",
+                "phone": f"+639{random.randint(100000000, 999999999)}",
+                "hire_date": hire_date,
+                "termination_date": None,
+                "job_id": job["job_id"],
+                "location_id": location["location_id"],
+                "employment_type": "Regular" if random.random() < 0.7 else random.choice(["Contract", "Probationary"]),
+                "work_setup": random.choice(["On-Site", "Remote", "Hybrid"]),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            employees.append(employee)
+        
+        return pd.DataFrame(employees)
+    
+    def _generate_monthly_products(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate 1-2 new products for monthly update"""
+        import random
+        from ..core.generators import ProductGenerator
+        from ..utils.id_generation import IDGenerator
+        
+        new_products_count = config.get('new_products_count', 2)
+        
+        # Get existing data for context
+        dataset_name = self.bigquery_client.dataset
+        categories_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_categories")
+        subcategories_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_subcategories")
+        brands_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_brands")
+        
+        # Get max product_id for sequencing
+        try:
+            max_id_query = f"""
+                SELECT MAX(CAST(REGEXP_EXTRACT(product_id, r'PRO(\\d+)') AS INT64)) as max_id 
+                FROM {dataset_name}.dim_products 
+                WHERE product_id LIKE 'PRO%'
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+            else:
+                max_id = 0
+        except Exception as e:
+            self.logger.warning(f"Could not get max product_id: {e}")
+            max_id = 0
+        
+        # Generate new products
+        products = []
+        for i in range(new_products_count):
+            category = categories_df.sample(1).iloc[0]
+            subcategory = subcategories_df[subcategories_df["category_id"] == category["category_id"]].sample(1).iloc[0]
+            brand = brands_df.sample(1).iloc[0]
+            
+            # Generate realistic pricing
+            base_price = random.uniform(10, 500)
+            cost = base_price * random.uniform(0.3, 0.7)
+            
+            # Generate launch date for this month
+            from datetime import date
+            current_year = datetime.now().year
+            current_month = datetime.now().month
+            launch_date = date(current_year, current_month, random.randint(1, 28))
+            
+            max_id += 1
+            product = {
+                "product_id": f"PRO{max_id:015d}",
+                "product_name": f"{brand['brand_name']} {subcategory['subcategory_name']} New {max_id}",
+                "sku": f"SKU-{max_id:06d}",
+                "category_id": category["category_id"],
+                "subcategory_id": subcategory["subcategory_id"],
+                "brand_id": brand["brand_id"],
+                "unit_price": round(base_price, 2),
+                "cost": round(cost, 2),
+                "status": "Active",
+                "launch_date": launch_date,
+                "discontinued_date": None,
+                "created_at": datetime.now(),
+                "updated_at": datetime.now()
+            }
+            products.append(product)
+        
+        return pd.DataFrame(products)
+    
+    def _generate_monthly_costs(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate operating costs for current month"""
+        import random
+        
+        # Get existing departments
+        dataset_name = self.bigquery_client.dataset
+        departments_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_departments")
+        
+        # Get max cost_id for sequencing
+        try:
+            max_id_query = f"""
+                SELECT MAX(cost_id) as max_id FROM {dataset_name}.fact_operating_costs
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+            else:
+                max_id = 0
+        except Exception as e:
+            self.logger.warning(f"Could not get max cost_id: {e}")
+            max_id = 0
+        
+        cost_categories = [
+            "Salaries", "Rent", "Utilities", "Marketing", "Travel", 
+            "Training", "Supplies", "Insurance", "Maintenance", "Legal"
+        ]
+        cost_types = ["Fixed", "Variable", "Semi-Variable"]
+        
+        costs = []
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        
+        # Generate costs for each department for current month
+        for _, department in departments_df.iterrows():
+            cost_category = random.choice(cost_categories)
+            cost_type = random.choice(cost_types)
+            
+            # Generate realistic cost amounts
+            if cost_category == "Salaries":
+                amount = random.uniform(50000, 200000)
+            elif cost_category == "Rent":
+                amount = random.uniform(20000, 80000)
+            elif cost_category == "Marketing":
+                amount = random.uniform(10000, 50000)
+            else:
+                amount = random.uniform(5000, 25000)
+            
+            max_id += 1
+            cost_date = datetime(current_year, current_month, random.randint(1, 28)).date()
+            
+            cost_record = {
+                "cost_id": max_id,
+                "date": cost_date,
+                "cost_category": cost_category,
+                "cost_type": cost_type,
+                "department_id": department["department_id"],
+                "amount": amount,
+                "description": f"{cost_category} - {cost_type} expense for {current_month}/{current_year}",
+                "created_at": datetime.combine(cost_date, datetime.min.time())
+            }
+            costs.append(cost_record)
+        
+        return pd.DataFrame(costs)
+    
+    def _generate_monthly_marketing_costs(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate marketing costs for current month"""
+        import random
+        
+        # Get active campaigns
+        dataset_name = self.bigquery_client.dataset
+        campaigns_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_campaigns WHERE status = 'Active'")
+        
+        if len(campaigns_df) == 0:
+            return pd.DataFrame()
+        
+        cost_categories = [
+            "Advertising", "Promotions", "Events", "Digital Marketing", 
+            "Print Media", "TV/Radio", "Social Media", "Influencer Marketing"
+        ]
+        
+        marketing_costs = []
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        
+        # Generate costs for each active campaign
+        for _, campaign in campaigns_df.iterrows():
+            # Generate 2-4 cost entries per campaign per month
+            num_entries = random.randint(2, 4)
+            
+            for i in range(num_entries):
+                cost_category = random.choice(cost_categories)
+                
+                # Cost based on campaign budget
+                budget = campaign["budget"]
+                amount = budget * random.uniform(0.01, 0.05)  # 1-5% of monthly budget
+                
+                cost_date = datetime(current_year, current_month, random.randint(1, 28)).date()
+                
+                cost_record = {
+                    "marketing_cost_id": self.id_generator.generate_id('fact_marketing_costs'),
+                    "date": cost_date,
+                    "campaign_id": campaign["campaign_id"],
+                    "cost_category": cost_category,
+                    "amount": amount,
+                    "description": f"{cost_category} expense for {campaign['campaign_name']} - {current_month}/{current_year}",
+                    "created_at": datetime.combine(cost_date, datetime.min.time())
+                }
+                marketing_costs.append(cost_record)
+        
+        return pd.DataFrame(marketing_costs)
+    
+    def _generate_monthly_inventory(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate inventory snapshots for current month"""
+        import random
+        
+        # Get existing products and locations
+        dataset_name = self.bigquery_client.dataset
+        products_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_products WHERE status = 'Active'")
+        locations_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_locations")
+        
+        # Get max inventory_id for sequencing
+        try:
+            max_id_query = f"""
+                SELECT MAX(inventory_id) as max_id FROM {dataset_name}.fact_inventory
+            """
+            max_id_result = self.bigquery_client.execute_query(max_id_query)
+            if len(max_id_result) > 0 and max_id_result.iloc[0]['max_id'] is not None:
+                max_id = max_id_result.iloc[0]['max_id']
+            else:
+                max_id = 0
+        except Exception as e:
+            self.logger.warning(f"Could not get max inventory_id: {e}")
+            max_id = 0
+        
+        inventory = []
+        current_year = datetime.now().year
+        current_month = datetime.now().month
+        
+        # Generate one inventory snapshot per product-location combination for current month
+        snapshot_date = datetime(current_year, current_month, random.randint(25, 28)).date()
+        
+        for _, product in products_df.iterrows():
+            for _, location in locations_df.iterrows():
+                # Random inventory levels
+                opening_stock = random.randint(100, 1000)
+                stock_received = random.randint(0, 200)
+                stock_sold = random.randint(0, opening_stock + stock_received)
+                closing_stock = opening_stock + stock_received - stock_sold
+                stock_lost = random.randint(0, 10) if random.random() < 0.1 else 0
+                
+                max_id += 1
+                inventory_record = {
+                    "inventory_id": max_id,
+                    "date": snapshot_date,
+                    "product_id": product["product_id"],
+                    "location_id": location["location_id"],
+                    "opening_stock": opening_stock,
+                    "closing_stock": closing_stock,
+                    "stock_received": stock_received,
+                    "stock_sold": stock_sold,
+                    "stock_lost": stock_lost if stock_lost > 0 else None,
+                    "unit_cost": float(product["cost"]),
+                    "total_value": closing_stock * float(product["cost"]),
+                    "created_at": datetime.combine(snapshot_date, datetime.min.time())
+                }
+                inventory.append(inventory_record)
+        
+        return pd.DataFrame(inventory)
+    
     def _generate_daily_sales(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate daily sales for incremental updates - specifically for yesterday"""
         daily_amount = config.get("daily_sales_amount", 2000000)
