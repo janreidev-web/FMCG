@@ -725,7 +725,10 @@ class ETLPipeline:
         self.logger.info("Starting incremental update...")
         
         try:
-            # Generate new sales data for yesterday
+            # Step 1: Update previous day's shipped orders to delivered
+            self._update_shipped_to_delivered()
+            
+            # Step 2: Generate new sales data for yesterday
             yesterday_sales_df = self._generate_daily_sales(config)
             
             if len(yesterday_sales_df) > 0:
@@ -740,6 +743,31 @@ class ETLPipeline:
             self.logger.error(f"Incremental update failed: {e}")
             raise
     
+    def _update_shipped_to_delivered(self) -> None:
+        """Update previous day's shipped orders to delivered status"""
+        dataset_name = self.bigquery_client.dataset
+        
+        # Get orders that were shipped yesterday (should be delivered today)
+        yesterday = datetime.now().date() - timedelta(days=1)
+        two_days_ago = datetime.now().date() - timedelta(days=2)
+        
+        try:
+            update_query = f"""
+                UPDATE `{self.bigquery_client.project_id}.{dataset_name}.fact_sales`
+                SET delivery_status = 'Delivered',
+                    delivery_date = DATE('{yesterday}')
+                WHERE delivery_status = 'Shipped'
+                AND DATE(order_date) = DATE('{two_days_ago}')
+                AND delivery_date IS NULL
+            """
+            
+            result = self.bigquery_client.execute_query(update_query)
+            self.logger.info(f"Updated shipped orders to delivered for {two_days_ago}")
+            
+        except Exception as e:
+            self.logger.warning(f"Could not update shipped orders: {e}")
+            # Continue with sales generation even if update fails
+    
     def _generate_daily_sales(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate daily sales for incremental updates - specifically for yesterday"""
         daily_amount = config.get("daily_sales_amount", 2000000)
@@ -750,6 +778,10 @@ class ETLPipeline:
         retailers = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_retailers WHERE status = 'Active'")
         employees = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_employees WHERE termination_date IS NULL")
         campaigns = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_campaigns WHERE status = 'Active'")
+        
+        # Sort campaigns by start_date to prioritize latest campaigns
+        if len(campaigns) > 0:
+            campaigns = campaigns.sort_values('start_date', ascending=False).reset_index(drop=True)
         
         # Get max sale_id from existing data to continue the sequence
         try:
@@ -790,15 +822,8 @@ class ETLPipeline:
         
         self.logger.info(f"Generating daily sales for {current_date}")
         
-        # Calculate total transactions based on retailer distribution
-        total_transactions = 0
-        for _, retailer in retailers.iterrows():
-            retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
-            daily_tx_range = retailer_params["daily_transactions"]
-            total_transactions += random.randint(daily_tx_range[0], daily_tx_range[1])
-        
-        # Cap total transactions to reasonable limit for daily run
-        total_transactions = min(total_transactions, 800)
+        # Generate daily transactions in range 99-148
+        total_transactions = random.randint(99, 148)
         
         self.logger.info(f"Generating {total_transactions} transactions for {current_date}")
         
@@ -810,12 +835,12 @@ class ETLPipeline:
             # Get retailer-specific transaction parameters
             retailer_params = self.get_retailer_transaction_params(retailer["retailer_type"])
             
-            # Random campaign assignment (30% chance)
+            # Campaign assignment (30% chance) - prioritize latest campaigns
             campaign = None
             if random.random() < 0.3 and len(campaigns) > 0:
-                campaign_sample = campaigns.sample(1)
-                if len(campaign_sample) > 0:
-                    campaign = campaign_sample.iloc[0]
+                # Select from top 3 latest campaigns (or fewer if less available)
+                top_campaigns = campaigns.head(min(3, len(campaigns)))
+                campaign = top_campaigns.iloc[0]  # Take the latest one
             
             # Generate quantity and amount based on retailer type
             quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
@@ -841,12 +866,13 @@ class ETLPipeline:
             max_id += 1
             sale_id = f"SAL{max_id:015d}"
             
-            # Delivery status logic based on date (yesterday orders should be shipped/delivered)
-            delivery_status = random.choice(["Shipped", "Delivered"])
-            if delivery_status == "Delivered":
-                delivery_date = current_date + timedelta(days=random.randint(1, 3))
-            else:  # Shipped items don't have delivery date yet
-                delivery_date = None
+            # Delivery status logic - realistic progression for daily sales
+            # For yesterday's orders: some are still pending, some shipped today
+            delivery_status = random.choice(["Pending", "Shipped"])  # No delivered yet for yesterday's orders
+            if delivery_status == "Pending":
+                delivery_date = None  # Pending orders don't have delivery dates
+            else:  # Shipped orders
+                delivery_date = current_date + timedelta(days=1)  # Will be delivered tomorrow
             
             sale = {
                 "sale_id": sale_id,
