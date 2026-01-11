@@ -644,7 +644,7 @@ class RetailerGenerator(DataGenerator):
                 "credit_limit": random.uniform(10000, 100000),
                 "payment_terms": random.choice(["Net 30", "Net 60", "COD", "Net 90"]),
                 "status": random.choice(["Active", "Inactive", "Suspended"]),
-                "registration_date": self.faker.date_between(start_date="-5y", end_date="today"),
+                "registration_date": self.faker.date_between(start_date="2015-01-01", end_date="today"),
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
