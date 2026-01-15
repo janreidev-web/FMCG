@@ -333,7 +333,26 @@ class ETLPipeline:
         
         current_date = start_date
         while current_date <= datetime.now():
+            # Calculate months since start for cost trend
+            months_elapsed = ((current_date.year - start_date.year) * 12 + 
+                            (current_date.month - start_date.month))
+            
             for _, product in products.iterrows():
+                base_cost = float(product["cost"])
+                
+                # Apply cost fluctuations:
+                # 1. Long-term inflation trend (2-3% annually)
+                inflation_factor = 1 + (0.025 * months_elapsed / 12)
+                
+                # 2. Seasonal variation (±5%)
+                seasonal_factor = 1 + (0.05 * random.uniform(-1, 1))
+                
+                # 3. Market volatility (±8% random monthly changes)
+                volatility_factor = 1 + (0.08 * random.uniform(-1, 1))
+                
+                # Calculate fluctuating cost
+                fluctuating_cost = base_cost * inflation_factor * seasonal_factor * volatility_factor
+                
                 for _, location in locations.iterrows():
                     # Random inventory levels
                     opening_stock = random.randint(100, 1000)
@@ -352,8 +371,8 @@ class ETLPipeline:
                         "stock_received": stock_received,
                         "stock_sold": stock_sold,
                         "stock_lost": stock_lost if stock_lost > 0 else None,
-                        "unit_cost": float(product["cost"]),
-                        "total_value": closing_stock * float(product["cost"]),
+                        "unit_cost": round(fluctuating_cost, 2),
+                        "total_value": round(closing_stock * fluctuating_cost, 2),
                         "created_at": current_date
                     }
                     inventory.append(inventory_record)
@@ -1179,7 +1198,28 @@ class ETLPipeline:
         # Generate one inventory snapshot per product-location combination for current month
         snapshot_date = datetime(current_year, current_month, random.randint(25, 28)).date()
         
+        # Calculate months since 2015 for cost trend
+        start_date = datetime(2015, 1, 1)
+        current_date = datetime(current_year, current_month, 1)
+        months_elapsed = ((current_date.year - start_date.year) * 12 + 
+                        (current_date.month - start_date.month))
+        
         for _, product in products_df.iterrows():
+            base_cost = float(product["cost"])
+            
+            # Apply cost fluctuations:
+            # 1. Long-term inflation trend (2-3% annually)
+            inflation_factor = 1 + (0.025 * months_elapsed / 12)
+            
+            # 2. Seasonal variation (±5%)
+            seasonal_factor = 1 + (0.05 * random.uniform(-1, 1))
+            
+            # 3. Market volatility (±8% random monthly changes)
+            volatility_factor = 1 + (0.08 * random.uniform(-1, 1))
+            
+            # Calculate fluctuating cost
+            fluctuating_cost = base_cost * inflation_factor * seasonal_factor * volatility_factor
+            
             for _, location in locations_df.iterrows():
                 # Random inventory levels
                 opening_stock = random.randint(100, 1000)
@@ -1199,8 +1239,8 @@ class ETLPipeline:
                     "stock_received": stock_received,
                     "stock_sold": stock_sold,
                     "stock_lost": stock_lost if stock_lost > 0 else None,
-                    "unit_cost": float(product["cost"]),
-                    "total_value": closing_stock * float(product["cost"]),
+                    "unit_cost": round(fluctuating_cost, 2),
+                    "total_value": round(closing_stock * fluctuating_cost, 2),
                     "created_at": datetime.combine(snapshot_date, datetime.min.time())
                 }
                 inventory.append(inventory_record)
