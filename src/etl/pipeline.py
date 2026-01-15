@@ -178,8 +178,8 @@ class ETLPipeline:
     
     def _generate_sales_data(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate sales transaction data - full 500K target"""
-        initial_amount = config.get("initial_sales_amount", 8000000000)
-        daily_amount = config.get("daily_sales_amount", 2000000)
+        initial_amount = config.get("initial_sales_amount", 9000000000)
+        daily_amount = config.get("daily_sales_amount", 2500000)
         
         # Get reference data
         products = self.data_cache["dim_products"]
@@ -344,11 +344,11 @@ class ETLPipeline:
                 # 1. Long-term inflation trend (2-3% annually)
                 inflation_factor = 1 + (0.025 * months_elapsed / 12)
                 
-                # 2. Seasonal variation (±5%)
-                seasonal_factor = 1 + (0.05 * random.uniform(-1, 1))
+                # 2. Seasonal variation (±10%)
+                seasonal_factor = 1 + (0.1 * random.uniform(-1, 1))
                 
-                # 3. Market volatility (±8% random monthly changes)
-                volatility_factor = 1 + (0.08 * random.uniform(-1, 1))
+                # 3. Market volatility (±15% random monthly changes)
+                volatility_factor = 1 + (0.15 * random.uniform(-1, 1))
                 
                 # Calculate fluctuating cost
                 fluctuating_cost = base_cost * inflation_factor * seasonal_factor * volatility_factor
