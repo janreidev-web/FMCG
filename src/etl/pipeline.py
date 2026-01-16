@@ -56,9 +56,9 @@ class ETLPipeline:
         
         # Retailer-specific transaction ranges (in PHP) - scaled for ₱20B/11years target
         self.retailer_transaction_ranges = {
-            "Sari-Sari Store": {"min_qty": 5, "max_qty": 50, "min_amount": 50, "max_amount": 3000, "daily_transactions": (10, 30)},
-            "Convenience Store": {"min_qty": 10, "max_qty": 100, "min_amount": 3000, "max_amount": 15000, "daily_transactions": (5, 15)},
-            "Pharmacy": {"min_qty": 2, "max_qty": 20, "min_amount": 15000, "max_amount": 25000, "daily_transactions": (3, 8)},
+            "Sari-Sari Store": {"min_qty": 10, "max_qty": 30, "min_amount": 100, "max_amount": 3000, "daily_transactions": (10, 30)},
+            "Convenience Store": {"min_qty": 15, "max_qty": 100, "min_amount": 3000, "max_amount": 15000, "daily_transactions": (5, 15)},
+            "Pharmacy": {"min_qty": 25, "max_qty": 40, "min_amount": 15000, "max_amount": 25000, "daily_transactions": (3, 8)},
             "Wholesale": {"min_qty": 50, "max_qty": 500, "min_amount": 25000, "max_amount": 100000, "daily_transactions": (2, 6)},
             "Supermarket": {"min_qty": 20, "max_qty": 200, "min_amount": 50000, "max_amount": 75000, "daily_transactions": (3, 10)},
             "Department Store": {"min_qty": 3, "max_qty": 30, "min_amount": 3000, "max_amount": 8000, "daily_transactions": (1, 4)}
@@ -1029,7 +1029,7 @@ class ETLPipeline:
             
             # Generate realistic pricing
             base_price = random.uniform(10, 500)
-            cost = base_price * random.uniform(0.3, 0.7)
+            cost = base_price * random.uniform(0.4, 0.6)
             
             # Generate launch date for this month
             from datetime import date
