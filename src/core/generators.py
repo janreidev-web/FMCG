@@ -586,9 +586,9 @@ class ProductGenerator(DataGenerator):
             subcategory = subcategories_df[subcategories_df["category_id"] == category["category_id"]].sample(1).iloc[0]
             brand = brands_df.sample(1).iloc[0]
             
-            # Generate realistic pricing
+            # Generate realistic pricing for FMCG (target 25-35% gross margin)
             base_price = random.uniform(10, 500)
-            cost = base_price * random.uniform(0.3, 0.7)
+            cost = base_price * random.uniform(0.65, 0.75)  # Cost is 65-75% of price = 25-35% margin
             
             # Generate launch date from company founding (2015-01-01) to today
             from datetime import date
