@@ -70,6 +70,13 @@ The FMCG Data Analytics Platform is a **complete data warehousing solution** des
   - Order progression: Pending → Shipped → Delivered
   - Geographic distribution based on Philippines administrative boundaries
 
+- **Philippine Economic Scenario Integration**: Revenue and cost fluctuations based on actual PSA data
+  - **TRAIN Law Impact** (2018): 6.5% inflation spike with 2-8% excise tax effects
+  - **COVID-19 Pandemic** (2020-2022): Volume and pricing volatility across ECQ, GCQ, and lockdown periods
+  - **Inflation Cycles** (2015-2026): Actual Philippine inflation rates from 1.5% (2015) to 8% peak (2023)
+  - **Seasonal Patterns**: Ber months demand surge, lean months dip (Jun-Aug)
+  - **Independent Price/Cost Movements**: Realistic gross margin fluctuations
+
 ### Automated Workflows
 
 - **Daily Sales Generation**: 99-148 transactions with order status updates
@@ -336,6 +343,68 @@ The platform supports manual execution through GitHub Actions for testing and on
 
 ---
 
+## Economic Modeling
+
+### Philippine Economic Scenario (2015-2026)
+
+The platform incorporates **actual Philippine economic data** from the Philippine Statistics Authority (PSA) to create realistic revenue and cost fluctuations.
+
+#### Price Inflation (Sales Revenue)
+
+| **Period** | **Annual Rate** | **Key Events** |
+|:----------:|:---------------:|:--------------:|
+| 2015-2016 | 1.5% | Low inflation period |
+| 2017 | 3.0% | Pre-TRAIN Law baseline |
+| **2018** | **6.5%** | **TRAIN Law implementation spike** |
+| 2019 | 3.0% | Post-TRAIN stabilization |
+| 2020 | 2.5% | Pandemic-induced deflation |
+| 2021 | 4.0% | Economic recovery |
+| 2022 | 6.0% | Global inflation surge |
+| **2023** | **8.0%** | **Peak inflation** |
+| 2024 | 4.0% | Moderating inflation |
+| 2025+ | 2.5% | Stabilization phase |
+
+#### Cost Inflation (Inventory/COGS)
+
+Cost inflation runs slightly lower than retail prices (0.5-1% differential), creating realistic gross margin compression and expansion cycles.
+
+#### TRAIN Law Impact (January 2018)
+
+- **Direct Price Impact**: Additional 2-8% increase from excise taxes on sweetened beverages, fuel, and other FMCG products
+- **Input Cost Impact**: 5.5% cost inflation on raw materials and supplies
+- **Margin Effect**: Temporary margin expansion as retail prices rose faster than costs
+
+#### COVID-19 Pandemic Effects
+
+**Volume Impact:**
+- **Pre-pandemic** (Jan 2015 - Feb 2020): Normal transaction volumes (1.0x)
+- **ECQ Period** (Mar-May 2020): Severe drop to 50-60% of normal volumes
+- **GCQ/MGCQ** (Jun 2020 - Mar 2021): Moderate impact at 70-80% volumes
+- **Various Lockdowns** (Apr 2021 - Feb 2022): Recovery phase at 90-105% volumes
+- **Alert Levels/Endemic** (Mar 2022+): Return to normal with growth (100-110%)
+
+**Pricing Impact:**
+- **ECQ Period**: +8% to +18% price surge due to supply chain disruptions
+- **GCQ/MGCQ**: +3% to +10% elevated pricing
+- **Lockdown Period**: +2% to +6% moderate premium
+- **Endemic Phase**: Normalizing to -1% to +3%
+
+#### Seasonal Patterns
+
+- **Ber Months** (Oct-Dec): +2% to +6% demand increase (Christmas season)
+- **Lean Months** (Jun-Aug): -6% to -2% demand decrease (back-to-school, summer)
+- **Regular Months**: ±4% normal variation
+
+#### Gross Margin Dynamics
+
+The independent movement of prices and costs creates realistic margin fluctuations:
+- **Margin Expansion**: 2018 (TRAIN Law), 2020 (pandemic pricing power)
+- **Margin Compression**: 2023 (costs rose 7.5% vs prices 8%)
+- **Competitive Pressure**: ±8% random variation simulating market competition
+- **Forex Impact**: ±5% variation from PHP peso fluctuations on imported goods
+
+---
+
 ## Data Quality
 
 ### Chronological ID Sequencing
@@ -421,6 +490,6 @@ This project is licensed under the MIT License - see the LICENSE file for comple
 
 *For technical support or inquiries, please refer to the documentation or create an issue in the GitHub repository.*
 
-**Last Updated**: January 2026  
-**Version**: 2.0  
+**Last Updated**: January 16, 2026  
+**Version**: 2.1 - Philippine Economic Scenario Integration  
 **Status**: Production Ready
