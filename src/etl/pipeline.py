@@ -178,8 +178,8 @@ class ETLPipeline:
     
     def _generate_sales_data(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate sales transaction data - full 500K target"""
-        initial_amount = config.get("initial_sales_amount", 9000000000)
-        daily_amount = config.get("daily_sales_amount", 2500000)
+        initial_amount = config.get("initial_sales_amount", 8000000000)
+        daily_amount = config.get("daily_sales_amount", 2000000)
         
         # Get reference data
         products = self.data_cache["dim_products"]
