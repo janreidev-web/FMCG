@@ -265,7 +265,88 @@ class ETLPipeline:
                 # Apply COVID impact to quantity as well
                 quantity = max(1, int(quantity * covid_impact))
                 
-                unit_price = float(product["unit_price"])
+                # Apply price fluctuations (Philippine economic scenario)
+                base_price = float(product["unit_price"])
+                
+                # Calculate months since start for price trends
+                months_since_start = ((current_date.year - start_date.year) * 12 + 
+                                     (current_date.month - start_date.month))
+                
+                # Price fluctuation factors based on Philippine economic conditions:
+                
+                # 1. Philippine inflation trend (based on PSA actual data)
+                if order_date < date(2017, 1, 1):
+                    # 2015-2016: Very low inflation (~1.5%)
+                    annual_inflation = 0.015
+                elif order_date < date(2018, 1, 1):
+                    # 2017: Low inflation (~3%)
+                    annual_inflation = 0.030
+                elif order_date < date(2019, 1, 1):
+                    # 2018: TRAIN Law spike - peak ~6.5%
+                    annual_inflation = 0.065
+                elif order_date < date(2020, 1, 1):
+                    # 2019: Moderate (~3%)
+                    annual_inflation = 0.030
+                elif order_date < date(2021, 1, 1):
+                    # 2020: Pandemic - low (~2.5%)
+                    annual_inflation = 0.025
+                elif order_date < date(2022, 1, 1):
+                    # 2021: Recovery (~4%)
+                    annual_inflation = 0.040
+                elif order_date < date(2023, 1, 1):
+                    # 2022: High inflation spike (~6%)
+                    annual_inflation = 0.060
+                elif order_date < date(2024, 1, 1):
+                    # 2023: Peak inflation (~8%)
+                    annual_inflation = 0.080
+                elif order_date < date(2025, 1, 1):
+                    # 2024: Moderating (~4%)
+                    annual_inflation = 0.040
+                else:
+                    # 2025+: Stabilizing (~2.5%)
+                    annual_inflation = 0.025
+                
+                price_inflation = 1 + (annual_inflation * months_since_start / 12)
+                
+                # 2. TRAIN Law excise tax impact (Jan 2018)
+                if order_date >= date(2018, 1, 1):
+                    # TRAIN Law added excise taxes on sweetened beverages, fuel, etc.
+                    # Affects certain product categories more
+                    train_law_impact = random.uniform(1.02, 1.08)  # 2-8% price increase
+                else:
+                    train_law_impact = 1.0
+                
+                # 3. Competitive pressure (±8% random variation)
+                competitive_pressure = 1 + random.uniform(-0.08, 0.08)
+                
+                # 4. Demand fluctuation (±6% based on seasonality)
+                # Higher during Christmas (Oct-Dec), lower during lean months (Jun-Aug)
+                if order_date.month in [10, 11, 12]:
+                    demand_factor = 1 + random.uniform(0.02, 0.06)  # Ber months
+                elif order_date.month in [6, 7, 8]:
+                    demand_factor = 1 + random.uniform(-0.06, -0.02)  # Lean months
+                else:
+                    demand_factor = 1 + random.uniform(-0.04, 0.04)
+                
+                # 5. COVID pricing impact (Philippine scenario)
+                if order_date < date(2020, 3, 1):
+                    # Pre-pandemic: normal pricing
+                    covid_price_factor = 1.0
+                elif order_date < date(2020, 6, 1):
+                    # ECQ period (Mar-May 2020): supply chain disruption
+                    covid_price_factor = random.uniform(1.08, 1.18)
+                elif order_date < date(2021, 4, 1):
+                    # GCQ/MGCQ (Jun 2020-Mar 2021): stabilizing
+                    covid_price_factor = random.uniform(1.03, 1.10)
+                elif order_date < date(2022, 3, 1):
+                    # Various lockdowns (Apr 2021-Feb 2022): moderate impact
+                    covid_price_factor = random.uniform(1.02, 1.06)
+                else:
+                    # Alert levels/Endemic (Mar 2022+): normalizing
+                    covid_price_factor = random.uniform(0.99, 1.03)
+                
+                # Apply all price factors
+                unit_price = base_price * price_inflation * train_law_impact * competitive_pressure * demand_factor * covid_price_factor
                 total_amount = quantity * unit_price
                 
                 # Ensure transaction is within retailer's expected range
@@ -366,19 +447,52 @@ class ETLPipeline:
             
             for _, product in products.iterrows():
                 base_cost = float(product["cost"])
+                snapshot_date = current_date.date()
                 
-                # Apply cost fluctuations:
-                # 1. Long-term inflation trend (2-3% annually)
-                inflation_factor = 1 + (0.025 * months_elapsed / 12)
+                # Apply cost fluctuations based on Philippine economic conditions:
                 
-                # 2. Seasonal variation (±10%)
-                seasonal_factor = 1 + (0.1 * random.uniform(-1, 1))
+                # 1. Philippine cost inflation (based on PSA data, slightly lower than retail)
+                if snapshot_date < date(2017, 1, 1):
+                    # 2015-2016: Very low (~1.2%)
+                    cost_inflation_rate = 0.012
+                elif snapshot_date < date(2018, 1, 1):
+                    # 2017: Low (~2.5%)
+                    cost_inflation_rate = 0.025
+                elif snapshot_date < date(2019, 1, 1):
+                    # 2018: TRAIN Law impact on inputs (~5.5%)
+                    cost_inflation_rate = 0.055
+                elif snapshot_date < date(2020, 1, 1):
+                    # 2019: Moderate (~2.5%)
+                    cost_inflation_rate = 0.025
+                elif snapshot_date < date(2021, 1, 1):
+                    # 2020: Pandemic - low (~2%)
+                    cost_inflation_rate = 0.020
+                elif snapshot_date < date(2022, 1, 1):
+                    # 2021: Recovery (~3.5%)
+                    cost_inflation_rate = 0.035
+                elif snapshot_date < date(2023, 1, 1):
+                    # 2022: High inflation (~5.5%)
+                    cost_inflation_rate = 0.055
+                elif snapshot_date < date(2024, 1, 1):
+                    # 2023: Peak cost inflation (~7.5%)
+                    cost_inflation_rate = 0.075
+                elif snapshot_date < date(2025, 1, 1):
+                    # 2024: Moderating (~3.5%)
+                    cost_inflation_rate = 0.035
+                else:
+                    # 2025+: Stabilizing (~2%)
+                    cost_inflation_rate = 0.020
                 
-                # 3. Market volatility (±15% random monthly changes)
-                volatility_factor = 1 + (0.15 * random.uniform(-1, 1))
+                inflation_factor = 1 + (cost_inflation_rate * months_elapsed / 12)
+                
+                # 2. Supply chain volatility (±6%)
+                supply_chain_factor = 1 + (0.06 * random.uniform(-1, 1))
+                
+                # 3. Import/forex impact (±5% - PHP peso fluctuations)
+                forex_factor = 1 + (0.05 * random.uniform(-1, 1))
                 
                 # Calculate fluctuating cost
-                fluctuating_cost = base_cost * inflation_factor * seasonal_factor * volatility_factor
+                fluctuating_cost = base_cost * inflation_factor * supply_chain_factor * forex_factor
                 
                 for _, location in locations.iterrows():
                     # Random inventory levels
