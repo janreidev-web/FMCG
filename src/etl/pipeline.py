@@ -217,8 +217,31 @@ class ETLPipeline:
         jan_2026 = datetime(2026, 1, 1).date()
         
         while current_date <= end_date:
-            # Calculate daily transactions with variation
-            daily_tx = random.randint(min_daily_tx, max_daily_tx)
+            # COVID-19 impact factor based on date
+            order_date = current_date.date()
+            
+            # Pre-pandemic: Jan 2015 - Feb 2020 (normal)
+            if order_date < date(2020, 3, 1):
+                covid_impact = 1.0
+            # Pandemic period: Mar 2020 - Dec 2021 (reduced revenue)
+            elif order_date < date(2022, 1, 1):
+                # Severe impact in early months (Mar-Jun 2020): -40% to -50%
+                if order_date < date(2020, 7, 1):
+                    covid_impact = random.uniform(0.50, 0.60)
+                # Moderate impact (Jul 2020 - Dec 2021): -20% to -30%
+                else:
+                    covid_impact = random.uniform(0.70, 0.80)
+            # Post-pandemic recovery: Jan 2022 - Jun 2023 (gradual recovery)
+            elif order_date < date(2023, 7, 1):
+                # Recovery phase: -10% to +5%
+                covid_impact = random.uniform(0.90, 1.05)
+            # New normal: Jul 2023 onwards (back to normal with slight growth)
+            else:
+                covid_impact = random.uniform(1.0, 1.10)
+            
+            # Calculate daily transactions with variation and COVID impact
+            daily_tx = int(random.randint(min_daily_tx, max_daily_tx) * covid_impact)
+            daily_tx = max(1, daily_tx)  # Ensure at least 1 transaction
             
             # Generate all transactions for this day
             for _ in range(daily_tx):
@@ -238,6 +261,10 @@ class ETLPipeline:
                 
                 # Generate quantity and amount based on retailer type
                 quantity = random.randint(retailer_params["min_qty"], retailer_params["max_qty"])
+                
+                # Apply COVID impact to quantity as well
+                quantity = max(1, int(quantity * covid_impact))
+                
                 unit_price = float(product["unit_price"])
                 total_amount = quantity * unit_price
                 
