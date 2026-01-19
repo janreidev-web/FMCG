@@ -42,67 +42,114 @@ class InventorySalesSynchronizer:
         self.inventory_data = None
         self.product_data = None
     
-    def load_data(self, start_date: str = None, end_date: str = None) -> None:
+    def load_data(self, start_date: str = None, end_date: str = None, 
+                  storage_aware: bool = False, max_days: int = 365, 
+                  batch_size: int = 100000, historical_mode: bool = False) -> None:
         """Load sales and inventory data for synchronization analysis"""
         
-        # Default to last 90 days if no dates provided
-        if not end_date:
+        # Historical mode for full dataset (471K sales, 2M inventory)
+        if historical_mode and not start_date:
+            # For historical analysis, load complete dataset
+            self.logger.info(f"Loading complete historical dataset (471K sales, 2M inventory)")
+            # Don't limit date range for historical mode
+            if not end_date:
+                end_date = datetime.now().date()
+            if not start_date:
+                # Go back to 2015 based on ETL pipeline start date
+                start_date = datetime(2015, 1, 1).date()
+        elif storage_aware and not start_date:
+            # Storage-aware mode for limited processing
             end_date = datetime.now().date()
-        if not start_date:
-            start_date = end_date - timedelta(days=90)
+            start_date = end_date - timedelta(days=max_days)
+            self.logger.info(f"Using storage-aware date range: {start_date} to {end_date}")
+        elif not end_date:
+            end_date = datetime.now().date()
+        elif not start_date:
+            start_date = end_date - timedelta(days=90)  # Default 90 days
         
-        self.logger.info(f"Loading data from {start_date} to {end_date}")
+        mode_desc = "historical" if historical_mode else "date range"
+        self.logger.info(f"Loading {mode_desc} data from {start_date} to {end_date}")
         
-        # Load sales data
-        sales_query = f"""
-        SELECT 
-            sale_id,
-            date as sale_date,
-            product_id,
-            retailer_id,
-            quantity as sales_quantity,
-            unit_price,
-            total_amount,
-            delivery_status
-        FROM `fact_sales`
-        WHERE date BETWEEN '{start_date}' AND '{end_date}'
-        AND delivery_status != 'Cancelled'
-        ORDER BY date, product_id, retailer_id
-        """
-        
-        self.sales_data = self.bq_client.execute_query(sales_query)
-        self.logger.info(f"Loaded {len(self.sales_data)} sales records")
-        
-        # Load inventory data
-        inventory_query = f"""
-        SELECT 
-            inventory_id,
-            date as inventory_date,
-            product_id,
-            location_id,
-            opening_stock,
-            closing_stock,
-            stock_received,
-            stock_sold,
-            stock_lost,
-            unit_cost,
-            total_value
-        FROM `fact_inventory`
-        WHERE date BETWEEN '{start_date}' AND '{end_date}'
-        ORDER BY date, product_id, location_id
-        """
-        
-        self.inventory_data = self.bq_client.execute_query(inventory_query)
-        self.logger.info(f"Loaded {len(self.inventory_data)} inventory records")
-        
-        # Load product data for SKU mapping
-        product_query = """
-        SELECT product_id, sku, product_name, category_id, brand_id
-        FROM `dim_products`
-        """
-        
-        self.product_data = self.bq_client.execute_query(product_query)
-        self.logger.info(f"Loaded {len(self.product_data)} product records")
+        try:
+            # Load sales data with appropriate batch size
+            sales_query = f"""
+            SELECT 
+                sale_id,
+                date as sale_date,
+                product_id,
+                retailer_id,
+                quantity as sales_quantity,
+                unit_price,
+                total_amount,
+                delivery_status
+            FROM `fact_sales`
+            WHERE date BETWEEN '{start_date}' AND '{end_date}'
+            AND delivery_status != 'Cancelled'
+            ORDER BY date, product_id, retailer_id
+            """
+            
+            # Add LIMIT only for non-historical mode
+            if not historical_mode:
+                sales_query += f" LIMIT {batch_size}"
+            
+            self.sales_data = self.bq_client.execute_query(sales_query)
+            mode_info = f" ({'historical' if historical_mode else f'batch size: {batch_size}'})"
+            self.logger.info(f"Loaded {len(self.sales_data)} sales records{mode_info}")
+            
+            # Load inventory data with appropriate batch size
+            inventory_query = f"""
+            SELECT 
+                inventory_id,
+                date as inventory_date,
+                product_id,
+                location_id,
+                opening_stock,
+                closing_stock,
+                stock_received,
+                stock_sold,
+                stock_lost,
+                unit_cost,
+                total_value
+            FROM `fact_inventory`
+            WHERE date BETWEEN '{start_date}' AND '{end_date}'
+            ORDER BY date, product_id, location_id
+            """
+            
+            # Add LIMIT only for non-historical mode
+            if not historical_mode:
+                inventory_query += f" LIMIT {batch_size}"
+            
+            self.inventory_data = self.bq_client.execute_query(inventory_query)
+            self.logger.info(f"Loaded {len(self.inventory_data)} inventory records{mode_info}")
+            
+            # Load product data
+            product_query = """
+            SELECT product_id, sku, product_name, category_id, brand_id
+            FROM `dim_products`
+            LIMIT 10000  # Reasonable limit for product catalog
+            """
+            
+            self.product_data = self.bq_client.execute_query(product_query)
+            self.logger.info(f"Loaded {len(self.product_data)} product records")
+            
+            # Log dataset statistics
+            if len(self.sales_data) > 0:
+                self.logger.info(f"Sales data range: {self.sales_data['sale_date'].min()} to {self.sales_data['sale_date'].max()}")
+                if historical_mode:
+                    self.logger.info(f"Historical sales dataset: {len(self.sales_data):,} records loaded")
+            if len(self.inventory_data) > 0:
+                self.logger.info(f"Inventory data range: {self.inventory_data['inventory_date'].min()} to {self.inventory_data['inventory_date'].max()}")
+                if historical_mode:
+                    self.logger.info(f"Historical inventory dataset: {len(self.inventory_data):,} records loaded")
+            
+        except Exception as e:
+            error_desc = "historical" if historical_mode else "dataset"
+            self.logger.error(f"Failed to load {error_desc} data: {str(e)}")
+            # Fallback to empty dataframes
+            self.sales_data = pd.DataFrame()
+            self.inventory_data = pd.DataFrame()
+            self.product_data = pd.DataFrame()
+            raise
     
     def analyze_synchronization_gaps(self) -> pd.DataFrame:
         """Analyze gaps between sales quantities and inventory stock movements"""
