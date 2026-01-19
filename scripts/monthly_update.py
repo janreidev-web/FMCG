@@ -81,8 +81,19 @@ def main():
         else:
             logger.info("ℹ️  No operating costs to add")
         
-        # Step 4: Generate inventory snapshots for current month
-        logger.info("Step 4: Generating inventory snapshots...")
+        # Step 4: Update retailer statuses
+        logger.info("Step 4: Updating retailer statuses...")
+        retailer_updates_df = pipeline._generate_monthly_retailer_updates(config)
+        
+        if len(retailer_updates_df) > 0:
+            # Update existing retailers
+            bq_manager.load_dataframe(retailer_updates_df, "dim_retailers", "WRITE_TRUNCATE")
+            logger.info(f"✅ Updated {len(retailer_updates_df)} retailer records")
+        else:
+            logger.info("ℹ️  No retailer updates needed")
+        
+        # Step 5: Generate inventory snapshots for current month
+        logger.info("Step 5: Generating inventory snapshots...")
         inventory_df = pipeline._generate_monthly_inventory(config)
         
         if len(inventory_df) > 0:
@@ -96,6 +107,7 @@ def main():
         logger.info(f"  New employees: {len(new_employees_df)}")
         logger.info(f"  New products: {len(new_products_df)}")
         logger.info(f"  Operating costs: {len(costs_df)}")
+        logger.info(f"  Retailer updates: {len(retailer_updates_df)}")
         logger.info(f"  Inventory records: {len(inventory_df)}")
         
     except Exception as e:

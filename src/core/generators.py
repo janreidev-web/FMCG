@@ -632,6 +632,23 @@ class RetailerGenerator(DataGenerator):
         
         for i in range(count):
             location = locations_df.sample(1).iloc[0]
+            registration_date = self.faker.date_between(start_date="-11y", end_date="today")
+            
+            # Business logic for initial status
+            approval_days = random.randint(1, 30)
+            status_date = registration_date + timedelta(days=approval_days)
+            
+            # 85% approved, 10% pending, 5% rejected
+            status_rand = random.random()
+            if status_rand < 0.85:
+                initial_status = "Active"
+                status_date = registration_date + timedelta(days=approval_days)
+            elif status_rand < 0.95:
+                initial_status = "Pending"
+                status_date = registration_date
+            else:
+                initial_status = "Rejected"
+                status_date = registration_date + timedelta(days=approval_days)
             
             retailer = {
                 "retailer_id": id_generator.generate_id('dim_retailers'),
@@ -643,14 +660,72 @@ class RetailerGenerator(DataGenerator):
                 "email": self.faker.email(),
                 "credit_limit": random.uniform(10000, 100000),
                 "payment_terms": random.choice(["Net 30", "Net 60", "COD", "Net 90"]),
-                "status": random.choice(["Active", "Inactive", "Suspended"]),
-                "registration_date": self.faker.date_between(start_date="-11y", end_date="today"),
+                "status": initial_status,
+                "status_date": status_date,
+                "registration_date": registration_date,
+                "deactivation_date": None,
+                "suspension_count": 0,
+                "last_order_date": None,
+                "total_orders": 0,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
             retailers.append(retailer)
         
         return pd.DataFrame(retailers)
+    
+    def update_retailer_status(self, retailers_df: pd.DataFrame, current_date: date) -> pd.DataFrame:
+        """Update retailer statuses based on business logic"""
+        updated_retailers = []
+        
+        for _, retailer in retailers_df.iterrows():
+            retailer_copy = retailer.copy()
+            
+            # Skip if already rejected
+            if retailer_copy['status'] == 'Rejected':
+                updated_retailers.append(retailer_copy)
+                continue
+            
+            # Pending retailers: chance of approval or rejection
+            if retailer_copy['status'] == 'Pending':
+                days_pending = (current_date - retailer_copy['status_date']).days
+                
+                if days_pending > 30:  # Auto-reject after 30 days
+                    retailer_copy['status'] = 'Rejected'
+                    retailer_copy['status_date'] = current_date
+                elif random.random() < 0.1:  # 10% daily chance of approval
+                    retailer_copy['status'] = 'Active'
+                    retailer_copy['status_date'] = current_date
+            
+            # Active retailers: chance of suspension or deactivation
+            elif retailer_copy['status'] == 'Active':
+                # Business failure risk (2% annual chance)
+                if random.random() < 0.02/12:  # Monthly probability
+                    retailer_copy['status'] = 'Inactive'
+                    retailer_copy['status_date'] = current_date
+                    retailer_copy['deactivation_date'] = current_date
+                # Payment default risk (1% annual chance)
+                elif random.random() < 0.01/12:
+                    retailer_copy['status'] = 'Suspended'
+                    retailer_copy['status_date'] = current_date
+                    retailer_copy['suspension_count'] += 1
+            
+            # Suspended retailers: chance of reactivation or deactivation
+            elif retailer_copy['status'] == 'Suspended':
+                days_suspended = (current_date - retailer_copy['status_date']).days
+                
+                if days_suspended > 90:  # Auto-deactivate after 90 days
+                    retailer_copy['status'] = 'Inactive'
+                    retailer_copy['status_date'] = current_date
+                    retailer_copy['deactivation_date'] = current_date
+                elif random.random() < 0.05:  # 5% daily chance of reactivation
+                    retailer_copy['status'] = 'Active'
+                    retailer_copy['status_date'] = current_date
+            
+            retailer_copy['updated_at'] = datetime.now()
+            updated_retailers.append(retailer_copy)
+        
+        return pd.DataFrame(updated_retailers)
 
 
 class BankGenerator(DataGenerator):

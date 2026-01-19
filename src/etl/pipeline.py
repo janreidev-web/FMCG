@@ -1309,6 +1309,24 @@ class ETLPipeline:
         
         return pd.DataFrame(marketing_costs)
     
+    def _generate_monthly_retailer_updates(self, config: Dict[str, Any]) -> pd.DataFrame:
+        """Generate monthly retailer status updates"""
+        from datetime import date
+        from ..core.generators import RetailerGenerator
+        
+        current_date = date.today()
+        
+        # Get existing retailers
+        retailers_df = self.bigquery_client.execute_query(
+            f"SELECT * FROM {self.bigquery_client.dataset}.dim_retailers"
+        )
+        
+        # Update statuses
+        retailer_gen = RetailerGenerator(self.faker)
+        updated_retailers = retailer_gen.update_retailer_status(retailers_df, current_date)
+        
+        return updated_retailers
+    
     def _generate_monthly_inventory(self, config: Dict[str, Any]) -> pd.DataFrame:
         """Generate inventory snapshots for current month"""
         import random
