@@ -30,7 +30,7 @@ class DistributionAnalytics:
                    l.region, l.province, l.city
             FROM `{self.dataset}.dim_retailers` r
             JOIN `{self.dataset}.dim_locations` l ON r.location_id = l.location_id
-            WHERE r.status IN ('Active', 'Suspended')
+            WHERE r.status = 'Active'
             AND r.registration_date <= '{analysis_date}'
         ),
         
@@ -41,8 +41,7 @@ class DistributionAnalytics:
                 al.city,
                 COUNT(ar.location_id) as retailer_count,
                 COUNT(DISTINCT ar.retailer_type) as type_diversity,
-                SUM(CASE WHEN ar.status = 'Active' THEN 1 ELSE 0 END) as active_count,
-                SUM(CASE WHEN ar.status = 'Suspended' THEN 1 ELSE 0 END) as suspended_count
+                SUM(CASE WHEN ar.status = 'Active' THEN 1 ELSE 0 END) as active_count
             FROM active_locations al
             LEFT JOIN active_retailers ar ON al.location_id = ar.location_id
             GROUP BY al.region, al.province, al.city
@@ -55,9 +54,9 @@ class DistributionAnalytics:
                 SUM(CASE WHEN retailer_count > 0 THEN 1 ELSE 0 END) as covered_locations,
                 SUM(retailer_count) as total_retailers,
                 SUM(active_count) as active_retailers,
-                SUM(suspended_count) as suspended_retailers,
+                SUM(CASE WHEN retailer_count = 0 THEN 1 ELSE 0 END) as uncovered_locations,
                 AVG(CASE WHEN retailer_count > 0 THEN type_diversity ELSE 0 END) as avg_type_diversity,
-                SUM(CASE WHEN retailer_count = 0 THEN 1 ELSE 0 END) as uncovered_locations
+                SUM(CASE WHEN retailer_count > 0 THEN type_diversity ELSE 0 END) as total_type_diversity
             FROM location_coverage
             GROUP BY region
         )
@@ -70,7 +69,6 @@ class DistributionAnalytics:
             ROUND(SUM(covered_locations) * 100.0 / SUM(total_locations), 2) as coverage_percentage,
             SUM(total_retailers) as total_retailers,
             SUM(active_retailers) as active_retailers,
-            SUM(suspended_retailers) as suspended_retailers,
             ROUND(AVG(avg_type_diversity), 2) as avg_type_diversity,
             '{analysis_date}' as analysis_date
         FROM regional_metrics
@@ -85,7 +83,6 @@ class DistributionAnalytics:
             ROUND(covered_locations * 100.0 / total_locations, 2) as coverage_percentage,
             total_retailers,
             active_retailers,
-            suspended_retailers,
             ROUND(avg_type_diversity, 2) as avg_type_diversity,
             '{analysis_date}' as analysis_date
         FROM regional_metrics
@@ -106,7 +103,7 @@ class DistributionAnalytics:
                    COUNT(*) as retailer_count
             FROM `{self.dataset}.dim_retailers` r
             JOIN `{self.dataset}.dim_locations` l ON r.location_id = l.location_id
-            WHERE r.status IN ('Active', 'Suspended')
+            WHERE r.status = 'Active'
             AND r.registration_date <= '{analysis_date}'
             GROUP BY r.retailer_type, l.region, l.province
         )
@@ -117,7 +114,7 @@ class DistributionAnalytics:
             SUM(retailer_count) as total_count,
             ROUND(SUM(retailer_count) * 100.0 / 
                   (SELECT COUNT(*) FROM `{self.dataset}.dim_retailers` 
-                   WHERE status IN ('Active', 'Suspended') 
+                   WHERE status = 'Active' 
                    AND registration_date <= '{analysis_date}'), 2) as market_share_percentage,
             COUNT(DISTINCT province) as province_presence,
             '{analysis_date}' as analysis_date
@@ -182,7 +179,7 @@ class DistributionAnalytics:
             CROSS JOIN (
                 SELECT DISTINCT retailer_type 
                 FROM `{self.dataset}.dim_retailers` 
-                WHERE status IN ('Active', 'Suspended')
+                WHERE status = 'Active'
             ) rt
         ),
         
@@ -195,7 +192,7 @@ class DistributionAnalytics:
                 COUNT(*) as actual_count
             FROM `{self.dataset}.dim_retailers` r
             JOIN `{self.dataset}.dim_locations` l ON r.location_id = l.location_id
-            WHERE r.status IN ('Active', 'Suspended')
+            WHERE r.status = 'Active'
             AND r.registration_date <= '{analysis_date}'
             GROUP BY l.region, l.province, l.city, r.retailer_type
         ),

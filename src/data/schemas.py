@@ -88,13 +88,10 @@ DIM_RETAILERS = TableSchema(
         {"name": "status_date", "type": "DATE", "mode": "REQUIRED"},
         {"name": "registration_date", "type": "DATE", "mode": "REQUIRED"},
         {"name": "deactivation_date", "type": "DATE", "mode": "NULLABLE"},
-        {"name": "suspension_count", "type": "INTEGER", "mode": "REQUIRED"},
-        {"name": "last_order_date", "type": "DATE", "mode": "NULLABLE"},
-        {"name": "total_orders", "type": "INTEGER", "mode": "REQUIRED"},
         {"name": "created_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
         {"name": "updated_at", "type": "TIMESTAMP", "mode": "REQUIRED"},
     ],
-    description="Retailer master data with lifecycle management and distribution coverage analytics"
+    description="Retailer master data with simplified status management for distribution coverage analytics"
 )
 
 DIM_LOCATIONS = TableSchema(
