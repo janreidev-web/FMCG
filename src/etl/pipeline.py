@@ -187,6 +187,14 @@ class ETLPipeline:
         employees = self.data_cache["dim_employees"]
         campaigns = self.data_cache["dim_campaigns"]
         
+        # Calculate target transactions for 11 years (increased to 500K)
+        target_transactions = 500000  # Increased from 100K to 500K
+        
+        # Set exact date range: January 1, 2015 to day before yesterday
+        start_date = datetime(2015, 1, 1)
+        end_date = datetime.now() - timedelta(days=2)  # Day before yesterday
+        total_days = (end_date - start_date).days + 1  # Include both start and end dates
+        
         # Pre-compute retailer eligibility by date for performance optimization
         self.logger.info("Pre-computing retailer eligibility for performance optimization...")
         retailer_eligibility_cache = {}
@@ -206,14 +214,6 @@ class ETLPipeline:
             current_cache_date += timedelta(days=1)
         
         self.logger.info(f"Retailer eligibility cache built for {len(retailer_eligibility_cache)} days")
-        
-        # Calculate target transactions for 11 years (increased to 500K)
-        target_transactions = 500000  # Increased from 100K to 500K
-        
-        # Set exact date range: January 1, 2015 to day before yesterday
-        start_date = datetime(2015, 1, 1)
-        end_date = datetime.now() - timedelta(days=2)  # Day before yesterday
-        total_days = (end_date - start_date).days + 1  # Include both start and end dates
         
         # Calculate daily transaction targets
         base_daily_transactions = target_transactions // total_days
