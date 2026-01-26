@@ -187,6 +187,26 @@ class ETLPipeline:
         employees = self.data_cache["dim_employees"]
         campaigns = self.data_cache["dim_campaigns"]
         
+        # Pre-compute retailer eligibility by date for performance optimization
+        self.logger.info("Pre-computing retailer eligibility for performance optimization...")
+        retailer_eligibility_cache = {}
+        
+        # Create a cache of eligible retailers for each date
+        current_cache_date = start_date.date()
+        while current_cache_date <= end_date.date():
+            # Vectorized filtering of eligible retailers
+            eligible_mask = (
+                (retailers['status'] == 'Active') |
+                ((retailers['status'] == 'Terminated') & 
+                 (retailers['deactivation_date'].notna()) & 
+                 (current_cache_date < retailers['deactivation_date']))
+            )
+            eligible_retailers_df = retailers[eligible_mask]
+            retailer_eligibility_cache[current_cache_date] = eligible_retailers_df
+            current_cache_date += timedelta(days=1)
+        
+        self.logger.info(f"Retailer eligibility cache built for {len(retailer_eligibility_cache)} days")
+        
         # Calculate target transactions for 11 years (increased to 500K)
         target_transactions = 500000  # Increased from 100K to 500K
         
@@ -247,23 +267,14 @@ class ETLPipeline:
             for _ in range(daily_tx):
                 product = products.sample(1).iloc[0]
                 
-                # Sample retailers based on their status as of the transaction date
-                eligible_retailers = []
-                for _, retailer in retailers.iterrows():
-                    # Check if retailer was active on this transaction date
-                    if retailer['status'] == 'Active':
-                        eligible_retailers.append(retailer)
-                    elif retailer['status'] == 'Terminated' and retailer['deactivation_date'] is not None:
-                        # Include terminated retailers if transaction is before termination date
-                        if order_date < retailer['deactivation_date']:
-                            eligible_retailers.append(retailer)
+                # Get eligible retailers from cache (optimized)
+                eligible_retailers_df = retailer_eligibility_cache[order_date]
                 
-                if len(eligible_retailers) == 0:
+                if len(eligible_retailers_df) == 0:
                     continue  # Skip if no eligible retailers available
                 
-                # Convert to DataFrame and sample
-                eligible_df = pd.DataFrame(eligible_retailers)
-                retailer = eligible_df.sample(1).iloc[0]
+                # Sample directly from cached DataFrame
+                retailer = eligible_retailers_df.sample(1).iloc[0]
                 
                 employee = employees.sample(1).iloc[0]
                 
