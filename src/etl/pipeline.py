@@ -155,24 +155,34 @@ class ETLPipeline:
         self.logger.info("Generating fact data...")
         
         # Generate sales data
+        self.logger.info("Starting sales data generation...")
         sales_df = self._generate_sales_data(config)
         self.data_cache["fact_sales"] = sales_df
+        self.logger.info(f"Sales data generation completed: {len(sales_df):,} transactions")
         
         # Generate inventory data
+        self.logger.info("Starting inventory data generation...")
         inventory_df = self._generate_inventory_data(config)
         self.data_cache["fact_inventory"] = inventory_df
+        self.logger.info(f"Inventory data generation completed: {len(inventory_df):,} records")
         
         # Generate operating costs
+        self.logger.info("Starting operating costs generation...")
         costs_df = self._generate_operating_costs(config)
         self.data_cache["fact_operating_costs"] = costs_df
+        self.logger.info(f"Operating costs generation completed: {len(costs_df):,} records")
         
         # Generate marketing costs
+        self.logger.info("Starting marketing costs generation...")
         marketing_df = self._generate_marketing_costs(config)
         self.data_cache["fact_marketing_costs"] = marketing_df
+        self.logger.info(f"Marketing costs generation completed: {len(marketing_df):,} records")
         
         # Generate employee facts
+        self.logger.info("Starting employee facts generation...")
         employee_facts_df = self._generate_employee_facts(config)
         self.data_cache["fact_employees"] = employee_facts_df
+        self.logger.info(f"Employee facts generation completed: {len(employee_facts_df):,} records")
         
         self.logger.info("Fact data generation completed")
     
@@ -499,8 +509,37 @@ class ETLPipeline:
         # Generate monthly inventory snapshots from company founding (2015-01-01) to present
         start_date = datetime(2015, 1, 1)
         
+        # Progress tracking for inventory generation
+        total_months = ((datetime.now().year - start_date.year) * 12 + 
+                       (datetime.now().month - start_date.month)) + 1
+        month_count = 0
+        progress_interval = max(1, total_months // 10)  # Log every 10% of months
+        inventory_start_time = datetime.now()
+        
+        self.logger.info(f"Starting inventory generation: {total_months} months, {len(products)} products, {len(locations)} locations")
+        
         current_date = start_date
         while current_date <= datetime.now():
+            month_count += 1
+            
+            # Progress logging
+            if month_count % progress_interval == 0 or month_count == total_months:
+                progress_percent = (month_count / total_months) * 100
+                elapsed_time = datetime.now() - inventory_start_time
+                avg_records_per_month = len(inventory) / month_count if month_count > 0 else 0
+                
+                if progress_percent > 0:
+                    total_estimated_time = elapsed_time.total_seconds() / (progress_percent / 100)
+                    remaining_time_seconds = total_estimated_time - elapsed_time.total_seconds()
+                    remaining_minutes = remaining_time_seconds / 60
+                else:
+                    remaining_minutes = 0
+                
+                self.logger.info(
+                    f"Inventory Progress: {progress_percent:.1f}% ({month_count}/{total_months} months) | "
+                    f"Records: {len(inventory):,} | Avg: {avg_records_per_month:.0f} rec/month | "
+                    f"Elapsed: {elapsed_time.total_seconds()/60:.1f} min | ETA: {remaining_minutes:.1f} min"
+                )
             # Calculate months since start for cost trend
             months_elapsed = ((current_date.year - start_date.year) * 12 + 
                             (current_date.month - start_date.month))
