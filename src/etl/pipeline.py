@@ -232,9 +232,15 @@ class ETLPipeline:
         sale_id = 1
         total_generated = 0
         
+        # Progress tracking variables
+        progress_interval = max(1, total_days // 20)  # Log every 5% of progress
+        last_progress_log = 0
+        start_time = datetime.now()
+        
         current_date = start_date
         today = datetime.now().date()
         jan_2026 = datetime(2026, 1, 1).date()
+        days_processed = 0
         
         while current_date <= end_date:
             # COVID-19 impact factor based on date
@@ -435,6 +441,30 @@ class ETLPipeline:
                 sale_id += 1
                 total_generated += 1
             
+            days_processed += 1
+            
+            # Progress logging every 5% of completion
+            if days_processed % progress_interval == 0 or days_processed == total_days:
+                progress_percent = (days_processed / total_days) * 100
+                elapsed_time = datetime.now() - start_time
+                avg_tx_per_day = total_generated / days_processed if days_processed > 0 else 0
+                
+                # Estimate remaining time
+                if progress_percent > 0:
+                    total_estimated_time = elapsed_time.total_seconds() / (progress_percent / 100)
+                    remaining_time_seconds = total_estimated_time - elapsed_time.total_seconds()
+                    remaining_minutes = remaining_time_seconds / 60
+                else:
+                    remaining_minutes = 0
+                
+                self.logger.info(
+                    f"Progress: {progress_percent:.1f}% ({days_processed}/{total_days} days) | "
+                    f"Generated: {total_generated:,} transactions | "
+                    f"Avg: {avg_tx_per_day:.1f} tx/day | "
+                    f"Elapsed: {elapsed_time.total_seconds()/60:.1f} min | "
+                    f"ETA: {remaining_minutes:.1f} min"
+                )
+            
             current_date += timedelta(days=1)
         
         # Convert to DataFrame
@@ -461,6 +491,7 @@ class ETLPipeline:
         """Generate inventory data"""
         products = self.data_cache["dim_products"]
         locations = self.data_cache["dim_locations"]
+        retailers = self.data_cache["dim_retailers"]
         
         inventory = []
         inventory_id = 1
