@@ -638,14 +638,16 @@ class RetailerGenerator(DataGenerator):
             approval_days = random.randint(1, 30)
             status_date = registration_date + timedelta(days=approval_days)
             
-            # 90% approved, 10% pending approval
+            # 85% Active, 15% Terminated (for realistic distribution)
             status_rand = random.random()
-            if status_rand < 0.9:
+            if status_rand < 0.85:
                 initial_status = "Active"
                 status_date = registration_date + timedelta(days=approval_days)
+                deactivation_date = None
             else:
-                initial_status = "Active"
-                status_date = registration_date + timedelta(days=approval_days + random.randint(1, 90))
+                initial_status = "Terminated"
+                status_date = registration_date + timedelta(days=approval_days + random.randint(30, 365))
+                deactivation_date = status_date
             
             retailer = {
                 "retailer_id": id_generator.generate_id('dim_retailers'),
@@ -660,7 +662,7 @@ class RetailerGenerator(DataGenerator):
                 "status": initial_status,
                 "status_date": status_date,
                 "registration_date": registration_date,
-                "deactivation_date": None,
+                "deactivation_date": deactivation_date,
                 "created_at": datetime.now(),
                 "updated_at": datetime.now()
             }
@@ -675,9 +677,9 @@ class RetailerGenerator(DataGenerator):
         for _, retailer in retailers_df.iterrows():
             retailer_copy = retailer.copy()
             
-            # Active retailers: chance of partnership discontinuation
+            # Active retailers: chance of termination
             if retailer_copy['status'] == 'Active':
-                # Business failure/partnership termination risk (3% annual chance)
+                # Partnership termination risk (3% annual chance)
                 if random.random() < 0.03/12:  # Monthly probability
                     retailer_copy['status'] = 'Terminated'
                     retailer_copy['status_date'] = current_date

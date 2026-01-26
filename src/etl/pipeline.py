@@ -246,7 +246,25 @@ class ETLPipeline:
             # Generate all transactions for this day
             for _ in range(daily_tx):
                 product = products.sample(1).iloc[0]
-                retailer = retailers.sample(1).iloc[0]
+                
+                # Sample retailers based on their status as of the transaction date
+                eligible_retailers = []
+                for _, retailer in retailers.iterrows():
+                    # Check if retailer was active on this transaction date
+                    if retailer['status'] == 'Active':
+                        eligible_retailers.append(retailer)
+                    elif retailer['status'] == 'Terminated' and retailer['deactivation_date'] is not None:
+                        # Include terminated retailers if transaction is before termination date
+                        if order_date < retailer['deactivation_date']:
+                            eligible_retailers.append(retailer)
+                
+                if len(eligible_retailers) == 0:
+                    continue  # Skip if no eligible retailers available
+                
+                # Convert to DataFrame and sample
+                eligible_df = pd.DataFrame(eligible_retailers)
+                retailer = eligible_df.sample(1).iloc[0]
+                
                 employee = employees.sample(1).iloc[0]
                 
                 # Get retailer-specific transaction parameters
@@ -495,7 +513,22 @@ class ETLPipeline:
                 fluctuating_cost = base_cost * inflation_factor * supply_chain_factor * forex_factor
                 
                 for _, location in locations.iterrows():
-                    # Random inventory levels
+                    # Check if location had active retailers at this point in time
+                    location_has_active_retailers = False
+                    for _, retailer in retailers.iterrows():
+                        if retailer['location_id'] == location['location_id']:
+                            if retailer['status'] == 'Active':
+                                location_has_active_retailers = True
+                                break
+                            elif retailer['status'] == 'Terminated' and retailer['deactivation_date'] is not None:
+                                if snapshot_date < retailer['deactivation_date']:
+                                    location_has_active_retailers = True
+                                    break
+                    
+                    # Only generate inventory for locations that had active retailers
+                    if not location_has_active_retailers:
+                        continue
+                    
                     opening_stock = random.randint(100, 1000)
                     stock_received = random.randint(0, 200)
                     stock_sold = random.randint(0, opening_stock + stock_received)
@@ -1331,10 +1364,18 @@ class ETLPipeline:
         """Generate inventory snapshots for current month"""
         import random
         
-        # Get existing products and locations
+        # Get existing products and locations with active retailers only
         dataset_name = self.bigquery_client.dataset
         products_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_products WHERE status = 'Active'")
-        locations_df = self.bigquery_client.execute_query(f"SELECT * FROM {dataset_name}.dim_locations")
+        
+        # Get locations that have active retailers
+        locations_query = f"""
+            SELECT DISTINCT l.* 
+            FROM {dataset_name}.dim_locations l
+            JOIN {dataset_name}.dim_retailers r ON l.location_id = r.location_id
+            WHERE r.status = 'Active'
+        """
+        locations_df = self.bigquery_client.execute_query(locations_query)
         
         # Get max inventory_id for sequencing
         try:
