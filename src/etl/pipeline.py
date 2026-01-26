@@ -518,6 +518,32 @@ class ETLPipeline:
         
         self.logger.info(f"Starting inventory generation: {total_months} months, {len(products)} products, {len(locations)} locations")
         
+        # Pre-compute location-retailer eligibility cache for performance optimization
+        self.logger.info("Pre-computing location-retailer eligibility for inventory generation...")
+        location_eligibility_cache = {}
+        
+        # Create a cache of locations with active retailers for each date
+        current_cache_date = start_date.date()
+        end_cache_date = datetime.now().date()
+        
+        while current_cache_date <= end_cache_date:
+            # Vectorized filtering of locations with active retailers
+            active_retailer_mask = (
+                (retailers['status'] == 'Active') |
+                ((retailers['status'] == 'Terminated') & 
+                 (retailers['deactivation_date'].notna()) & 
+                 (current_cache_date < retailers['deactivation_date']))
+            )
+            active_retailers = retailers[active_retailer_mask]
+            
+            # Get unique location_ids from active retailers
+            eligible_location_ids = set(active_retailers['location_id'].unique())
+            location_eligibility_cache[current_cache_date] = eligible_location_ids
+            
+            current_cache_date += timedelta(days=30)  # Move to next month
+        
+        self.logger.info(f"Location eligibility cache built for {len(location_eligibility_cache)} months")
+        
         current_date = start_date
         while current_date <= datetime.now():
             month_count += 1
@@ -594,20 +620,11 @@ class ETLPipeline:
                 fluctuating_cost = base_cost * inflation_factor * supply_chain_factor * forex_factor
                 
                 for _, location in locations.iterrows():
-                    # Check if location had active retailers at this point in time
-                    location_has_active_retailers = False
-                    for _, retailer in retailers.iterrows():
-                        if retailer['location_id'] == location['location_id']:
-                            if retailer['status'] == 'Active':
-                                location_has_active_retailers = True
-                                break
-                            elif retailer['status'] == 'Terminated' and retailer['deactivation_date'] is not None:
-                                if snapshot_date < retailer['deactivation_date']:
-                                    location_has_active_retailers = True
-                                    break
+                    # Get eligible locations from cache (optimized)
+                    eligible_location_ids = location_eligibility_cache.get(snapshot_date, set())
                     
                     # Only generate inventory for locations that had active retailers
-                    if not location_has_active_retailers:
+                    if location['location_id'] not in eligible_location_ids:
                         continue
                     
                     opening_stock = random.randint(100, 1000)
